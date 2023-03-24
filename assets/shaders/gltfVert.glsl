@@ -7,7 +7,7 @@ layout (location = 2) in vec3 inNormal;
 layout (location = 3) out vec2 fragUV;
 layout (location = 4) out vec3 fragNorm;
 
-layout (std140) uniform mtx {
+uniform mtx {
     mat4 uProj;
     mat4 uView;
     mat4 uWorld;

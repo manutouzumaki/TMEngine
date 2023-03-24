@@ -6,9 +6,14 @@
 #include <stb_image.h>
 
 #include <glad/glad.h>
+
+#define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
+
+#include <glext.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 
 // TODO: try to remove this ...
 struct TMWindow {
@@ -65,6 +70,7 @@ struct TMRenderer {
     TMMemoryPool* shaderBuffersMemory;
 };
 
+
  TMRenderer *TMRendererCreate(TMWindow *window) {
     TMRenderer *renderer = (TMRenderer *)malloc(sizeof(TMRenderer));
     renderer->buffersMemory = TMMemoryPoolCreate(sizeof(TMBuffer), TM_RENDERER_MEMORY_BLOCK_SIZE);
@@ -75,9 +81,6 @@ struct TMRenderer {
     
     renderer->width = window->width;
     renderer->height = window->height;
-
-    //renderer->width = 800;
-    //renderer->height = 600;
 
     glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
@@ -278,7 +281,7 @@ struct TMRenderer {
     TMMemoryPoolFree(renderer->buffersMemory, (void *)buffer);
 }
 
- void TMRendererDrawBufferElements(TMRenderer *renderer, TMBuffer *buffer) {
+void TMRendererDrawBufferElements(TMRenderer *renderer, TMBuffer *buffer) {
     glBindVertexArray(buffer->id);
     switch(buffer->eboType) {
         case TM_EBO_UNSIGNED_SHORT: glDrawElements(GL_TRIANGLES, buffer->indicesCount, GL_UNSIGNED_SHORT, 0); break;
@@ -288,12 +291,12 @@ struct TMRenderer {
     }
 }
 
- void TMRendererDrawBufferArray(TMRenderer *renderer, TMBuffer *buffer) {
+void TMRendererDrawBufferArray(TMRenderer *renderer, TMBuffer *buffer) {
     glBindVertexArray(buffer->id);
     glDrawArrays(GL_TRIANGLES, 0, buffer->verticesCount);
 }
 
- TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, const char *fragPath) {
+TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, const char *fragPath) {
     TMShader *shader = (TMShader *)TMMemoryPoolAlloc(renderer->shadersMemory);
 
     // read the vertex and fragment files

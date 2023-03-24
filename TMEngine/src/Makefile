@@ -1,5 +1,5 @@
 INCL_PATH_WIN32=libs/stb_image
-INCL_PATH_MACOS=libs/glad/include -Ilibs/stb_image
+INCL_PATH_MACOS=libs/glad/include -Ilibs/stb_image -Ilibs/glext
 
 build_win32:
 	cl \
@@ -27,8 +27,8 @@ build_macos:
 	-c -DTM_DEBUG -DTM_MACOS -g \
 	-I$(INCL_PATH_MACOS) \
 	*.cpp utils/*.cpp platform_macos/*.cpp libs/glad/src/glad.cpp \
-	&& ar r ../build/tmlib.a *.o \
-#	rm *o
+	&& ar r ../build/tmlib.a *.o
+	rm *.o
 clean_mac:
 # 	this if for dylib build
 #	rm -R ../../Game/build/libTMEngine.dylib.dSYM
