@@ -564,7 +564,8 @@ void TMRendererDrawBufferArray(TMRenderer* renderer, TMBuffer* buffer) {
     renderer->deviceContext->Draw(buffer->verticesCount, 0);
 }
 
-TMShader* TMRendererShaderCreate(TMRenderer* renderer, const char* vertPath, const char* fragPath) {
+
+TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferData, size_t bufferSize, unsigned int index) {
     TMShader* shader = (TMShader*)TMMemoryPoolAlloc(renderer->shadersMemory);
 
     // read the vertex and fragment files

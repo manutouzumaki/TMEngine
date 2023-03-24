@@ -1,9 +1,11 @@
-#version 410 core
-in vec2 fragUV;
+#version 410
+// #extension GL_ARB_separate_shader_objects : enable
 
 uniform sampler2D uTexture;
 
-out vec4 outColor;
+layout (location = 3) in vec2 fragUV;
+
+layout (location = 0) out vec4 outColor;
 
 void main() {
    outColor = texture(uTexture, fragUV);

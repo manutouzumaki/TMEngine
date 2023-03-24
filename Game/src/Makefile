@@ -22,7 +22,7 @@ build_macos:
 #	clang -std=c++17 -Wall -DTM_DEBUG -g -I$(INCL_PATH) *.cpp -o ../build/Game -L$(LINK_PATH) -lTMEngine
 
 #	conpile with static library .a (mac os lib)
-	clang -std=c++17 -DTM_DEBUG -g -I$(INCL_PATH) *.cpp -o ../build/Game ../../TMEngine/build/tmlib.a -lglfw
+	clang -std=c++17 -DTM_DEBUG -DTM_MACOS -g -I$(INCL_PATH) *.cpp -o ../build/Game ../../TMEngine/build/tmlib.a -lglfw
 run_macos:
 	../build/Game
 clean_macos:

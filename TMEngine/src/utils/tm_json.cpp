@@ -181,7 +181,7 @@ static void ScanToken(JsonScanner *scanner) {
                 ScannerAddNumberToken(scanner);
             }
             else {
-                printf("Unexpected character. ERROR at line %d\n", scanner->line);
+                //printf("Unexpected character. ERROR at line %d\n", scanner->line);
             }
         } break;
    } 
@@ -342,7 +342,7 @@ TMJson *TMJsonOpen(const char *filepath) {
 
     ParserTokens(&json->root, scanner.tokens);
     TMDarrayDestroy(scanner.tokens);
-    PrintJsonObject(&json->root);
+    //PrintJsonObject(&json->root);
     
     return json;
 }

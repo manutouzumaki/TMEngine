@@ -2,6 +2,7 @@
 #define _TM_RENDERER_H_
 
 #include "tm_defines.h"
+#include <stdlib.h>
 
 #define TM_CULL_BACK (1 << 0)
 #define TM_CULL_FRONT (1 << 1)
@@ -68,7 +69,7 @@ TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, co
 TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, int size, int *array);
 TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, int size, TMMat4 *array);
 
-TM_EXPORT TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferData, size_t bufferSize);
+TM_EXPORT TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferData, size_t bufferSize, unsigned int index);
 TM_EXPORT void TMRendererShaderBufferDestroy(TMRenderer* renderer, TMShaderBuffer* shaderBuffer);
 TM_EXPORT void TMRendererShaderBufferUpdate(TMRenderer* renderer, TMShaderBuffer* shaderBuffer, void* bufferData);
 

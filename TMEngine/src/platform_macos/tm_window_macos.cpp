@@ -85,13 +85,13 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
         glfwSetWindowShouldClose(window->glfwWindow, true); 
     }
 
-    for(int i = 0; i < ARRAY_LEGHT(gCurrentInput.keys); ++i) {
+    for(int i = 0; i < ARRAY_LENGTH(gCurrentInput.keys); ++i) {
         gCurrentInput.keys[i].wasPress = false;
         if(gLastInput.keys[i].isPress) {
             gCurrentInput.keys[i].wasPress = true;
         }
     }
-    for(int i = 0; i < ARRAY_LEGHT(gCurrentInput.mouseButtons); ++i) {
+    for(int i = 0; i < ARRAY_LENGTH(gCurrentInput.mouseButtons); ++i) {
         gCurrentInput.mouseButtons[i].wasPress = false;
         if(gLastInput.mouseButtons[i].isPress) {
             gCurrentInput.mouseButtons[i].wasPress = true;

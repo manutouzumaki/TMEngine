@@ -86,11 +86,11 @@ void GameInitialize(GameState *state, TMWindow *window) {
     state->renderer = TMRendererCreate(window);
 
     state->shader = TMRendererShaderCreate(state->renderer,
-                                           "../../assets/shaders/vert.hlsl",
-                                           "../../assets/shaders/frag.hlsl");
+                                           "../../assets/shaders/vert.glsl",
+                                           "../../assets/shaders/frag.glsl");
     state->cloneShader = TMRendererShaderCreate(state->renderer,
-                                                "../../assets/shaders/gltfVert.hlsl",
-                                                "../../assets/shaders/gltfFrag.hlsl");
+                                                "../../assets/shaders/gltfVert.glsl",
+                                                "../../assets/shaders/gltfFrag.glsl");
 
     state->texture = TMRendererTextureCreate(state->renderer,
                                              "../../assets/images/back.png");
@@ -154,7 +154,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMRendererFaceCulling(state->renderer, false, TM_CULL_BACK);
    
     Matrices mats{};
-    state->shaderBuffer = TMRendererShaderBufferCreate(state->renderer, &mats, sizeof(Matrices));
+    state->shaderBuffer = TMRendererShaderBufferCreate(state->renderer, &mats, sizeof(Matrices), 0);
 }
 
 void GameUpdate(GameState *state) {
@@ -169,21 +169,19 @@ void GameRender(GameState *state) {
 
     // TODO: improve the shaderBuffer upgrate API ...
 
+    // Render Background
     TMRendererBindShader(state->renderer, state->shader);
+    TMRendererTextureBind(state->renderer, state->texture, state->shader, "back", 0);
     TMVec3 pos = {0, 0, 0};
     TMVec3 tar = {0, 0, 1};
     TMVec3 up  = {0, 1, 0};
     Matrices mats{};
     mats.view = TMMat4LookAt(pos, pos + tar, up);
-    
-    // Render Background
-    TMRendererTextureBind(state->renderer, state->texture, state->shader, "back", 0);
     mats.proj = TMMat4Ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 100.0f);
     mats.world = TMMat4Scale(width, height, 1.0f); 
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
     TMRendererDrawBufferElements(state->renderer, state->buffer);
 
-   
     // 3D Rendering Here !!!
     TMRendererBindShader(state->renderer, state->cloneShader);
     TMRendererDepthTestEnable(state->renderer);
@@ -198,7 +196,6 @@ void GameRender(GameState *state) {
     angle += 0.02f;
 
     TMRendererDepthTestDisable(state->renderer);
-
 
     TMRendererPresent(state->renderer);
 }

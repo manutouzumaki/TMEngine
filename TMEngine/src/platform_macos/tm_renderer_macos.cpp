@@ -10,6 +10,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// TODO: try to remove this ...
+struct TMWindow {
+    GLFWwindow *glfwWindow;
+    int width;
+    int height;
+};
+
+enum TM_EBO_TYPE {
+    TM_EBO_UNSIGNED_UNDEFINE,
+    TM_EBO_UNSIGNED_SHORT,
+    TM_EBO_UNSIGNED_INT,
+};
+
 // TODO: memset zero all the return structs
 struct TMBuffer {
     unsigned int id;
@@ -19,10 +32,17 @@ struct TMBuffer {
     unsigned int ebo;
     unsigned int verticesCount;
     unsigned int indicesCount;
+    TM_EBO_TYPE eboType;
 };
 
 struct TMShader {
     unsigned int id;
+};
+
+struct TMShaderBuffer {
+    unsigned int id;
+    unsigned int uboSize;
+    unsigned int uboIndex;
 };
 
 struct TMTexture {
@@ -35,12 +55,6 @@ struct TMFramebuffer {
     unsigned int id;
 };
 
-struct TMWindow {
-    GLFWwindow* glfwWindow;
-    int width;
-    int height;
-};
-
 struct TMRenderer {
     int width;
     int height;
@@ -48,6 +62,7 @@ struct TMRenderer {
     TMMemoryPool *texturesMemory;
     TMMemoryPool *shadersMemory;
     TMMemoryPool *framebufferMemory;
+    TMMemoryPool* shaderBuffersMemory;
 };
 
  TMRenderer *TMRendererCreate(TMWindow *window) {
@@ -56,9 +71,10 @@ struct TMRenderer {
     renderer->texturesMemory = TMMemoryPoolCreate(sizeof(TMTexture), TM_RENDERER_MEMORY_BLOCK_SIZE);
     renderer->shadersMemory = TMMemoryPoolCreate(sizeof(TMShader), TM_RENDERER_MEMORY_BLOCK_SIZE);
     renderer->framebufferMemory = TMMemoryPoolCreate(sizeof(TMFramebuffer), TM_RENDERER_MEMORY_BLOCK_SIZE);
+    renderer->shaderBuffersMemory = TMMemoryPoolCreate(sizeof(TMShaderBuffer), TM_RENDERER_MEMORY_BLOCK_SIZE);
     
-    renderer->width = 1080/4;
-    renderer->height = 1920/4;
+    renderer->width = window->width;
+    renderer->height = window->height;
 
     //renderer->width = 800;
     //renderer->height = 600;
@@ -76,14 +92,15 @@ struct TMRenderer {
     TMMemoryPoolDestroy(renderer->texturesMemory);
     TMMemoryPoolDestroy(renderer->shadersMemory);
     TMMemoryPoolDestroy(renderer->framebufferMemory);
+    TMMemoryPoolDestroy(renderer->shaderBuffersMemory);
     free(renderer);
 }
 
- void TMRendererDepthTestEnable() {
+ void TMRendererDepthTestEnable(TMRenderer *renderer) {
     glEnable(GL_DEPTH_TEST);
 }
 
- void TMRendererDepthTestDisable() {
+ void TMRendererDepthTestDisable(TMRenderer *renderer) {
     glDisable(GL_DEPTH_TEST);
 }
 
@@ -102,7 +119,7 @@ struct TMRenderer {
     return false;
 }
 
- void TMRendererFaceCulling(bool value,  unsigned int flags) {
+ void TMRendererFaceCulling(TMRenderer *renderer, bool value,  unsigned int flags) {
     if(value) {
         glEnable(GL_CULL_FACE);
         if (flags == TM_CULL_BACK) {
@@ -122,7 +139,7 @@ struct TMRenderer {
     }
 }
 
- void TMRendererClear(float r, float g, float b, float a, unsigned  int flags) {
+ void TMRendererClear(TMRenderer *renderer, float r, float g, float b, float a, unsigned  int flags) {
         glClearColor(r, g, b, a);
         unsigned int mask = 0;
         if(flags & TM_COLOR_BUFFER_BIT) mask |= GL_COLOR_BUFFER_BIT;
@@ -136,7 +153,10 @@ struct TMRenderer {
     // TODO ...
 }
 
- TMBuffer *TMRendererBufferCreate(TMRenderer *renderer, TMVertex *vertices, unsigned int verticesCount) {
+ TMBuffer *TMRendererBufferCreate(TMRenderer *renderer,
+                                  TMVertex *vertices,
+                                  unsigned int verticesCount,
+                                  TMShader *shader) {
     TMBuffer *buffer = (TMBuffer *)TMMemoryPoolAlloc(renderer->buffersMemory);
 
     unsigned int VAO, VBO;
@@ -152,6 +172,8 @@ struct TMRenderer {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TMVertex), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(TMVertex), (void *)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     buffer->id = VAO;
     buffer->vbo0 = VBO;
@@ -161,8 +183,9 @@ struct TMRenderer {
 }
 
  TMBuffer *TMRendererBufferCreate(TMRenderer *renderer,
-                                           TMVertex *vertices,      unsigned int verticesCount,
-                                           unsigned short *indices, unsigned int indicesCount) {
+                                  TMVertex *vertices,      unsigned int verticesCount,
+                                  unsigned int *indices, unsigned int indicesCount,
+                                  TMShader *shader) {
     TMBuffer *buffer = (TMBuffer *)TMMemoryPoolAlloc(renderer->buffersMemory);
 
     unsigned int VAO, VBO, EBO;
@@ -176,16 +199,19 @@ struct TMRenderer {
 
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned short) * indicesCount, indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indicesCount, indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TMVertex), (void *)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TMVertex), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(TMVertex), (void *)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     buffer->id = VAO;
     buffer->vbo0 = VBO;
     buffer->ebo = EBO;
+    buffer->eboType = TM_EBO_UNSIGNED_INT;
     buffer->verticesCount = verticesCount;
     buffer->indicesCount = indicesCount;
 
@@ -197,7 +223,8 @@ struct TMRenderer {
                                       float *vertices,        unsigned int verticesCount,
                                       float *uvs,              unsigned int uvsCount,
                                       float *normals,          unsigned int normalsCount,
-                                      unsigned short *indices, unsigned int indicesCount) {
+                                      unsigned short *indices, unsigned int indicesCount,
+                                      TMShader *shader) {
     TMBuffer *buffer = (TMBuffer *)TMMemoryPoolAlloc(renderer->buffersMemory);
 
     unsigned int VAO;
@@ -232,6 +259,7 @@ struct TMRenderer {
     buffer->vbo1 = VBOs[1];
     buffer->vbo2 = VBOs[2];
     buffer->ebo = EBO;
+    buffer->eboType = TM_EBO_UNSIGNED_SHORT;
     buffer->id = VAO;
 
     buffer->verticesCount = verticesCount;
@@ -250,12 +278,17 @@ struct TMRenderer {
     TMMemoryPoolFree(renderer->buffersMemory, (void *)buffer);
 }
 
- void TMRendererDrawBufferElements(TMBuffer *buffer) {
+ void TMRendererDrawBufferElements(TMRenderer *renderer, TMBuffer *buffer) {
     glBindVertexArray(buffer->id);
-    glDrawElements(GL_TRIANGLES, buffer->indicesCount, GL_UNSIGNED_SHORT, 0);
+    switch(buffer->eboType) {
+        case TM_EBO_UNSIGNED_SHORT: glDrawElements(GL_TRIANGLES, buffer->indicesCount, GL_UNSIGNED_SHORT, 0); break;
+        case TM_EBO_UNSIGNED_INT: glDrawElements(GL_TRIANGLES, buffer->indicesCount, GL_UNSIGNED_INT, 0); break;
+        case TM_EBO_UNSIGNED_UNDEFINE:
+        default: printf("Error: your buffer dont have indices, try use TMRendererDrawBufferArray\n"); break;
+    }
 }
 
- void TMRendererDrawBufferArray(TMBuffer *buffer) {
+ void TMRendererDrawBufferArray(TMRenderer *renderer, TMBuffer *buffer) {
     glBindVertexArray(buffer->id);
     glDrawArrays(GL_TRIANGLES, 0, buffer->verticesCount);
 }
@@ -319,54 +352,78 @@ struct TMRenderer {
     TMMemoryPoolFree(renderer->shadersMemory, (void *)shader);
 }
 
- void TMRendererBindShader(TMShader *shader) {
+ void TMRendererBindShader(TMRenderer *renderer, TMShader *shader) {
     glUseProgram(shader->id);
 }
 
- void TMRendererUnbindShader(TMShader *shader) {
+ void TMRendererUnbindShader(TMRenderer *renderer, TMShader *shader) {
     glUseProgram(0);
 }
 
- void TMRendererShaderUpdate(TMShader *shader, const char *varName, float value) {
+ void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, float value) {
     int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(shader);
+    TMRendererBindShader(renderer, shader);
     glUniform1f(varLoc, value);
 }
 
- void TMRendererShaderUpdate(TMShader *shader, const char *varName, int value) {
+ void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, int value) {
     int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(shader);
+    TMRendererBindShader(renderer, shader);
     glUniform1i(varLoc, value);
 }
 
- void TMRendererShaderUpdate(TMShader *shader, const char *varName, TMVec3 value) {
+ void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, TMVec3 value) {
     int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(shader);
+    TMRendererBindShader(renderer, shader);
     glUniform3fv(varLoc, 1, value.v);
 }
 
- void TMRendererShaderUpdate(TMShader *shader, const char *varName, TMVec4 value) {
+ void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, TMVec4 value) {
     int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(shader);
+    TMRendererBindShader(renderer, shader);
     glUniform4fv(varLoc, 1, value.v);
 }
 
- void TMRendererShaderUpdate(TMShader *shader, const char *varName, TMMat4 value) {
+ void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, TMMat4 value) {
     int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(shader);
+    TMRendererBindShader(renderer, shader);
     glUniformMatrix4fv(varLoc, 1, false, value.v);
 }
 
- void TMRendererShaderUpdate(TMShader *shader, const char *varName, int size, int *array) {
+ void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, int size, int *array) {
     int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(shader);
+    TMRendererBindShader(renderer, shader);
     glUniform1iv(varLoc, size, array);
 }
 
- void TMRendererShaderUpdate(TMShader *shader, const char *varName, int size, TMMat4 *array) {
+ void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, int size, TMMat4 *array) {
     int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(shader);
+    TMRendererBindShader(renderer, shader);
     glUniformMatrix4fv(varLoc, size, false, (float *)array);
+}
+
+TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferData, size_t bufferSize, unsigned int index) {
+    TMShaderBuffer *shaderBuffer = (TMShaderBuffer *)TMMemoryPoolAlloc(renderer->shaderBuffersMemory);
+
+    shaderBuffer->uboSize = bufferSize;
+    shaderBuffer->uboIndex = index;
+
+    glGenBuffers(1, &shaderBuffer->id);
+    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer->id);
+    glBufferData(GL_UNIFORM_BUFFER, shaderBuffer->uboSize, bufferData, GL_STATIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, shaderBuffer->uboIndex, shaderBuffer->id);
+
+    return shaderBuffer;
+}
+
+void TMRendererShaderBufferDestroy(TMRenderer* renderer, TMShaderBuffer* shaderBuffer) {
+    TMMemoryPoolFree(renderer->shaderBuffersMemory, (void *)shaderBuffer);
+}
+
+void TMRendererShaderBufferUpdate(TMRenderer* renderer, TMShaderBuffer* shaderBuffer, void* bufferData) {
+    glBindBuffer(GL_UNIFORM_BUFFER, shaderBuffer->id);
+    glBufferData(GL_UNIFORM_BUFFER, shaderBuffer->uboSize, bufferData, GL_STATIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, shaderBuffer->uboIndex, shaderBuffer->id);
 }
 
  TMTexture *TMRendererTextureCreate(TMRenderer *renderer, const char *filepath) {
@@ -427,13 +484,13 @@ struct TMRenderer {
     return texture;
 }
 
- void TMRendererTextureBind(TMTexture *texture, TMShader *shader, const char *varName, int textureIndex) {
+ void TMRendererTextureBind(TMRenderer *renderer, TMTexture *texture, TMShader *shader, const char *varName, int textureIndex) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture->id);
-    TMRendererShaderUpdate(shader, varName, textureIndex);
+    TMRendererShaderUpdate(renderer, shader, varName, textureIndex);
 }
 
- void TMRendererTextureUnbind(TMTexture *texture, int textureIndex) {
+ void TMRendererTextureUnbind(TMRenderer *renderer, TMTexture *texture, int textureIndex) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);
