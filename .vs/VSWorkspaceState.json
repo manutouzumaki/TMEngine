@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\Game",
+    "\\Game\\src",
+    "\\TMEngine",
+    "\\TMEngine\\src",
+    "\\TMEngine\\src\\platform_win32",
+    "\\TMEngine\\src\\utils"
+  ],
+  "SelectedNode": "\\TMEngine\\src\\platform_win32\\tm_window_win32.cpp",
+  "PreviewInSolutionExplorer": false
+}

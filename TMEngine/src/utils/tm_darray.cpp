@@ -3,15 +3,12 @@
 #include <memory.h>
 #include <assert.h>
 
-
-#define TM_EXPORT __attribute__((visibility("default")))
-
 #define TM_DARRAY_RAW_DATA(array) ((unsigned int *)(array) - 2)
 #define TM_DARRAY_GET_CAPACITY(array) (TM_DARRAY_RAW_DATA(array)[0])
 #define TM_DARRAY_GET_SIZE(array) (TM_DARRAY_RAW_DATA(array)[1])
 
 
-TM_EXPORT void *TMDarrayCreate_(void *array, unsigned int elementSize, unsigned int elementCount) {
+void *TMDarrayCreate_(void *array, unsigned int elementSize, unsigned int elementCount) {
     if(array == NULL) {
         unsigned int rawSize = (sizeof(unsigned int) * 2) + (elementSize * elementCount);
         unsigned int *base = (unsigned int *)malloc(rawSize);
@@ -38,19 +35,19 @@ TM_EXPORT void *TMDarrayCreate_(void *array, unsigned int elementSize, unsigned 
     }
 }
 
-TM_EXPORT void TMDarrayDestroy_(void *array) {
+void TMDarrayDestroy_(void *array) {
     assert(array != NULL);
     void *rawData = TM_DARRAY_RAW_DATA(array);
     free(rawData);
 }
 
-TM_EXPORT unsigned int TMDarraySize_(void *array) {
+unsigned int TMDarraySize_(void *array) {
     assert(array != NULL);
     return TM_DARRAY_GET_SIZE(array);
     
 }
 
-TM_EXPORT unsigned int TMDarrayCapacity_(void *array) {
+unsigned int TMDarrayCapacity_(void *array) {
     assert(array != NULL);
     return TM_DARRAY_GET_CAPACITY(array);
 }

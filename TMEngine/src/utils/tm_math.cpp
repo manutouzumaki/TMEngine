@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include "tm_math.h"
 
-
-#define TM_EXPORT __attribute__((visibility("default")))
 // TODO(manuel): add TM_EXPORT to functions
 
 ////////////////////////////
@@ -398,12 +396,33 @@ TMMat4 operator*(TMMat4 m, float f) {
     a.v[3 * 4 + aRow] * b.v[bCol * 4 + 3]
 
 TMMat4 operator*(TMMat4 a, TMMat4 b) {
-	return {
+#ifdef TM_MACOS
+    return {
 		M4D(0, 0), M4D(1, 0), M4D(2, 0), M4D(3, 0), // Column 0
 		M4D(0, 1), M4D(1, 1), M4D(2, 1), M4D(3, 1), // Column 1
 		M4D(0, 2), M4D(1, 2), M4D(2, 2), M4D(3, 2), // Column 2
 		M4D(0, 3), M4D(1, 3), M4D(2, 3), M4D(3, 3)  // Column 3
     };
+#elif TM_WIN32
+    return {
+        a.m00 * b.m00 + a.m01 * b.m10 + a.m02 * b.m20 + a.m03 * b.m30, 
+        a.m00 * b.m01 + a.m01 * b.m11 + a.m02 * b.m21 + a.m03 * b.m31, 
+        a.m00 * b.m02 + a.m01 * b.m12 + a.m02 * b.m22 + a.m03 * b.m32,
+        a.m00 * b.m03 + a.m01 * b.m13 + a.m02 * b.m23 + a.m03 * b.m33,
+        a.m10 * b.m00 + a.m11 * b.m10 + a.m12 * b.m20 + a.m13 * b.m30, 
+        a.m10 * b.m01 + a.m11 * b.m11 + a.m12 * b.m21 + a.m13 * b.m31, 
+        a.m10 * b.m02 + a.m11 * b.m12 + a.m12 * b.m22 + a.m13 * b.m32,
+        a.m10 * b.m03 + a.m11 * b.m13 + a.m12 * b.m23 + a.m13 * b.m33,
+        a.m20 * b.m00 + a.m21 * b.m10 + a.m22 * b.m20 + a.m23 * b.m30, 
+        a.m20 * b.m01 + a.m21 * b.m11 + a.m22 * b.m21 + a.m23 * b.m31, 
+        a.m20 * b.m02 + a.m21 * b.m12 + a.m22 * b.m22 + a.m23 * b.m32,
+        a.m20 * b.m03 + a.m21 * b.m13 + a.m22 * b.m23 + a.m23 * b.m33,
+        a.m30 * b.m00 + a.m31 * b.m10 + a.m32 * b.m20 + a.m33 * b.m30, 
+        a.m30 * b.m01 + a.m31 * b.m11 + a.m32 * b.m21 + a.m33 * b.m31, 
+        a.m30 * b.m02 + a.m31 * b.m12 + a.m32 * b.m22 + a.m33 * b.m32,
+        a.m30 * b.m03 + a.m31 * b.m13 + a.m32 * b.m23 + a.m33 * b.m33
+    };
+#endif
 }
 
 #define M4V4D(mRow, x, y, z, w) \
@@ -421,6 +440,7 @@ TMVec4 operator*(TMMat4 m, TMVec4 v) {
     };
 }
 
+// TODO: fix this to work on Opengl and DirectX
 TMVec3 TMMat4TransformVector(TMMat4 m, TMVec3 v) {
 	return {
 		M4V4D(0, v.x, v.y, v.z, 0.0f),
@@ -429,6 +449,7 @@ TMVec3 TMMat4TransformVector(TMMat4 m, TMVec3 v) {
     };
 }
 
+// TODO: fix this to work on Opengl and DirectX
 TMVec3 TMMat4TransformPoint(TMMat4 m, TMVec3 v) {
 	return {
 		M4V4D(0, v.x, v.y, v.z, 1.0f),
@@ -437,6 +458,7 @@ TMVec3 TMMat4TransformPoint(TMMat4 m, TMVec3 v) {
     };
 }
 
+// TODO: fix this to work on Opengl and DirectX
 TMVec3 TMMat4TransformPoint(TMMat4 m, TMVec3 v, float *w) {
 	float _w = *w;
 	*w = M4V4D(3, v.x, v.y, v.z, _w);
@@ -534,12 +556,21 @@ TMMat4 TMMat4Frustum(float l, float r, float b, float t, float n, float f) {
         printf("WARNING: Trying to create invalid frustum\n");
         return {}; // Error
     }
+#ifdef TM_MACOS
     return TMMat4{
             (2.0f * n) / (r - l), 0, 0, 0,
             0, (2.0f * n) / (t - b), 0, 0,
             (r + l) / (r - l), (t + b) / (t - b), (-(f + n)) / (f - n), -1,
             0, 0, (-2 * f * n) / (f - n), 0
     };
+#elif TM_WIN32
+    return TMMat4{
+        (2.0f * n) / (r - l), 0, -(r + l) / (r - l), 0,
+        0, (2.0f * n) / (t - b), -(t + b) / (t - b), 0,
+        0, 0, f / (f - n), -(f * n) / (f - n),
+        0, 0, 1, 0
+    };
+#endif
 }
 
 TMMat4 TMMat4Perspective(float fov, float aspect, float znear, float zfar) {
@@ -552,12 +583,24 @@ TMMat4 TMMat4Ortho(float l, float r, float b, float t, float n, float f) {
     if (l == r || t == b || n == f) {
         return {}; // Error
     }
-    return TMMat4{
-            2.0f / (r - l), 0, 0, 0,
-            0, 2.0f / (t - b), 0, 0,
-            0, 0, -2.0f / (f - n), 0,
-            -((r + l) / (r - l)), -((t + b) / (t - b)), -((f + n) / (f - n)), 1
+    
+#ifdef TM_MACOS
+    TMMat4 result = {
+        2.0f / (r - l), 0, 0, 0,
+        0, 2.0f / (t - b), 0, 0,
+        0, 0, -2.0f / (f - n), 0,
+        -((r + l) / (r - l)), -((t + b) / (t - b)), -((f + n) / (f - n)), 1
     };
+#elif TM_WIN32
+    TMMat4 result = {
+       2.0f / (r - l), 0, 0, (r + l) / (r - l),
+       0, 2.0f / (t - b), 0, (t + b) / (t - b),
+       0, 0, 1.0f / (f - n), -n / (f - n),
+       0, 0, 0, 1
+    };
+#endif
+
+    return result;
 }
 
 TMMat4 TMMat4Identity() {
@@ -571,6 +614,7 @@ TMMat4 TMMat4Identity() {
 }
 
 TMMat4 TMMat4LookAt(TMVec3 position, TMVec3 target, TMVec3 up) {
+#ifdef TM_MACOS
     // Remember, forward is negative z
     TMVec3 f = TMVec3Normalized(target - position) * -1.0f;
     TMVec3 r = TMVec3Cross(up, f); // Right handed
@@ -579,29 +623,50 @@ TMMat4 TMMat4LookAt(TMVec3 position, TMVec3 target, TMVec3 up) {
     }
     TMVec3Normalized(r);
     TMVec3 u = TMVec3Normalized(TMVec3Cross(f, r)); // Right handed
-
     TMVec3 t = TMVec3{
             -TMVec3Dot(r, position),
             -TMVec3Dot(u, position),
             -TMVec3Dot(f, position)
     };
-
-    return TMMat4{
+    TMMat4 result = {
             // Transpose upper 3x3 matrix to invert it
             r.x, u.x, f.x, 0,
             r.y, u.y, f.y, 0,
             r.z, u.z, f.z, 0,
             t.x, t.y, t.z, 1
     };
+#elif TM_WIN32
+    TMVec3 zaxis = TMVec3Normalized(target - position);
+    TMVec3 xaxis = TMVec3Normalized(TMVec3Cross(up, zaxis));
+    TMVec3 yaxis = TMVec3Cross(zaxis, xaxis);
+    TMMat4 result = {
+        xaxis.x, xaxis.y, xaxis.z, -TMVec3Dot(xaxis, position), 
+        yaxis.x, yaxis.y, yaxis.z, -TMVec3Dot(yaxis, position), 
+        zaxis.x, zaxis.y, zaxis.z, -TMVec3Dot(zaxis, position),
+        0,       0,       0,       1 
+    };
+#endif
+    return result;
 }
 
+// TODO: fix all this functions ...
+
 TMMat4 TMMat4Translate(float x, float y, float z) {
+#ifdef TM_MACOS 
     TMMat4 result = {
             1, 0, 0, 0,
             0, 1, 0, 0,
-            0, 0, 1,0,
-            x, y,z,1
+            0, 0, 1, 0,
+            x, y, z, 1
     };
+#elif TM_WIN32
+    TMMat4 result = {
+            1, 0, 0, x,
+            0, 1, 0, y,
+            0, 0, 1, z,
+            0, 0, 0, 1
+    };
+#endif
     return result;
 }
 
@@ -616,31 +681,60 @@ TMMat4 TMMat4Scale(float x, float y, float z) {
 }
 
 TMMat4 TMMat4RotateX(float angle) {
+#ifdef TM_MACOS
     TMMat4 result = {
-            1, 0, 0, 0,
+            1,           0,            0, 0,
             0, cosf(angle), -sinf(angle), 0,
-            0, sinf(angle), cosf(angle), 0,
-            0, 0, 0, 1
+            0, sinf(angle),  cosf(angle), 0,
+            0,           0,            0, 1
     };
+#elif TM_WIN32
+    TMMat4 result = {
+            1,            0,           0,  0,
+            0,  cosf(angle), sinf(angle),  0,
+            0, -sinf(angle), cosf(angle),  0,
+            0,            0,           0,  1
+    };
+#endif
+
     return result;
 }
 
 TMMat4 TMMat4RotateY(float angle) {
+#ifdef TM_MACOS
     TMMat4 result = {
-            cosf(angle), 0, sinf(angle), 0,
-            0, 1, 0, 0,
+             cosf(angle), 0, sinf(angle), 0,
+                       0, 1,           0, 0,
             -sinf(angle), 0, cosf(angle), 0,
-            0, 0, 0, 1
+                       0, 0,           0, 1
     };
+#elif TM_WIN32
+    TMMat4 result = {
+             cosf(angle), 0, -sinf(angle), 0,
+                       0, 1,            0, 0,
+             sinf(angle), 0,  cosf(angle), 0,
+                       0, 0,            0, 1
+    };
+
+#endif
     return result;
 }
 
 TMMat4 TMMat4RotateZ(float angle) {
+#ifdef TM_MACOS
     TMMat4 result = {
             cosf(angle), -sinf(angle), 0, 0,
-            sinf(angle), cosf(angle), 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
+            sinf(angle),  cosf(angle), 0, 0,
+                      0,            0, 1, 0,
+                      0,            0, 0, 1
     };
+#elif TM_WIN32
+    TMMat4 result = {
+             cosf(angle), sinf(angle), 0, 0,
+            -sinf(angle), cosf(angle), 0, 0,
+                       0,           0, 1, 0,
+                       0,           0, 0, 1
+    };
+#endif
     return result;
 }

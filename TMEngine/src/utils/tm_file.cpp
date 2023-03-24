@@ -7,11 +7,9 @@
 
 extern int errno;
 
-#define TM_EXPORT __attribute__((visibility("default")))
-
-TM_EXPORT TMFile TMFileOpen(const char *filepath) {
+TMFile TMFileOpen(const char *filepath) {
     TMFile result{};
-    FILE *file = fopen(filepath, "r");
+    FILE *file = fopen(filepath, "rb");
     if(!file) {
         int errorCode = errno;
         fprintf(stderr, "Value of errno: %d\n", errno);
@@ -29,16 +27,17 @@ TM_EXPORT TMFile TMFileOpen(const char *filepath) {
     fseek(file, 0, SEEK_SET);
     // alloc the memory
     result.data = malloc(fileSize + 1);
+    memset(result.data, 0, fileSize + 1);
     result.size = fileSize;
     // store the content of the file
     fread(result.data, fileSize, 1, file);
     char *buffer = (char *)result.data;
-    buffer[fileSize] = 0; // null terminating string...
+    buffer[fileSize] = '\0'; // null terminating string...
     fclose(file);
     return result;
 }
 
-TM_EXPORT void TMFileClose(TMFile *file) {
+void TMFileClose(TMFile *file) {
     if(file->data) free(file->data);
     file->data = NULL;
     file->size = 0;

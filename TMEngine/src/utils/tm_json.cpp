@@ -7,8 +7,6 @@
 #include <assert.h>
 #include <string.h>
 
-#define TM_EXPORT __attribute__((visibility("default")))
-
 // TODO(manuto): try to create the tokenizer but with out allocating memory for the string
 // use pointer to the file instead ...
 
@@ -170,6 +168,9 @@ static void ScanToken(JsonScanner *scanner) {
             break;
         case '\n':
             scanner->line++;
+            if(scanner->line > 2124) {
+                int stopHere = 0;
+            };
             break;
         case '"': ScannerAddStringToken(scanner); break;
         default: {
@@ -331,7 +332,7 @@ static void PrintJsonObject(TMJsonObject *object) {
 
 }
 
-TM_EXPORT TMJson *TMJsonOpen(const char *filepath) {
+TMJson *TMJsonOpen(const char *filepath) {
     TMJson *json = (TMJson *)malloc(sizeof(TMJson));
     memset(json, 0, sizeof(TMJson));
     json->file = TMFileOpen(filepath);
@@ -346,7 +347,7 @@ TM_EXPORT TMJson *TMJsonOpen(const char *filepath) {
     return json;
 }
 
-TM_EXPORT void TMJsonClose(TMJson *json) {
+void TMJsonClose(TMJson *json) {
     JsonObjectFree(&json->root);
     TMFileClose(&json->file);
     free(json);
@@ -355,7 +356,7 @@ TM_EXPORT void TMJsonClose(TMJson *json) {
 
 // for now we do a linear search ...
 // TODO: change this to use a hashtable
-TM_EXPORT TMJsonObject *TMJsonFindChildByName(TMJsonObject *object, const char *name) {
+TMJsonObject *TMJsonFindChildByName(TMJsonObject *object, const char *name) {
     if(object->type == TM_JSON_NULL) {
         for(int i = 0; i < object->childsCount; ++i) {
             TMJsonObject *child = object->childs + i;

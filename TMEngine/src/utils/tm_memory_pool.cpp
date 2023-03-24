@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <memory.h>
 
-#define TM_EXPORT __attribute__((visibility("default")))
-
-TM_EXPORT TMMemoryPool *TMMemoryPoolCreate(unsigned int chunkSize, unsigned int numChunk) {
+TMMemoryPool *TMMemoryPoolCreate(unsigned int chunkSize, unsigned int numChunk) {
     TMMemoryPool *memoryPool = (TMMemoryPool *)malloc(sizeof(TMMemoryPool));
     memset(memoryPool, 0, sizeof(TMMemoryPool));
 
@@ -35,7 +33,7 @@ TM_EXPORT TMMemoryPool *TMMemoryPoolCreate(unsigned int chunkSize, unsigned int 
     return memoryPool;
 }
 
-TM_EXPORT void TMMemoryPoolDestroy(TMMemoryPool *memoryPool) {
+void TMMemoryPoolDestroy(TMMemoryPool *memoryPool) {
     for(int i = 0; i < memoryPool->blockCount; ++i) {
         free(memoryPool->blockArray[i]);
     }
@@ -43,7 +41,7 @@ TM_EXPORT void TMMemoryPoolDestroy(TMMemoryPool *memoryPool) {
     free(memoryPool);
 }
 
-TM_EXPORT void *TMMemoryPoolAlloc(TMMemoryPool *memoryPool) {
+void *TMMemoryPoolAlloc(TMMemoryPool *memoryPool) {
     if(memoryPool->head) {
         unsigned char *chunk = memoryPool->head;
         unsigned char **next = (unsigned char **)chunk;
@@ -87,7 +85,7 @@ TM_EXPORT void *TMMemoryPoolAlloc(TMMemoryPool *memoryPool) {
     return data;
 }
 
-TM_EXPORT void TMMemoryPoolFree(TMMemoryPool *memoryPool, void *mem) {
+void TMMemoryPoolFree(TMMemoryPool *memoryPool, void *mem) {
     unsigned char *chunk = ((unsigned char *)mem - HEADER_SIZE);
     unsigned char **next = (unsigned char **)chunk;
     *next = memoryPool->head;

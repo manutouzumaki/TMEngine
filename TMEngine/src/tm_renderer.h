@@ -1,6 +1,8 @@
 #ifndef _TM_RENDERER_H_
 #define _TM_RENDERER_H_
 
+#include "tm_defines.h"
+
 #define TM_CULL_BACK (1 << 0)
 #define TM_CULL_FRONT (1 << 1)
 
@@ -10,63 +12,73 @@
 
 #include "utils/tm_math.h"
 
-
+struct TMWindow;
 struct TMRenderer;
 struct TMBuffer;
 struct TMShader;
+struct TMShaderBuffer;
 struct TMTexture;
+struct TMShaderStruct;
 struct TMFramebuffer;
 
 struct TMVertex {
     TMVec3 position;
     TMVec2 uv;
+    TMVec3 normal;
 };
 
-TMRenderer *TMRendererCreate();
-void TMRendererDestroy(TMRenderer *renderer);
-void TMRendererDepthTestEnable();
-void TMRendererDepthTestDisable();
-void TMRendererFaceCulling(bool value,  unsigned int flags);
-int TMRendererGetWidth(TMRenderer *renderer);
-int TMRendererGetHeight(TMRenderer *renderer);
-bool TMRendererUpdateRenderArea(TMRenderer *renderer);
-void TMRendererClear(float r, float g, float b, float a, unsigned  int flags);
-void TMRendererPresent(TMRenderer *renderer);
+TM_EXPORT TMRenderer *TMRendererCreate(TMWindow *window);
+TM_EXPORT void TMRendererDestroy(TMRenderer *renderer);
+TM_EXPORT void TMRendererDepthTestEnable(TMRenderer* renderer);
+TM_EXPORT void TMRendererDepthTestDisable(TMRenderer* renderer);
+TM_EXPORT void TMRendererFaceCulling(TMRenderer* renderer, bool value,  unsigned int flags);
+TM_EXPORT int TMRendererGetWidth(TMRenderer *renderer);
+TM_EXPORT int TMRendererGetHeight(TMRenderer *renderer);
+TM_EXPORT bool TMRendererUpdateRenderArea(TMRenderer *renderer);
+TM_EXPORT void TMRendererClear(TMRenderer* renderer, float r, float g, float b, float a, unsigned  int flags);
+TM_EXPORT void TMRendererPresent(TMRenderer *renderer);
 
 
-TMBuffer *TMRendererBufferCreate(TMRenderer *renderer,
-                                 TMVertex *vertices, unsigned int verticesCount);
-TMBuffer *TMRendererBufferCreate(TMRenderer *renderer,
+TM_EXPORT TMBuffer *TMRendererBufferCreate(TMRenderer *renderer,
                                  TMVertex *vertices, unsigned int verticesCount,
-                                 unsigned short *indices, unsigned int indicesCount);
-TMBuffer *TMRendererBufferCreate(TMRenderer *renderer,
+                                 TMShader *shader);
+TM_EXPORT TMBuffer *TMRendererBufferCreate(TMRenderer *renderer,
+                                 TMVertex *vertices, unsigned int verticesCount,
+                                 unsigned int *indices, unsigned int indicesCount,
+                                 TMShader *shader);
+TM_EXPORT TMBuffer *TMRendererBufferCreate(TMRenderer *renderer,
                                  float *vertices, unsigned int verticesCount,
                                  float *uvs, unsigned int uvsCount,
                                  float *normals, unsigned int normalsCount,
-                                 unsigned short *indices, unsigned int indicesCount);
+                                 unsigned short *indices, unsigned int indicesCount,
+                                 TMShader *shader);
 
-void TMRendererBufferDestroy(TMRenderer *renderer, TMBuffer *buffer);
-void TMRendererDrawBufferElements(TMBuffer *buffer);
-void TMRendererDrawBufferArray(TMBuffer *buffer);
+TM_EXPORT void TMRendererBufferDestroy(TMRenderer *renderer, TMBuffer *buffer);
+TM_EXPORT void TMRendererDrawBufferElements(TMRenderer* renderer, TMBuffer *buffer);
+TM_EXPORT void TMRendererDrawBufferArray(TMRenderer* renderer, TMBuffer *buffer);
 
-TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, const char *fragPath);
-void TMRendererShaderDestroy(TMRenderer *renderer, TMShader *shader);
-void TMRendererBindShader(TMShader *shader);
-void TMRendererShaderUpdate(TMShader *shader, const char *varName, float value);
-void TMRendererShaderUpdate(TMShader *shader, const char *varName, int value);
-void TMRendererShaderUpdate(TMShader *shader, const char *varName, TMVec3 value);
-void TMRendererShaderUpdate(TMShader *shader, const char *varName, TMVec4 value);
-void TMRendererShaderUpdate(TMShader *shader, const char *varName, TMMat4 value);
-void TMRendererShaderUpdate(TMShader *shader, const char *varName, int size, int *array);
-void TMRendererShaderUpdate(TMShader *shader, const char *varName, int size, TMMat4 *array);
+TM_EXPORT TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, const char *fragPath);
+TM_EXPORT void TMRendererShaderDestroy(TMRenderer *renderer, TMShader *shader);
+TM_EXPORT void TMRendererBindShader(TMRenderer* renderer, TMShader *shader);
+TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, float value);
+TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, int value);
+TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, TMVec3 value);
+TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, TMVec4 value);
+TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, TMMat4 value);
+TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, int size, int *array);
+TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, int size, TMMat4 *array);
 
-TMTexture *TMRendererTextureCreate(TMRenderer *renderer, const char *filepath);
-void TMRendererTextureDestroy(TMRenderer *renderer, TMTexture *texture);
-void TMRendererTextureBind(TMTexture *texture, TMShader *shader, const char *varName, int textureIndex);
-void TMRendererTextureUnbind(TMTexture *texture, int textureIndex);
+TM_EXPORT TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferData, size_t bufferSize);
+TM_EXPORT void TMRendererShaderBufferDestroy(TMRenderer* renderer, TMShaderBuffer* shaderBuffer);
+TM_EXPORT void TMRendererShaderBufferUpdate(TMRenderer* renderer, TMShaderBuffer* shaderBuffer, void* bufferData);
+
+TM_EXPORT TMTexture *TMRendererTextureCreate(TMRenderer *renderer, const char *filepath);
+TM_EXPORT void TMRendererTextureDestroy(TMRenderer *renderer, TMTexture *texture);
+TM_EXPORT void TMRendererTextureBind(TMRenderer* renderer, TMTexture *texture, TMShader *shader, const char *varName, int textureIndex);
+TM_EXPORT void TMRendererTextureUnbind(TMRenderer* renderer, TMTexture *texture, int textureIndex);
 
 
-TMFramebuffer *TMRendererFramebufferCreate(TMRenderer *renderer);
-void TMRendererFramebufferDestroy(TMRenderer *renderer, TMFramebuffer *framebuffer);
+TM_EXPORT TMFramebuffer *TMRendererFramebufferCreate(TMRenderer *renderer);
+TM_EXPORT void TMRendererFramebufferDestroy(TMRenderer *renderer, TMFramebuffer *framebuffer);
 
 #endif

@@ -1,6 +1,7 @@
 #ifndef _TM_JSON_H_
 #define _TM_JSON_H_
 
+#include "../tm_defines.h"
 #include "tm_file.h"
 
  // TODO(manuel):
@@ -38,8 +39,8 @@ struct TMJson {
     TMJsonObject root;
 };
 
-TMJson *TMJsonOpen(const char *filepath);
-void TMJsonClose(TMJson *json);
-TMJsonObject *TMJsonFindChildByName(TMJsonObject *object, const char *name);
+TM_EXPORT TMJson *TMJsonOpen(const char *filepath);
+TM_EXPORT void TMJsonClose(TMJson *json);
+TM_EXPORT TMJsonObject *TMJsonFindChildByName(TMJsonObject *object, const char *name);
 
 #endif
