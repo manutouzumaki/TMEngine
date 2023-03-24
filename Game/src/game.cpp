@@ -85,13 +85,22 @@ void GetAttributeAtIndex(TMJsonObject *root, unsigned int i, void **data, size_t
 void GameInitialize(GameState *state, TMWindow *window) {
     state->renderer = TMRendererCreate(window);
 
+#ifdef TM_MACOS
     state->shader = TMRendererShaderCreate(state->renderer,
                                            "../../assets/shaders/vert.glsl",
                                            "../../assets/shaders/frag.glsl");
     state->cloneShader = TMRendererShaderCreate(state->renderer,
                                                 "../../assets/shaders/gltfVert.glsl",
                                                 "../../assets/shaders/gltfFrag.glsl");
+#elif TM_WIN32
+    state->shader = TMRendererShaderCreate(state->renderer,
+                                           "../../assets/shaders/vert.hlsl",
+                                           "../../assets/shaders/frag.hlsl");
+    state->cloneShader = TMRendererShaderCreate(state->renderer,
+                                                "../../assets/shaders/gltfVert.hlsl",
+                                                "../../assets/shaders/gltfFrag.hlsl");
 
+#endif
     state->texture = TMRendererTextureCreate(state->renderer,
                                              "../../assets/images/back.png");
     state->cubeTexture = TMRendererTextureCreate(state->renderer,

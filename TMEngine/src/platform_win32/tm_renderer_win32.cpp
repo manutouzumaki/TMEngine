@@ -565,7 +565,7 @@ void TMRendererDrawBufferArray(TMRenderer* renderer, TMBuffer* buffer) {
 }
 
 
-TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferData, size_t bufferSize, unsigned int index) {
+TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, const char *fragPath) {
     TMShader* shader = (TMShader*)TMMemoryPoolAlloc(renderer->shadersMemory);
 
     // read the vertex and fragment files
@@ -626,7 +626,7 @@ void TMRendererBindShader(TMRenderer *renderer, TMShader* shader) {
 }
 
 
-TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void* bufferData, size_t bufferSize) {
+TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferData, size_t bufferSize, unsigned int index) {
     TMShaderBuffer* shaderBuffer = (TMShaderBuffer*)TMMemoryPoolAlloc(renderer->shaderBuffersMemory);
 
     // Initialize constant buffer

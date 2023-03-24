@@ -1,6 +1,6 @@
  game
 
- Timestamp is 641c3936 (Thu Mar 23 08:34:14 2023)
+ Timestamp is 641dbf9f (Fri Mar 24 12:19:59 2023)
 
  Preferred load address is 0000000140000000
 
@@ -45,7 +45,7 @@
  0005:00000580 00000028H .idata$2                DATA
  0005:000005a8 00000018H .idata$3                DATA
  0005:000005c0 00000580H .idata$4                DATA
- 0005:00000b40 0000119cH .idata$6                DATA
+ 0005:00000b40 0000119eH .idata$6                DATA
  0006:00000000 00000175H .00cfg                  DATA
  0007:00000000 0000029fH _RDATA                  DATA
 
@@ -79,10 +79,15 @@
  0000:00000000       __x64_code_ranges_to_entry_points_count 0000000000000000     <absolute>
  0000:00000100       __guard_flags              0000000000000100     <absolute>
  0000:00000000       __ImageBase                0000000140000000     <linker-defined>
- 0001:00008f30       __local_stdio_printf_options 0000000140009f30 f i main.obj
- 0001:00008f40       _vfprintf_l                0000000140009f40 f i main.obj
- 0001:00008f90       printf                     0000000140009f90 f i main.obj
+ 0001:00008f30       ?GameInitialize@@YAXPEAUGameState@@PEAUTMWindow@@@Z 0000000140009f30 f   game.obj
+ 0001:00009540       ?GameUpdate@@YAXPEAUGameState@@@Z 000000014000a540 f   game.obj
+ 0001:00009550       ?GameRender@@YAXPEAUGameState@@@Z 000000014000a550 f   game.obj
+ 0001:00009c00       ?GameShutdown@@YAXPEAUGameState@@@Z 000000014000ac00 f   game.obj
+ 0001:00009d80       ?GetAttributeAtIndex@@YAXPEAUTMJsonObject@@IPEAPEAXPEA_KPEAX@Z 000000014000ad80 f   game.obj
  0001:0000a490       main                       000000014000b490 f   main.obj
+ 0001:0000a570       __local_stdio_printf_options 000000014000b570 f i main.obj
+ 0001:0000a580       _vfprintf_l                000000014000b580 f i main.obj
+ 0001:0000a5e0       printf                     000000014000b5e0 f i main.obj
  0001:0000a64c       ??H@YA?AUTMVec3@@U0@0@Z    000000014000b64c f   tmlib:tmlib.dll
  0001:0000a652       ??D@YA?AUTMMat4@@U0@0@Z    000000014000b652 f   tmlib:tmlib.dll
  0001:0000a658       ?TMMat4Perspective@@YA?AUTMMat4@@MMMM@Z 000000014000b658 f   tmlib:tmlib.dll
@@ -108,7 +113,7 @@
  0001:0000a6d0       ?TMRendererShaderCreate@@YAPEAUTMShader@@PEAUTMRenderer@@PEBD1@Z 000000014000b6d0 f   tmlib:tmlib.dll
  0001:0000a6d6       ?TMRendererShaderDestroy@@YAXPEAUTMRenderer@@PEAUTMShader@@@Z 000000014000b6d6 f   tmlib:tmlib.dll
  0001:0000a6dc       ?TMRendererBindShader@@YAXPEAUTMRenderer@@PEAUTMShader@@@Z 000000014000b6dc f   tmlib:tmlib.dll
- 0001:0000a6e2       ?TMRendererShaderBufferCreate@@YAPEAUTMShaderBuffer@@PEAUTMRenderer@@PEAX_K@Z 000000014000b6e2 f   tmlib:tmlib.dll
+ 0001:0000a6e2       ?TMRendererShaderBufferCreate@@YAPEAUTMShaderBuffer@@PEAUTMRenderer@@PEAX_KI@Z 000000014000b6e2 f   tmlib:tmlib.dll
  0001:0000a6e8       ?TMRendererShaderBufferDestroy@@YAXPEAUTMRenderer@@PEAUTMShaderBuffer@@@Z 000000014000b6e8 f   tmlib:tmlib.dll
  0001:0000a6ee       ?TMRendererShaderBufferUpdate@@YAXPEAUTMRenderer@@PEAUTMShaderBuffer@@PEAX@Z 000000014000b6ee f   tmlib:tmlib.dll
  0001:0000a6f4       ?TMRendererTextureCreate@@YAPEAUTMTexture@@PEAUTMRenderer@@PEBD@Z 000000014000b6f4 f   tmlib:tmlib.dll
@@ -2724,11 +2729,6 @@
  0001:0007bb5c       strrchr                    000000014007cb5c f   libvcruntime:strrchr.obj
  0001:0007bce8       strchr                     000000014007cce8 f   libvcruntime:strchr.obj
  0001:0007bd84       wcschr                     000000014007cd84 f   libvcruntime:wcschr.obj
- 0001:0007be00       ?GameInitialize@@YAXPEAUGameState@@PEAUTMWindow@@@Z 000000014007ce00 f   game.obj
- 0001:0007c410       ?GameUpdate@@YAXPEAUGameState@@@Z 000000014007d410 f   game.obj
- 0001:0007c420       ?GameRender@@YAXPEAUGameState@@@Z 000000014007d420 f   game.obj
- 0001:0007cad0       ?GameShutdown@@YAXPEAUGameState@@@Z 000000014007dad0 f   game.obj
- 0001:0007cc50       ?GetAttributeAtIndex@@YAXPEAUTMJsonObject@@IPEAPEAXPEA_KPEAX@Z 000000014007dc50 f   game.obj
  0001:0007daa0       _guard_dispatch_icall_nop  000000014007eaa0 f   LIBCMT:guard_dispatch.obj
  0001:0007dac0       _guard_xfg_dispatch_icall_nop 000000014007eac0 f   LIBCMT:guard_xfg_dispatch.obj
  0002:00000000       __xc_a                     0000000140082000     LIBCMT:initializers.obj
@@ -2746,7 +2746,6 @@
  0002:00000d00       __xp_z                     0000000140082d00     LIBCMT:initializers.obj
  0002:00000e10       __xt_a                     0000000140082e10     LIBCMT:initializers.obj
  0002:00000f20       __xt_z                     0000000140082f20     LIBCMT:initializers.obj
- 0002:00001348       __real@c0000000            0000000140083348     game.obj
  0002:000013e4       __real@3c23d70a            00000001400833e4     game.obj
  0002:000013e8       __real@3ca3d70a            00000001400833e8     game.obj
  0002:000013ec       __real@3f000000            00000001400833ec     game.obj
@@ -2755,6 +2754,7 @@
  0002:000013f8       __real@42700000            00000001400833f8     game.obj
  0002:000013fc       __real@42c80000            00000001400833fc     game.obj
  0002:00001400       __real@bf000000            0000000140083400     game.obj
+ 0002:00001404       __real@c0000000            0000000140083404     game.obj
  0002:00001410       __xmm@80000000800000008000000080000000 0000000140083410     game.obj
  0002:00001470       __xmm@ffffffffffffffffffffffffffffffff 0000000140083470     LIBCMT:utility.obj
  0002:00001488       _pDestructExceptionObject  0000000140083488     libvcruntime:ehhelpers.obj
@@ -3805,7 +3805,7 @@
  0003:00001590       ??_R0?AVpairNode@@@8       000000014009a590     libvcruntime:undname.obj
  0003:000015b8       ??_R0?AVtype_info@@@8      000000014009a5b8     LIBCMT:std_type_info_static.obj
  0003:000016f0       ?vertices@@3PAUTMVertex@@A 000000014009a6f0     game.obj
- 0003:00001798       ?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA 000000014009a798     main.obj
+ 0003:000017c0       ?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA 000000014009a7c0     main.obj
  0003:00001e58       __scrt_current_native_startup_state 000000014009ae58     LIBCMT:utility.obj
  0003:00001e60       __scrt_native_startup_lock 000000014009ae60     LIBCMT:utility.obj
  0003:00001eb0       ?__type_info_root_node@@3U__type_info_node@@A 000000014009aeb0     LIBCMT:tncleanup.obj
@@ -3966,7 +3966,7 @@
  0005:00000408       __imp_?TMRendererTextureCreate@@YAPEAUTMTexture@@PEAUTMRenderer@@PEBD@Z 00000001400a2408     tmlib:tmlib.dll
  0005:00000410       __imp_?TMRendererShaderBufferUpdate@@YAXPEAUTMRenderer@@PEAUTMShaderBuffer@@PEAX@Z 00000001400a2410     tmlib:tmlib.dll
  0005:00000418       __imp_?TMRendererShaderBufferDestroy@@YAXPEAUTMRenderer@@PEAUTMShaderBuffer@@@Z 00000001400a2418     tmlib:tmlib.dll
- 0005:00000420       __imp_?TMRendererShaderBufferCreate@@YAPEAUTMShaderBuffer@@PEAUTMRenderer@@PEAX_K@Z 00000001400a2420     tmlib:tmlib.dll
+ 0005:00000420       __imp_?TMRendererShaderBufferCreate@@YAPEAUTMShaderBuffer@@PEAUTMRenderer@@PEAX_KI@Z 00000001400a2420     tmlib:tmlib.dll
  0005:00000428       __imp_?TMRendererBindShader@@YAXPEAUTMRenderer@@PEAUTMShader@@@Z 00000001400a2428     tmlib:tmlib.dll
  0005:00000430       __imp_?TMRendererShaderDestroy@@YAXPEAUTMRenderer@@PEAUTMShader@@@Z 00000001400a2430     tmlib:tmlib.dll
  0005:00000438       __imp_?TMRendererShaderCreate@@YAPEAUTMShader@@PEAUTMRenderer@@PEBD1@Z 00000001400a2438     tmlib:tmlib.dll
@@ -7976,6 +7976,7 @@
  0000:fff5c004       __guard_fids__             0000000140000004     LIBCMT:exe_main.obj
  0000:fff5c008       __guard_fids__             0000000140000008     LIBCMT:exe_main.obj
  0001:000062a0       ??__Evertices@@YAXXZ       00000001400072a0 f   game.obj
+ 0001:00009cf0       ?StringToUnsignedInt@@YAIPEBD_K@Z 000000014000acf0 f   game.obj
  0001:0000aac0       capture_current_context    000000014000bac0 f   LIBCMT:gs_report.obj
  0001:0000ab48       capture_previous_context   000000014000bb48 f   LIBCMT:gs_report.obj
  0001:0000ac70       $$000000                   000000014000bc70     LIBCMT:amdsecgs.obj
@@ -8714,7 +8715,6 @@
  0001:0007a7a8       _get_fname                 000000014007b7a8 f   libucrt:fpexcept.obj
  0001:0007b720       $$000000                   000000014007c720     LIBCMT:chkstk.obj
  0001:0007b9f0       $$000000                   000000014007c9f0     libvcruntime:memcmp.obj
- 0001:0007cbc0       ?StringToUnsignedInt@@YAIPEBD_K@Z 000000014007dbc0 f   game.obj
  0001:0007da90       $$000000                   000000014007ea90     LIBCMT:guard_dispatch.obj
  0001:0007dab0       $$000000                   000000014007eab0     LIBCMT:guard_xfg_dispatch.obj
  0001:0007ead0       ?filt$0@?0??__scrt_common_main_seh@@YAHXZ@4HA 000000014007fad0 f   LIBCMT:exe_main.obj
@@ -8792,8 +8792,40 @@
  0002:00000220       ?vertices$initializer$@@3P6AXXZEA 0000000140082220     game.obj
  0002:00000550       ?pre_c_initializer@@3P6AHXZEA 0000000140082550     LIBCMT:exe_main.obj
  0002:00000660       ?post_pgo_initializer@@3P6AHXZEA 0000000140082660     LIBCMT:exe_main.obj
- 0002:00001428       $SG6076                    0000000140083428     main.obj
- 0002:00001438       $SG6077                    0000000140083438     main.obj
+ 0002:00001030       $SG7538                    0000000140083030     game.obj
+ 0002:00001070       $SG7539                    0000000140083070     game.obj
+ 0002:00001084       $SG7608                    0000000140083084     game.obj
+ 0002:00001090       $SG7552                    0000000140083090     game.obj
+ 0002:000010d0       $SG7553                    00000001400830d0     game.obj
+ 0002:000010e4       $SG7609                    00000001400830e4     game.obj
+ 0002:000010f0       $SG7566                    00000001400830f0     game.obj
+ 0002:00001130       $SG7567                    0000000140083130     game.obj
+ 0002:00001148       $SG7603                    0000000140083148     game.obj
+ 0002:00001158       $SG7604                    0000000140083158     game.obj
+ 0002:00001168       $SG7605                    0000000140083168     game.obj
+ 0002:00001170       $SG7606                    0000000140083170     game.obj
+ 0002:00001180       $SG7607                    0000000140083180     game.obj
+ 0002:00001190       $SG7610                    0000000140083190     game.obj
+ 0002:00001198       $SG7611                    0000000140083198     game.obj
+ 0002:000011a8       $SG7612                    00000001400831a8     game.obj
+ 0002:000011b8       $SG7648                    00000001400831b8     game.obj
+ 0002:000011d8       $SG7649                    00000001400831d8     game.obj
+ 0002:000011f8       $SG7650                    00000001400831f8     game.obj
+ 0002:00001220       $SG7651                    0000000140083220     game.obj
+ 0002:00001248       $SG7652                    0000000140083248     game.obj
+ 0002:00001268       $SG7653                    0000000140083268     game.obj
+ 0002:00001288       $SG7654                    0000000140083288     game.obj
+ 0002:000012a8       $SG7655                    00000001400832a8     game.obj
+ 0002:000012d0       $SG7656                    00000001400832d0     game.obj
+ 0002:000012f8       $SG7657                    00000001400832f8     game.obj
+ 0002:00001308       $SG7658                    0000000140083308     game.obj
+ 0002:00001314       $SG7659                    0000000140083314     game.obj
+ 0002:00001320       $SG7660                    0000000140083320     game.obj
+ 0002:00001330       $SG7661                    0000000140083330     game.obj
+ 0002:00001338       $SG7692                    0000000140083338     game.obj
+ 0002:00001340       $SG7693                    0000000140083340     game.obj
+ 0002:00001428       $SG7203                    0000000140083428     main.obj
+ 0002:00001438       $SG7204                    0000000140083438     main.obj
  0002:00001450       GS_ExceptionPointers       0000000140083450     LIBCMT:gs_report.obj
  0002:000014a0       ?tokenTable@@3QBUStringLiteral@@B 00000001400834a0     libvcruntime:undname.obj
  0002:000015b0       ?nameTable@@3QBUStringLiteral@@B 00000001400835b0     libvcruntime:undname.obj
@@ -8901,41 +8933,14 @@
  0002:0000d750       __real@433fffffffffffff    000000014008f750     libucrt:fpsr.obj
  0002:0000d758       __real@c33fffffffffffff    000000014008f758     libucrt:fpsr.obj
  0002:0000d770       ?_names@?1??_get_fname@@9@4QBU<unnamed-type-_names>@?1??1@YAPEADI@Z@B 000000014008f770     libucrt:fpexcept.obj
- 0002:0000dcb0       $SG7580                    000000014008fcb0     game.obj
- 0002:0000dcf0       $SG7581                    000000014008fcf0     game.obj
- 0002:0000dd04       $SG7650                    000000014008fd04     game.obj
- 0002:0000dd10       $SG7594                    000000014008fd10     game.obj
- 0002:0000dd50       $SG7595                    000000014008fd50     game.obj
- 0002:0000dd64       $SG7651                    000000014008fd64     game.obj
- 0002:0000dd70       $SG7608                    000000014008fd70     game.obj
- 0002:0000ddb0       $SG7609                    000000014008fdb0     game.obj
- 0002:0000ddc8       $SG7645                    000000014008fdc8     game.obj
- 0002:0000ddd8       $SG7646                    000000014008fdd8     game.obj
- 0002:0000dde8       $SG7647                    000000014008fde8     game.obj
- 0002:0000ddf0       $SG7648                    000000014008fdf0     game.obj
- 0002:0000de00       $SG7649                    000000014008fe00     game.obj
- 0002:0000de10       $SG7652                    000000014008fe10     game.obj
- 0002:0000de18       $SG7653                    000000014008fe18     game.obj
- 0002:0000de28       $SG7654                    000000014008fe28     game.obj
- 0002:0000de38       $SG7690                    000000014008fe38     game.obj
- 0002:0000de58       $SG7691                    000000014008fe58     game.obj
- 0002:0000de78       $SG7692                    000000014008fe78     game.obj
- 0002:0000dea0       $SG7693                    000000014008fea0     game.obj
- 0002:0000dec8       $SG7694                    000000014008fec8     game.obj
- 0002:0000dee8       $SG7695                    000000014008fee8     game.obj
- 0002:0000df08       $SG7696                    000000014008ff08     game.obj
- 0002:0000df28       $SG7697                    000000014008ff28     game.obj
- 0002:0000df50       $SG7698                    000000014008ff50     game.obj
- 0002:0000df78       $SG7699                    000000014008ff78     game.obj
- 0002:0000df88       $SG7700                    000000014008ff88     game.obj
- 0002:0000df94       $SG7701                    000000014008ff94     game.obj
- 0002:0000dfa0       $SG7702                    000000014008ffa0     game.obj
- 0002:0000dfb0       $SG7703                    000000014008ffb0     game.obj
- 0002:0000dfb8       $SG7734                    000000014008ffb8     game.obj
- 0002:0000dfc0       $SG7735                    000000014008ffc0     game.obj
- 0002:0000f150       $unwind$_vfprintf_l        0000000140091150     main.obj
- 0002:0000f158       $unwind$printf             0000000140091158     main.obj
+ 0002:0000f150       $unwind$?GameInitialize@@YAXPEAUGameState@@PEAUTMWindow@@@Z 0000000140091150     game.obj
+ 0002:0000f15c       $unwind$?GameRender@@YAXPEAUGameState@@@Z 000000014009115c     game.obj
+ 0002:0000f170       $unwind$?GameShutdown@@YAXPEAUGameState@@@Z 0000000140091170     game.obj
+ 0002:0000f178       $unwind$?StringToUnsignedInt@@YAIPEBD_K@Z 0000000140091178     game.obj
+ 0002:0000f180       $unwind$?GetAttributeAtIndex@@YAXPEAUTMJsonObject@@IPEAPEAXPEA_KPEAX@Z 0000000140091180     game.obj
  0002:0000f190       $unwind$??__Evertices@@YAXXZ 0000000140091190     game.obj
+ 0002:0000f1a8       $unwind$_vfprintf_l        00000001400911a8     main.obj
+ 0002:0000f1b0       $unwind$printf             00000001400911b0     main.obj
  0002:0000f1b8       $unwind$main               00000001400911b8     main.obj
  0002:0000f1c0       $unwind$__report_securityfailure 00000001400911c0     LIBCMT:gs_report.obj
  0002:0000f1c8       $unwind$__report_securityfailureEx 00000001400911c8     LIBCMT:gs_report.obj
@@ -10461,11 +10466,6 @@
  0002:00015b00       $xdatasym                  0000000140097b00     libvcruntime:memcmp.obj
  0002:00015b04       $unwind$__C_specific_handler_noexcept 0000000140097b04     libvcruntime:chandler_noexcept.obj
  0002:00015b14       $unwind$strrchr            0000000140097b14     libvcruntime:strrchr.obj
- 0002:00015b1c       $unwind$?GameInitialize@@YAXPEAUGameState@@PEAUTMWindow@@@Z 0000000140097b1c     game.obj
- 0002:00015b28       $unwind$?GameRender@@YAXPEAUGameState@@@Z 0000000140097b28     game.obj
- 0002:00015b3c       $unwind$?GameShutdown@@YAXPEAUGameState@@@Z 0000000140097b3c     game.obj
- 0002:00015b44       $unwind$?StringToUnsignedInt@@YAIPEBD_K@Z 0000000140097b44     game.obj
- 0002:00015b4c       $unwind$?GetAttributeAtIndex@@YAXPEAUTMJsonObject@@IPEAPEAXPEA_KPEAX@Z 0000000140097b4c     game.obj
  0003:000005d0       ?__vcrt_flsindex@@3KA      00000001400995d0     libvcruntime:per_thread_data.obj
  0003:000005d8       ?prefix@?1??getDimension@UnDecorator@@CA?AVDName@@_N@Z@4UStringLiteral@@A 00000001400995d8     libvcruntime:undname.obj
  0003:00000730       _ctype_loc_style           0000000140099730     libucrt:wsetlocale.obj
@@ -10479,10 +10479,10 @@
  0003:000011e0       ?__dcrt_lowio_console_output_handle@@3PEAXEA 000000014009a1e0     libucrt:initcon.obj
  0003:000011e9       ?dazSupported@?1??common_control87@@9@9 000000014009a1e9     libucrt:ieee.obj
  0003:000011f0       ?dazSupported@?1??_ctrlfp@@9@9 000000014009a1f0     libucrt:fpctrl.obj
+ 0003:00001790       ?buffer@?1??StringToUnsignedInt@@YAIPEBD_K@Z@4PADA 000000014009a790     game.obj
  0003:000017b8       ?angle@?1??GameRender@@YAXPEAUGameState@@@Z@4MA 000000014009a7b8     game.obj
  0003:000017d0       GS_ExceptionRecord         000000014009a7d0     LIBCMT:gs_report.obj
  0003:00001870       GS_ContextRecord           000000014009a870     LIBCMT:gs_report.obj
- 0003:00001d40       ?buffer@?1??StringToUnsignedInt@@YAIPEBD_K@Z@4PADA 000000014009ad40     game.obj
  0003:00001e68       ?is_initialized_as_dll@@3_NA 000000014009ae68     LIBCMT:utility.obj
  0003:00001e69       ?module_local_atexit_table_initialized@@3_NA 000000014009ae69     LIBCMT:utility.obj
  0003:00001e70       ?module_local_atexit_table@@3U_onexit_table_t@@A 000000014009ae70     LIBCMT:utility.obj
@@ -10525,8 +10525,8 @@
  0003:00003770       ?mbst@?1??mbrtowc@@9@4U_Mbstatet@@A 000000014009c770     libucrt:mbrtowc.obj
  0003:00003780       ?mbst@?1??_mbsrtowcs_helper@@YA_KPEA_WPEAPEBD_KPEAU_Mbstatet@@AEAV__crt_cached_ptd_host@@@Z@4U2@A 000000014009c780     libucrt:mbrtowc.obj
  0003:00003790       ?internal_pst@?1??__mbrtoc32_utf8@__crt_mbstring@@YA_KPEA_UPEBD_KPEAU_Mbstatet@@AEAV__crt_cached_ptd_host@@@Z@4U3@A 000000014009c790     libucrt:mbrtoc32.obj
- 0005:000013de       .idata$6                   00000001400a33de     tmlib:tmlib.dll
- 0005:00001558       .idata$6                   00000001400a3558     kernel32:KERNEL32.dll
+ 0005:000013e0       .idata$6                   00000001400a33e0     tmlib:tmlib.dll
+ 0005:0000155a       .idata$6                   00000001400a355a     kernel32:KERNEL32.dll
  0007:00000000       MoveSmall                  00000001400a5000     libvcruntime:memcpy.obj
  0007:00000040       MoveSmallYmm               00000001400a5040     libvcruntime:memcpy.obj
  0007:00000064       MoveSmallYmmNT             00000001400a5064     libvcruntime:memcpy.obj
