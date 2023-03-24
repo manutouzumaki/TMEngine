@@ -360,48 +360,6 @@ struct TMRenderer {
     glUseProgram(0);
 }
 
- void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, float value) {
-    int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(renderer, shader);
-    glUniform1f(varLoc, value);
-}
-
- void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, int value) {
-    int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(renderer, shader);
-    glUniform1i(varLoc, value);
-}
-
- void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, TMVec3 value) {
-    int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(renderer, shader);
-    glUniform3fv(varLoc, 1, value.v);
-}
-
- void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, TMVec4 value) {
-    int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(renderer, shader);
-    glUniform4fv(varLoc, 1, value.v);
-}
-
- void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, TMMat4 value) {
-    int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(renderer, shader);
-    glUniformMatrix4fv(varLoc, 1, false, value.v);
-}
-
- void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, int size, int *array) {
-    int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(renderer, shader);
-    glUniform1iv(varLoc, size, array);
-}
-
- void TMRendererShaderUpdate(TMRenderer *renderer, TMShader *shader, const char *varName, int size, TMMat4 *array) {
-    int varLoc = glGetUniformLocation(shader->id, varName);
-    TMRendererBindShader(renderer, shader);
-    glUniformMatrix4fv(varLoc, size, false, (float *)array);
-}
-
 TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferData, size_t bufferSize, unsigned int index) {
     TMShaderBuffer *shaderBuffer = (TMShaderBuffer *)TMMemoryPoolAlloc(renderer->shaderBuffersMemory);
 
@@ -484,10 +442,13 @@ void TMRendererShaderBufferUpdate(TMRenderer* renderer, TMShaderBuffer* shaderBu
     return texture;
 }
 
- void TMRendererTextureBind(TMRenderer *renderer, TMTexture *texture, TMShader *shader, const char *varName, int textureIndex) {
+void TMRendererTextureBind(TMRenderer *renderer, TMTexture *texture, TMShader *shader, const char *varName, int textureIndex) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture->id);
-    TMRendererShaderUpdate(renderer, shader, varName, textureIndex);
+    int varLoc = glGetUniformLocation(shader->id, varName);
+    TMRendererBindShader(renderer, shader);
+    glUniform1i(varLoc, textureIndex);
+
 }
 
  void TMRendererTextureUnbind(TMRenderer *renderer, TMTexture *texture, int textureIndex) {

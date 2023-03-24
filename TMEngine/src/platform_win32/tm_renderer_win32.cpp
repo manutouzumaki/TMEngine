@@ -625,33 +625,6 @@ void TMRendererBindShader(TMRenderer *renderer, TMShader* shader) {
     renderer->deviceContext->PSSetShader(shader->pixel, 0, 0);
 }
 
-void TMRendererShaderUpdate(TMRenderer* renderer, TMShader* shader, const char* varName, float value) {
-
-}
-
-void TMRendererShaderUpdate(TMRenderer* renderer, TMShader* shader, const char* varName, int value) {
-
-}
-
-void TMRendererShaderUpdate(TMRenderer* renderer, TMShader* shader, const char* varName, TMVec3 value) {
-
-}
-
-void TMRendererShaderUpdate(TMRenderer* renderer, TMShader* shader, const char* varName, TMVec4 value) {
-
-}
-
-void TMRendererShaderUpdate(TMRenderer* renderer, TMShader* shader, const char* varName, TMMat4 value) {
-
-}
-
-void TMRendererShaderUpdate(TMRenderer* renderer, TMShader* shader, const char* varName, int size, int* array) {
-
-}
-
-void TMRendererShaderUpdate(TMRenderer *renderer, TMShader* shader, const char* varName, int size, TMMat4* array) {
-
-}
 
 TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void* bufferData, size_t bufferSize) {
     TMShaderBuffer* shaderBuffer = (TMShaderBuffer*)TMMemoryPoolAlloc(renderer->shaderBuffersMemory);

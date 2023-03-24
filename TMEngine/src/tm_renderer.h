@@ -61,13 +61,6 @@ TM_EXPORT void TMRendererDrawBufferArray(TMRenderer* renderer, TMBuffer *buffer)
 TM_EXPORT TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, const char *fragPath);
 TM_EXPORT void TMRendererShaderDestroy(TMRenderer *renderer, TMShader *shader);
 TM_EXPORT void TMRendererBindShader(TMRenderer* renderer, TMShader *shader);
-TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, float value);
-TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, int value);
-TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, TMVec3 value);
-TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, TMVec4 value);
-TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, TMMat4 value);
-TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, int size, int *array);
-TM_EXPORT void TMRendererShaderUpdate(TMRenderer* renderer, TMShader *shader, const char *varName, int size, TMMat4 *array);
 
 TM_EXPORT TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferData, size_t bufferSize, unsigned int index);
 TM_EXPORT void TMRendererShaderBufferDestroy(TMRenderer* renderer, TMShaderBuffer* shaderBuffer);
