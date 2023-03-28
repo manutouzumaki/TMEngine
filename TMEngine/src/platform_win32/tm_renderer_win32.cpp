@@ -732,7 +732,7 @@ TMTexture* TMRendererTextureCreate(TMRenderer* renderer, const char* filepath) {
     colorMapDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;//D3D11_TEXTURE_ADDRESS_CLAMP;
     colorMapDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;//D3D11_TEXTURE_ADDRESS_CLAMP;
     colorMapDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    colorMapDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; //D3D11_FILTER_MIN_MAG_MIP_LINEAR | D3D11_FILTER_MIN_MAG_MIP_POINT
+    colorMapDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; //D3D11_FILTER_MIN_MAG_MIP_LINEAR | D3D11_FILTER_MIN_MAG_MIP_POINT
     colorMapDesc.MaxLOD = D3D11_FLOAT32_MAX;
     result = renderer->device->CreateSamplerState(&colorMapDesc, &texture->colorMapSampler);
     if (FAILED(result))

@@ -189,6 +189,8 @@ void GameRender(GameState *state) {
     // TODO: improve the shaderBuffer upgrate API ...
 
     // Render Background
+    TMRendererDepthTestDisable(state->renderer);
+    
     TMRendererBindShader(state->renderer, state->shader);
     TMRendererTextureBind(state->renderer, state->texture, state->shader, "back", 0);
     TMVec3 pos = {0, 0, 0};
@@ -200,26 +202,6 @@ void GameRender(GameState *state) {
     mats.world = TMMat4Scale(width, height, 1.0f); 
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
     TMRendererDrawBufferElements(state->renderer, state->buffer);
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-/// test code
-////////////////////////////////////////////////////////////////////////////////////////
-    mats.world = TMMat4Identity(); 
-    TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
-    TMRendererRenderBatchAdd(state->renderBatch, 100, 0, 1, 100, 100, 0, 13, state->uvs);
-    TMRendererRenderBatchAdd(state->renderBatch, 200, 0, 1, 100, 100, 0, 24, state->uvs);
-
-    TMRendererRenderBatchDraw(state->renderBatch);
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-#if 1
 
     // 3D Rendering Here !!!
     TMRendererBindShader(state->renderer, state->cloneShader);
@@ -235,7 +217,15 @@ void GameRender(GameState *state) {
     angle += 0.02f;
 
     TMRendererDepthTestDisable(state->renderer);
-#endif
+
+
+    mats.world = TMMat4Identity(); 
+    mats.proj = TMMat4Ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 100.0f);
+    TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
+    TMRendererRenderBatchAdd(state->renderBatch, 0, 0, 1, 100, 100, 0, 13, state->uvs);
+    TMRendererRenderBatchAdd(state->renderBatch, 200, 0, 1, 100, 100, 0, 24, state->uvs);
+    
+    TMRendererRenderBatchDraw(state->renderBatch);
 
     TMRendererPresent(state->renderer);
 }
