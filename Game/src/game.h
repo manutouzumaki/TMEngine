@@ -6,15 +6,24 @@
 
 struct GameState {
     TMRenderer *renderer;
+    
     TMShader *shader;
     TMShader *cloneShader;
+    TMShader *batchShader;
+
     TMBuffer *buffer;
     TMBuffer *cubeBuffer;
     TMBuffer *cloneBuffer;
+    
     TMTexture *texture;
     TMTexture *cubeTexture;
     TMTexture *cloneTexture;
+    TMTexture *charactersTexture;
+    
     TMShaderBuffer *shaderBuffer;
+    
+    TMRenderBatch *renderBatch;
+    float *uvs;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);

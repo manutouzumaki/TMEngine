@@ -100,6 +100,9 @@ void GameInitialize(GameState *state, TMWindow *window) {
     state->cloneShader = TMRendererShaderCreate(state->renderer,
                                                 "../../assets/shaders/gltfVert.hlsl",
                                                 "../../assets/shaders/gltfFrag.hlsl");
+    state->batchShader = TMRendererShaderCreate(state->renderer,
+                                                "../../assets/shaders/batchVert.hlsl",
+                                                "../../assets/shaders/batchFrag.hlsl");
 #endif
 
     state->texture = TMRendererTextureCreate(state->renderer,
@@ -108,6 +111,8 @@ void GameInitialize(GameState *state, TMWindow *window) {
                                                  "../../assets/images/moon.png");
     state->cloneTexture = TMRendererTextureCreate(state->renderer,
                                                   "../../assets/images/clone.png");
+    state->charactersTexture = TMRendererTextureCreate(state->renderer,
+                                                       "../../assets/images/characters_packed.png");
 
     state->buffer = TMRendererBufferCreate(state->renderer,
                                            vertices, ARRAY_LENGTH(vertices),
@@ -165,6 +170,10 @@ void GameInitialize(GameState *state, TMWindow *window) {
    
     Matrices mats{};
     state->shaderBuffer = TMRendererShaderBufferCreate(state->renderer, &mats, sizeof(Matrices), 0);
+
+
+    state->renderBatch = TMRendererRenderBatchCreate(state->renderer, state->batchShader, state->charactersTexture, 100);
+    state->uvs = TMGenerateUVs(state->charactersTexture, 24, 24);
 }
 
 void GameUpdate(GameState *state) {
@@ -192,6 +201,26 @@ void GameRender(GameState *state) {
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
     TMRendererDrawBufferElements(state->renderer, state->buffer);
 
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+/// test code
+////////////////////////////////////////////////////////////////////////////////////////
+    mats.world = TMMat4Identity(); 
+    TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
+    TMRendererRenderBatchAdd(state->renderBatch, 100, 0, 1, 100, 100, 0, 13, state->uvs);
+    TMRendererRenderBatchAdd(state->renderBatch, 200, 0, 1, 100, 100, 0, 24, state->uvs);
+
+    TMRendererRenderBatchDraw(state->renderBatch);
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+#if 1
+
     // 3D Rendering Here !!!
     TMRendererBindShader(state->renderer, state->cloneShader);
     TMRendererDepthTestEnable(state->renderer);
@@ -206,18 +235,25 @@ void GameRender(GameState *state) {
     angle += 0.02f;
 
     TMRendererDepthTestDisable(state->renderer);
+#endif
 
     TMRendererPresent(state->renderer);
 }
 
 void GameShutdown(GameState *state) {
+    if(state->uvs) free(state->uvs);
+
+    TMRendererRenderBatchDestroy(state->renderer, state->renderBatch);
+    
     TMRendererShaderBufferDestroy(state->renderer, state->shaderBuffer);
     TMRendererBufferDestroy(state->renderer, state->cloneBuffer);
     TMRendererBufferDestroy(state->renderer, state->cubeBuffer);
     TMRendererBufferDestroy(state->renderer, state->buffer);
+    TMRendererTextureDestroy(state->renderer, state->charactersTexture);
     TMRendererTextureDestroy(state->renderer, state->cloneTexture);
     TMRendererTextureDestroy(state->renderer, state->cubeTexture);
     TMRendererTextureDestroy(state->renderer, state->texture);
+    TMRendererShaderDestroy(state->renderer, state->batchShader);
     TMRendererShaderDestroy(state->renderer, state->cloneShader);
     TMRendererShaderDestroy(state->renderer, state->shader);
     TMRendererDestroy(state->renderer);

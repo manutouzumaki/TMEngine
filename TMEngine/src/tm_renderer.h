@@ -21,6 +21,7 @@ struct TMShaderBuffer;
 struct TMTexture;
 struct TMShaderStruct;
 struct TMFramebuffer;
+struct TMRenderBatch;
 
 struct TMVertex {
     TMVec3 position;
@@ -71,8 +72,16 @@ TM_EXPORT void TMRendererTextureDestroy(TMRenderer *renderer, TMTexture *texture
 TM_EXPORT void TMRendererTextureBind(TMRenderer* renderer, TMTexture *texture, TMShader *shader, const char *varName, int textureIndex);
 TM_EXPORT void TMRendererTextureUnbind(TMRenderer* renderer, TMTexture *texture, int textureIndex);
 
-
 TM_EXPORT TMFramebuffer *TMRendererFramebufferCreate(TMRenderer *renderer);
 TM_EXPORT void TMRendererFramebufferDestroy(TMRenderer *renderer, TMFramebuffer *framebuffer);
+
+TM_EXPORT TMRenderBatch *TMRendererRenderBatchCreate(TMRenderer *renderer, TMShader *shader, TMTexture *texture, size_t size);
+TM_EXPORT void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z, float w, float h, float angle);
+TM_EXPORT void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z, float w, float h, float angle, int sprite, float *uvs);
+TM_EXPORT void TMRendererRenderBatchDraw(TMRenderBatch *renderBatch);
+TM_EXPORT void TMRendererRenderBatchDestroy(TMRenderer *renderer, TMRenderBatch *renderBatch);
+
+// this uvs should be free calling free(uvs)
+TM_EXPORT float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight);
 
 #endif

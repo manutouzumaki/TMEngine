@@ -11,6 +11,11 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
+struct TMBatchVertex {
+    TMVec3 position;
+    TMVec2 uvs;
+};
+
 // TODO: try to remove this ...
 struct TMWindow {
     HWND hwndWindow;
@@ -49,6 +54,19 @@ struct TMTexture {
     ID3D11SamplerState* colorMapSampler;
 };
 
+struct TMRenderBatch {
+    TMRenderer *renderer;
+    TMShader *shader;
+    TMTexture *texture;
+
+    ID3D11Buffer *buffer;
+    ID3D11InputLayout *layout;
+    TMBatchVertex *batchBuffer;
+    unsigned int bufferSizeInBytes;
+    unsigned int size;
+    unsigned int used;
+};
+
 struct TMFramebuffer {
     unsigned int id;
 };
@@ -61,6 +79,7 @@ struct TMRenderer {
     TMMemoryPool* shadersMemory;
     TMMemoryPool* framebufferMemory;
     TMMemoryPool* shaderBuffersMemory;
+    TMMemoryPool* renderBatchsMemory;
 
     ID3D11Device* device;
     ID3D11DeviceContext* deviceContext;
@@ -250,6 +269,7 @@ TMRenderer* TMRendererCreate(TMWindow *window) {
     renderer->shadersMemory = TMMemoryPoolCreate(sizeof(TMShader), TM_RENDERER_MEMORY_BLOCK_SIZE);
     renderer->framebufferMemory = TMMemoryPoolCreate(sizeof(TMFramebuffer), TM_RENDERER_MEMORY_BLOCK_SIZE);
     renderer->shaderBuffersMemory = TMMemoryPoolCreate(sizeof(TMShaderBuffer), TM_RENDERER_MEMORY_BLOCK_SIZE);
+    renderer->renderBatchsMemory = TMMemoryPoolCreate(sizeof(TMRenderBatch), TM_RENDERER_MEMORY_BLOCK_SIZE);
 
     renderer->deviceContext->OMSetRenderTargets(1, &renderer->renderTargetView, renderer->depthStencilView);
     renderer->deviceContext->OMSetDepthStencilState(renderer->depthStencilOn, 1);
@@ -281,6 +301,7 @@ void TMRendererDestroy(TMRenderer* renderer) {
     TMMemoryPoolDestroy(renderer->shadersMemory);
     TMMemoryPoolDestroy(renderer->framebufferMemory);
     TMMemoryPoolDestroy(renderer->shaderBuffersMemory);
+    TMMemoryPoolDestroy(renderer->renderBatchsMemory);
     free(renderer);
 }
 
@@ -750,4 +771,173 @@ TMFramebuffer* TMRendererFramebufferCreate(TMRenderer* renderer) {
 
 void TMRendererFramebufferDestroy(TMRenderer* renderer, TMFramebuffer* framebuffer) {
 
+}
+
+TMRenderBatch *TMRendererRenderBatchCreate(TMRenderer *renderer, TMShader *shader, TMTexture *texture, size_t size) {
+    TMRenderBatch *renderBatch = (TMRenderBatch *)TMMemoryPoolAlloc(renderer->renderBatchsMemory);
+    renderBatch->renderer = renderer;
+    renderBatch->shader = shader;
+    renderBatch->texture = texture;
+    renderBatch->size = size;
+    renderBatch->used = 0;
+
+    // TODO: create the buffer
+    renderBatch->bufferSizeInBytes = sizeof(TMBatchVertex)*6*size;
+    D3D11_BUFFER_DESC vertexDesc;
+    ZeroMemory(&vertexDesc, sizeof(vertexDesc));
+    vertexDesc.Usage = D3D11_USAGE_DYNAMIC;
+    vertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vertexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    vertexDesc.ByteWidth = renderBatch->bufferSizeInBytes;
+    HRESULT result = renderer->device->CreateBuffer(&vertexDesc, NULL, &renderBatch->buffer);
+
+
+    // create input layout.
+    D3D11_INPUT_ELEMENT_DESC inputLayoutDesc[] =
+    {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
+         0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,
+        0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+    };
+    int totalLayoutElements = ARRAY_LENGTH(inputLayoutDesc);
+    result = renderer->device->CreateInputLayout(inputLayoutDesc,
+        totalLayoutElements,
+        shader->vertexShaderCompiled->GetBufferPointer(),
+        shader->vertexShaderCompiled->GetBufferSize(),
+        &renderBatch->layout);
+
+
+
+    renderBatch->batchBuffer = (TMBatchVertex *)malloc(renderBatch->bufferSizeInBytes);
+    memset(renderBatch->batchBuffer, 0, renderBatch->bufferSizeInBytes);
+
+    return renderBatch;
+}
+
+static void BatchQuadLocalToWorld(TMBatchVertex *quad, float x, float y, float z, float w, float h, float angle) {
+    TMMat4 world = TMMat4Translate(x, y, z) * TMMat4RotateZ(angle) * TMMat4Scale(w, h, 1);
+    for(int i = 0; i < 6; ++i) {
+        quad[i].position = TMMat4TransformPoint(TMMat4Transposed(world), quad[i].position);
+    }
+}
+
+static void BatchQuadHandleUVs(TMBatchVertex *quad, int sprite, float *uvs) {
+   int uvsIndex = sprite * 4;
+   float u0 = uvs[uvsIndex + 0]; 
+   float v0 = uvs[uvsIndex + 1];
+   float u1 = uvs[uvsIndex + 2];
+   float v1 = uvs[uvsIndex + 3];
+   quad[0].uvs = {u0, v0};
+   quad[1].uvs = {u1, v0};
+   quad[2].uvs = {u0, v1};
+   quad[3].uvs = {u0, v1};
+   quad[4].uvs = {u1, v0};
+   quad[5].uvs = {u1, v1};
+}
+
+static void AddQuadToBatchBuffer(TMRenderBatch *renderBatch, TMBatchVertex *quad) {
+    assert(renderBatch->used < renderBatch->size);
+    TMBatchVertex *vertex = renderBatch->batchBuffer + (renderBatch->used*6);
+    memcpy(vertex, quad, sizeof(TMBatchVertex)*6);
+    ++renderBatch->used;
+}
+
+void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                          float w, float h, float angle) {
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+    };
+    BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
+
+    if(renderBatch->used >= renderBatch->size) {
+        TMRendererRenderBatchDraw(renderBatch);
+    }
+    AddQuadToBatchBuffer(renderBatch, quad);
+}
+
+void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                          float w, float h, float angle,
+                                                          int sprite, float *uvs) {
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+    };
+    BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
+    BatchQuadHandleUVs(quad, sprite, uvs);
+
+    if(renderBatch->used >= renderBatch->size) {
+        TMRendererRenderBatchDraw(renderBatch);
+    }
+    AddQuadToBatchBuffer(renderBatch, quad);
+
+}
+
+void TMRendererRenderBatchDraw(TMRenderBatch *renderBatch) {
+    TMRenderer *renderer = renderBatch->renderer;
+    D3D11_MAPPED_SUBRESOURCE bufferData;
+    ZeroMemory(&bufferData, sizeof(bufferData));
+    renderer->deviceContext->Map(renderBatch->buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &bufferData);
+    memcpy(bufferData.pData, renderBatch->batchBuffer, sizeof(TMBatchVertex)*(renderBatch->used*6));
+    renderer->deviceContext->Unmap(renderBatch->buffer, 0);
+
+    unsigned int stride = sizeof(TMBatchVertex);
+    unsigned int offset = 0;
+    renderer->deviceContext->IASetInputLayout(renderBatch->layout);
+    TMRendererBindShader(renderer, renderBatch->shader);
+    TMRendererTextureBind(renderer, renderBatch->texture, renderBatch->shader, "uTexture", 0);
+    renderer->deviceContext->IASetVertexBuffers(0, 1, &renderBatch->buffer, &stride, &offset);
+
+    renderer->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    renderer->deviceContext->Draw(renderBatch->used*6, 0);
+
+    renderBatch->used = 0;
+}
+
+void TMRendererRenderBatchDestroy(TMRenderer *renderer, TMRenderBatch *renderBatch) {
+    if(renderBatch->batchBuffer) free(renderBatch->batchBuffer);
+    if(renderBatch->layout) renderBatch->layout->Release();
+    if(renderBatch->buffer) renderBatch->buffer->Release();
+    TMMemoryPoolFree(renderer->renderBatchsMemory, (void *)renderBatch);
+}
+
+
+float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight) {
+    float width = (float)tileWidth / (float)texture->width;
+    float height = (float)tileHeight / (float)texture->height;
+    int cols = texture->width / tileWidth;
+    int rows = texture->height / tileHeight;
+    float *uvs = (float *)malloc(cols * rows * 4 * sizeof(float));
+    
+    float ux = 0.0f;
+    float uy = 0.0f;
+    float vx = width;
+    float vy = height;
+    
+    float *uvsPtr = uvs;
+    for(int j = 0; j < rows; ++j) {
+        for(int i = 0; i < cols; ++i) {
+            *uvsPtr++ = ux;
+            *uvsPtr++ = uy;
+            *uvsPtr++ = vx;
+            *uvsPtr++ = vy;
+
+            ux += width;
+            vx += width;
+        }
+        ux = 0;
+        vx = width;
+        uy += height;
+        vy += height;
+    }
+    return uvs;
 }
