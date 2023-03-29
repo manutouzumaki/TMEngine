@@ -17,6 +17,11 @@ struct Matrices {
     TMMat4 world;
 };
 
+struct WorldColorInstance {
+    TMMat4 world;
+    TMVec4 color;
+};
+
 static float StringToFloat(const char *c, size_t size) {
     assert(size < 32);
     static char buffer[32];
@@ -103,6 +108,9 @@ void GameInitialize(GameState *state, TMWindow *window) {
     state->batchShader = TMRendererShaderCreate(state->renderer,
                                                 "../../assets/shaders/batchVert.hlsl",
                                                 "../../assets/shaders/batchFrag.hlsl");
+    state->instShader = TMRendererShaderCreate(state->renderer,
+                                               "../../assets/shaders/instVert.hlsl",
+                                               "../../assets/shaders/instFrag.hlsl");
 #endif
 
     state->texture = TMRendererTextureCreate(state->renderer,
@@ -174,6 +182,8 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     state->renderBatch = TMRendererRenderBatchCreate(state->renderer, state->batchShader, state->charactersTexture, 100);
     state->uvs = TMGenerateUVs(state->charactersTexture, 24, 24);
+
+    state->instanceRenderer = TMRendererInstanceRendererCreate(state->renderer, state->instShader, 4, sizeof(WorldColorInstance));
 }
 
 void GameUpdate(GameState *state) {
@@ -218,7 +228,7 @@ void GameRender(GameState *state) {
 
     TMRendererDepthTestDisable(state->renderer);
 
-
+    // batch rendering test
     mats.world = TMMat4Identity(); 
     mats.proj = TMMat4Ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 100.0f);
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
@@ -227,14 +237,27 @@ void GameRender(GameState *state) {
     
     TMRendererRenderBatchDraw(state->renderBatch);
 
+    // instance rendering test
+    WorldColorInstance instBuffer[4] = {};
+    instBuffer[0].world = TMMat4Translate(-width*0.5f, 0, 0) * TMMat4Scale(100, 50, 1);
+    instBuffer[0].color = {1, 0, 0, 1};
+    instBuffer[1].world = TMMat4Translate(0, 200, 0) * TMMat4Scale(200, 200, 1);
+    instBuffer[1].color = {0, 1, 0, 1};
+    instBuffer[2].world = TMMat4Translate(0, -200, 0) * TMMat4Scale(100, 50, 1);
+    instBuffer[2].color = {0, 0, 1, 1};
+    instBuffer[3].world = TMMat4Translate(width*0.5f, 0, 0) * TMMat4Scale(100, 300, 1);
+    instBuffer[3].color = {1, 0, 1, 1};
+
+    TMRendererBindShader(state->renderer, state->instShader);
+    TMRendererInstanceRendererDraw(state->renderer, state->instanceRenderer, instBuffer);
+
     TMRendererPresent(state->renderer);
 }
 
 void GameShutdown(GameState *state) {
+    TMRendererInstanceRendererDestroy(state->renderer, state->instanceRenderer);
     if(state->uvs) free(state->uvs);
-
     TMRendererRenderBatchDestroy(state->renderer, state->renderBatch);
-    
     TMRendererShaderBufferDestroy(state->renderer, state->shaderBuffer);
     TMRendererBufferDestroy(state->renderer, state->cloneBuffer);
     TMRendererBufferDestroy(state->renderer, state->cubeBuffer);
@@ -243,6 +266,7 @@ void GameShutdown(GameState *state) {
     TMRendererTextureDestroy(state->renderer, state->cloneTexture);
     TMRendererTextureDestroy(state->renderer, state->cubeTexture);
     TMRendererTextureDestroy(state->renderer, state->texture);
+    TMRendererShaderDestroy(state->renderer, state->instShader);
     TMRendererShaderDestroy(state->renderer, state->batchShader);
     TMRendererShaderDestroy(state->renderer, state->cloneShader);
     TMRendererShaderDestroy(state->renderer, state->shader);

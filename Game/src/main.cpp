@@ -7,7 +7,8 @@ int main() {
     GameState gameState{};
 
     GameInitialize(&gameState, window);
-
+    
+    // TODO: add delta time and fix update functions ...
     while(!TMWindowShouldClose(window)) {
         TMWindowFlushEventQueue(window);
         
@@ -15,7 +16,7 @@ int main() {
         GameRender(&gameState);
 
         TMWindowPresent(window);
-    } 
+    }
 
     GameShutdown(&gameState);
     TMWindowDestroy(window);

@@ -28,7 +28,6 @@ enum TM_EBO_TYPE {
     TM_EBO_UNSIGNED_INT,
 };
 
-// TODO: memset zero all the return structs
 struct TMBuffer {
     unsigned int id;
     unsigned int vbo0;
@@ -107,7 +106,6 @@ struct TMRenderer {
     glDisable(GL_DEPTH_TEST);
 }
 
-// TODO(manuel): set up the renderer->width and renderer->height fields
  int TMRendererGetWidth(TMRenderer *renderer) {
     return renderer->width;
 }

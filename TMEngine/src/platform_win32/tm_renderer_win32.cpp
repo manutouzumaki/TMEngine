@@ -67,6 +67,14 @@ struct TMRenderBatch {
     unsigned int used;
 };
 
+struct TMInstanceRenderer {
+    ID3D11InputLayout *layout;
+    ID3D11Buffer *vertBuffer;
+    ID3D11Buffer *instBuffer;
+    unsigned int instCount;
+    unsigned int instSize;
+};
+
 struct TMFramebuffer {
     unsigned int id;
 };
@@ -80,6 +88,7 @@ struct TMRenderer {
     TMMemoryPool* framebufferMemory;
     TMMemoryPool* shaderBuffersMemory;
     TMMemoryPool* renderBatchsMemory;
+    TMMemoryPool* instanceRendererMemory;
 
     ID3D11Device* device;
     ID3D11DeviceContext* deviceContext;
@@ -270,6 +279,7 @@ TMRenderer* TMRendererCreate(TMWindow *window) {
     renderer->framebufferMemory = TMMemoryPoolCreate(sizeof(TMFramebuffer), TM_RENDERER_MEMORY_BLOCK_SIZE);
     renderer->shaderBuffersMemory = TMMemoryPoolCreate(sizeof(TMShaderBuffer), TM_RENDERER_MEMORY_BLOCK_SIZE);
     renderer->renderBatchsMemory = TMMemoryPoolCreate(sizeof(TMRenderBatch), TM_RENDERER_MEMORY_BLOCK_SIZE);
+    renderer->instanceRendererMemory = TMMemoryPoolCreate(sizeof(TMInstanceRenderer), TM_RENDERER_MEMORY_BLOCK_SIZE);
 
     renderer->deviceContext->OMSetRenderTargets(1, &renderer->renderTargetView, renderer->depthStencilView);
     renderer->deviceContext->OMSetDepthStencilState(renderer->depthStencilOn, 1);
@@ -302,6 +312,7 @@ void TMRendererDestroy(TMRenderer* renderer) {
     TMMemoryPoolDestroy(renderer->framebufferMemory);
     TMMemoryPoolDestroy(renderer->shaderBuffersMemory);
     TMMemoryPoolDestroy(renderer->renderBatchsMemory);
+    TMMemoryPoolDestroy(renderer->instanceRendererMemory);
     free(renderer);
 }
 
@@ -781,7 +792,6 @@ TMRenderBatch *TMRendererRenderBatchCreate(TMRenderer *renderer, TMShader *shade
     renderBatch->size = size;
     renderBatch->used = 0;
 
-    // TODO: create the buffer
     renderBatch->bufferSizeInBytes = sizeof(TMBatchVertex)*6*size;
     D3D11_BUFFER_DESC vertexDesc;
     ZeroMemory(&vertexDesc, sizeof(vertexDesc));
@@ -816,6 +826,7 @@ TMRenderBatch *TMRendererRenderBatchCreate(TMRenderer *renderer, TMShader *shade
 }
 
 static void BatchQuadLocalToWorld(TMBatchVertex *quad, float x, float y, float z, float w, float h, float angle) {
+    // TODO: test the performance of this matrix multiplycation, maybe if fast to do it directly ...
     TMMat4 world = TMMat4Translate(x, y, z) * TMMat4RotateZ(angle) * TMMat4Scale(w, h, 1);
     for(int i = 0; i < 6; ++i) {
         quad[i].position = TMMat4TransformPoint(TMMat4Transposed(world), quad[i].position);
@@ -910,7 +921,7 @@ void TMRendererRenderBatchDestroy(TMRenderer *renderer, TMRenderBatch *renderBat
     TMMemoryPoolFree(renderer->renderBatchsMemory, (void *)renderBatch);
 }
 
-
+// TODO: find a better place to put this kind of functions ....
 float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight) {
     float width = (float)tileWidth / (float)texture->width;
     float height = (float)tileHeight / (float)texture->height;
@@ -940,4 +951,102 @@ float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight) {
         vy += height;
     }
     return uvs;
+}
+
+
+// TODO: for this is only to render quad (expand this in de future) ...
+
+TMInstanceRenderer *TMRendererInstanceRendererCreate(TMRenderer *renderer, TMShader *shader, unsigned int instCount, unsigned int instSize) {
+    TMInstanceRenderer *instanceRenderer = (TMInstanceRenderer *)TMMemoryPoolAlloc(renderer->instanceRendererMemory);
+
+    HRESULT result = {};
+
+    // create input layout.
+    D3D11_INPUT_ELEMENT_DESC inputLayoutDesc[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0,  0, D3D11_INPUT_PER_VERTEX_DATA,   0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 12, D3D11_INPUT_PER_VERTEX_DATA,   0},
+        {"WORLD"   , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,  0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+        {"WORLD"   , 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+        {"WORLD"   , 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+        {"WORLD"   , 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+        {"COLOR"   , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1}
+    };
+    int totalLayoutElements = ARRAY_LENGTH(inputLayoutDesc);
+    result = renderer->device->CreateInputLayout(inputLayoutDesc,
+        totalLayoutElements,
+        shader->vertexShaderCompiled->GetBufferPointer(),
+        shader->vertexShaderCompiled->GetBufferSize(),
+        &instanceRenderer->layout);
+
+    // create vertex buffer
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+    };
+
+    D3D11_SUBRESOURCE_DATA resourceData;
+    ZeroMemory(&resourceData, sizeof(resourceData));
+
+    D3D11_BUFFER_DESC vertexDesc;
+    ZeroMemory(&vertexDesc, sizeof(vertexDesc));
+    vertexDesc.Usage = D3D11_USAGE_DEFAULT;
+    vertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vertexDesc.ByteWidth = sizeof(TMBatchVertex) * 6;
+    resourceData.pSysMem = quad;
+    result = renderer->device->CreateBuffer(&vertexDesc, &resourceData, &instanceRenderer->vertBuffer);
+    if (FAILED(result)) {
+        printf("Error: failed vertex buffer creation ...\n");
+        return NULL;
+    }
+
+    // create instance buffer
+    D3D11_BUFFER_DESC instanceBufferDesc;
+    ZeroMemory(&instanceBufferDesc, sizeof(instanceBufferDesc));
+    instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    instanceBufferDesc.ByteWidth = instCount*instSize;
+    instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    instanceBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    instanceBufferDesc.MiscFlags = 0;
+    instanceBufferDesc.StructureByteStride = 0;
+
+    result = renderer->device->CreateBuffer(&instanceBufferDesc, 0, &instanceRenderer->instBuffer);
+    if (FAILED(result)) {
+        printf("Error: failed instance buffer creation ...\n");
+        return NULL;
+    }
+
+    instanceRenderer->instCount = instCount;
+    instanceRenderer->instSize = instSize;
+
+    return instanceRenderer;
+}
+
+void TMRendererInstanceRendererDraw(TMRenderer *renderer, TMInstanceRenderer *instanceRenderer, void *buffer) {
+
+    D3D11_MAPPED_SUBRESOURCE bufferData;
+    ZeroMemory(&bufferData, sizeof(bufferData));
+    renderer->deviceContext->Map(instanceRenderer->instBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &bufferData);
+    memcpy(bufferData.pData, buffer, instanceRenderer->instCount*instanceRenderer->instSize);
+    renderer->deviceContext->Unmap(instanceRenderer->instBuffer, 0);
+
+    unsigned int stride[2] = {sizeof(TMBatchVertex), instanceRenderer->instSize};
+    unsigned int offset[2] = {0, 0};
+    ID3D11Buffer *buffers[2] = {instanceRenderer->vertBuffer, instanceRenderer->instBuffer};
+    renderer->deviceContext->IASetInputLayout(instanceRenderer->layout);
+    renderer->deviceContext->IASetVertexBuffers(0, 2, buffers, stride, offset);
+    renderer->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    renderer->deviceContext->DrawInstanced(6, instanceRenderer->instCount, 0, 0);
+
+}
+
+void TMRendererInstanceRendererDestroy(TMRenderer *renderer, TMInstanceRenderer *instanceRenderer) {
+    if(instanceRenderer->layout) instanceRenderer->layout->Release();
+    if(instanceRenderer->vertBuffer) instanceRenderer->vertBuffer->Release();
+    if(instanceRenderer->instBuffer) instanceRenderer->instBuffer->Release();
+    TMMemoryPoolFree(renderer->instanceRendererMemory, (void *)instanceRenderer);
 }

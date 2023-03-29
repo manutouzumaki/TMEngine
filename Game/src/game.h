@@ -10,6 +10,7 @@ struct GameState {
     TMShader *shader;
     TMShader *cloneShader;
     TMShader *batchShader;
+    TMShader *instShader;
 
     TMBuffer *buffer;
     TMBuffer *cubeBuffer;
@@ -24,6 +25,8 @@ struct GameState {
     
     TMRenderBatch *renderBatch;
     float *uvs;
+
+    TMInstanceRenderer *instanceRenderer;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);
