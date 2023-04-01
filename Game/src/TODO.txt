@@ -1,0 +1,64 @@
+###################################################################################################################################
+### TODO: tmLibs and Game, develop by Manuel Cabrerizo 2023
+###################################################################################################################################
+###################################################################################################################################
+###
+###
+###     tmLibs is a cross platform (win32/macos) dinamyc library for game development
+###     it have many functions that work in a framework like way to help you develop
+###     a game, for example (platform layer, renderer, input,  parsers, files)
+###
+###
+###################################################################################################################################
+### GAME: 
+###################################################################################################################################
+### - implemet a minimal level base platformer (design the game loop for levels and menus from the start)
+### - deltaTime and fix timestep (FixUpdate, PreUpdate, PostUpdate, etc ...)
+### -
+### -
+### -
+### -
+### -
+###################################################################################################################################
+### tmLibs: 
+###################################################################################################################################
+### - fix matrix to use only row mayor or colum mayor, bu not both
+### - port the batch renderer to macos
+### - port the instance renderer to macos
+### - add textures to instance renderer
+### - add sound system
+### - add write files support (binary, json, xml)
+### - add animations 2d and 3d
+### - debug visualisation tool, for rays and bounding volumes (this functions should be define only on debug builds)
+### - collision detection library
+### - physic and collision resolution library
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+### -
+###################################################################################################################################
+### tym studios @copyright
+###################################################################################################################################
+###################################################################################################################################

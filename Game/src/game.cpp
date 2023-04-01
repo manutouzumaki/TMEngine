@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <memory.h>
+#include <math.h>
 
 struct Matrices {
     TMMat4 proj;
@@ -56,7 +57,7 @@ static const char *StringToNullTerString(const char *c, size_t size) {
 void GetAttributeAtIndex(TMJsonObject *root, unsigned int i, void **data, size_t *dataSize, void *srcData) {
     TMJsonObject *accessors   = TMJsonFindChildByName(root, "accessors");
     TMJsonObject *bufferViews = TMJsonFindChildByName(root, "bufferViews");
-    TMJsonObject *buffers     = TMJsonFindChildByName(root, "buffers");
+    // TMJsonObject *buffers     = TMJsonFindChildByName(root, "buffers");
 
     TMJsonObject *accessor = accessors->objects + i;
 
@@ -174,7 +175,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMFileClose(&cloneData);
     TMJsonClose(clone);
 
-    TMRendererFaceCulling(state->renderer, false, TM_CULL_BACK);
+    TMRendererFaceCulling(state->renderer, true, TM_CULL_BACK);
    
     Matrices mats{};
     state->shaderBuffer = TMRendererShaderBufferCreate(state->renderer, &mats, sizeof(Matrices), 0);
@@ -195,6 +196,7 @@ void GameRender(GameState *state) {
     
     float width = (float)TMRendererGetWidth(state->renderer);
     float height = (float)TMRendererGetHeight(state->renderer);
+    static float angle = 0.0f;
 
     // TODO: improve the shaderBuffer upgrate API ...
 
@@ -218,7 +220,6 @@ void GameRender(GameState *state) {
     TMRendererDepthTestEnable(state->renderer);
 
     // Render Clone
-    static float angle = 0.0f;
     TMRendererTextureBind(state->renderer, state->cloneTexture, state->cloneShader, "moon", 0);
     mats.proj = TMMat4Perspective(60.0f, width/height, 0.01f, 100.0f);
     mats.world = TMMat4Translate(0.0f, -2.0f, 5.0f) * TMMat4RotateY(angle) * TMMat4Scale(1.0f, 1.0f, 1.0f); 
@@ -239,10 +240,10 @@ void GameRender(GameState *state) {
 
     // instance rendering test
     WorldColorInstance instBuffer[4] = {};
-    instBuffer[0].world = TMMat4Translate(-width*0.5f, 0, 0) * TMMat4Scale(100, 50, 1);
+    instBuffer[0].world = TMMat4Translate(sinf(angle)*300, 0, 0) * TMMat4Scale(100, 50, 1);
     instBuffer[0].color = {1, 0, 0, 1};
     instBuffer[1].world = TMMat4Translate(0, 200, 0) * TMMat4Scale(200, 200, 1);
-    instBuffer[1].color = {0, 1, 0, 1};
+    instBuffer[1].color = {0.5, (sinf(3*angle) + 1)*0.5f, (cosf(angle) + 1)*0.5f, 1};
     instBuffer[2].world = TMMat4Translate(0, -200, 0) * TMMat4Scale(100, 50, 1);
     instBuffer[2].color = {0, 0, 1, 1};
     instBuffer[3].world = TMMat4Translate(width*0.5f, 0, 0) * TMMat4Scale(100, 300, 1);

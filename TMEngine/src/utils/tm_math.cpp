@@ -396,6 +396,30 @@ TMMat4 operator*(TMMat4 m, float f) {
     a.v[3 * 4 + aRow] * b.v[bCol * 4 + 3]
 
 TMMat4 operator*(TMMat4 a, TMMat4 b) {
+    TMMat4 result {};
+#ifdef TM_WIN32
+    for(int row = 0; row < 4; ++row) {
+        for(int col = 0; col < 4; ++col) {
+            result.v[row * 4 + col] =
+                a.v[row * 4 + 0] * b.v[0 * 4 + col] +
+                a.v[row * 4 + 1] * b.v[1 * 4 + col] +
+                a.v[row * 4 + 2] * b.v[2 * 4 + col] +
+                a.v[row * 4 + 3] * b.v[3 * 4 + col];
+        }
+    }
+#elif TM_MACOS
+    for(int col = 0; col < 4; ++col) {
+        for(int row = 0; row < 4; ++row) {
+            result.v[row * 4 + col] =
+                a.v[0 * 4 + col] * b.v[row * 4 + 0] +
+                a.v[1 * 4 + col] * b.v[row * 4 + 1] +
+                a.v[2 * 4 + col] * b.v[row * 4 + 2] +
+                a.v[3 * 4 + col] * b.v[row * 4 + 3];
+        }
+    }
+#endif
+    return result;
+#if 0
 #ifdef TM_MACOS
     return {
 		M4D(0, 0), M4D(1, 0), M4D(2, 0), M4D(3, 0), // Column 0
@@ -423,6 +447,7 @@ TMMat4 operator*(TMMat4 a, TMMat4 b) {
         a.m30 * b.m03 + a.m31 * b.m13 + a.m32 * b.m23 + a.m33 * b.m33
     };
 #endif
+#endif
 }
 
 #define M4V4D(mRow, x, y, z, w) \
@@ -432,34 +457,68 @@ TMMat4 operator*(TMMat4 a, TMMat4 b) {
     w * m.v[3 * 4 + mRow]
 
 TMVec4 operator*(TMMat4 m, TMVec4 v) {
-	return {
+#if 0
+    return {
 		M4V4D(0, v.x, v.y, v.z, v.w),
 		M4V4D(1, v.x, v.y, v.z, v.w),
 		M4V4D(2, v.x, v.y, v.z, v.w),
 		M4V4D(3, v.x, v.y, v.z, v.w)
     };
+#endif
+    TMVec4 result{};
+#ifdef TM_WIN32
+    for(int row = 0; row < 4; ++row) {
+        result.v[row] = m.v[row * 4 + 0] * v.x + m.v[row * 4 + 1] * v.y + m.v[row * 4 + 2] * v.z + m.v[row * 4 + 3] * v.w;
+    }
+#elif TM_MACOS
+    for(int col = 0; col < 4; ++col) {
+        result.v[col] = m.v[0 * 4 + col] * v.x + m.v[1 * 4 + col] * v.y + m.v[2 * 4 + col] * v.z + m.v[3 * 4 + col] * v.w;
+    }
+#endif
+    return result;
 }
 
 // TODO: fix this to work on Opengl and DirectX
 TMVec3 TMMat4TransformVector(TMMat4 m, TMVec3 v) {
+    TMVec4 vec4 = {v.x, v.y, v.z, 0.0f};
+    vec4 = m * vec4;
+    TMVec3 result = {vec4.x, vec4.y, vec4.z};
+    return result;
+#if 0
 	return {
 		M4V4D(0, v.x, v.y, v.z, 0.0f),
 		M4V4D(1, v.x, v.y, v.z, 0.0f),
 		M4V4D(2, v.x, v.y, v.z, 0.0f)
     };
+#endif
 }
 
 // TODO: fix this to work on Opengl and DirectX
 TMVec3 TMMat4TransformPoint(TMMat4 m, TMVec3 v) {
+    TMVec4 vec4 = {v.x, v.y, v.z, 1.0f};
+    vec4 = m * vec4;
+    TMVec3 result = {vec4.x, vec4.y, vec4.z};
+    return result;
+#if 0
 	return {
 		M4V4D(0, v.x, v.y, v.z, 1.0f),
 		M4V4D(1, v.x, v.y, v.z, 1.0f),
 		M4V4D(2, v.x, v.y, v.z, 1.0f)
     };
+#endif
 }
 
 // TODO: fix this to work on Opengl and DirectX
 TMVec3 TMMat4TransformPoint(TMMat4 m, TMVec3 v, float *w) {
+    float _w = *w;
+    TMVec4 vec4 = {v.x, v.y, v.z, _w};
+    vec4 = m * vec4;
+    *w = vec4.w;
+    TMVec3 result = {vec4.x, vec4.y, vec4.z};
+    return result;
+    
+
+#if 0
 	float _w = *w;
 	*w = M4V4D(3, v.x, v.y, v.z, _w);
 	return {
@@ -467,6 +526,7 @@ TMVec3 TMMat4TransformPoint(TMMat4 m, TMVec3 v, float *w) {
 		M4V4D(1, v.x, v.y, v.z, _w),
 		M4V4D(2, v.x, v.y, v.z, _w)
     };
+#endif
 }
 
 #define M4SWAP(x, y) \

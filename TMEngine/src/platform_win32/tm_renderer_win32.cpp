@@ -829,7 +829,7 @@ static void BatchQuadLocalToWorld(TMBatchVertex *quad, float x, float y, float z
     // TODO: test the performance of this matrix multiplycation, maybe if fast to do it directly ...
     TMMat4 world = TMMat4Translate(x, y, z) * TMMat4RotateZ(angle) * TMMat4Scale(w, h, 1);
     for(int i = 0; i < 6; ++i) {
-        quad[i].position = TMMat4TransformPoint(TMMat4Transposed(world), quad[i].position);
+        quad[i].position = TMMat4TransformPoint(world, quad[i].position);
     }
 }
 
