@@ -59,6 +59,27 @@ struct TMFramebuffer {
     unsigned int id;
 };
 
+struct TMRenderBatch {
+    TMRenderer *renderer;
+    TMShader *shader;
+    TMTexture *texture;
+
+    unsigned int vao;
+    unsigned int vbo;
+    TMBatchVertex *batchBuffer;
+    unsigned int bufferSizeInBytes;
+    unsigned int size;
+    unsigned int used;
+};
+
+struct TMInstanceRenderer {
+    unsigned int vao;
+    unsigned int vertBuffer;
+    unsigned int instBuffer;
+    unsigned int instCount;
+    unsigned int instSize;
+};
+
 struct TMRenderer {
     int width;
     int height;
@@ -67,6 +88,8 @@ struct TMRenderer {
     TMMemoryPool *shadersMemory;
     TMMemoryPool *framebufferMemory;
     TMMemoryPool* shaderBuffersMemory;
+    TMMemoryPool* renderBatchsMemory;
+    TMMemoryPool* instanceRendererMemory;
 };
 
 
@@ -77,6 +100,10 @@ struct TMRenderer {
     renderer->shadersMemory = TMMemoryPoolCreate(sizeof(TMShader), TM_RENDERER_MEMORY_BLOCK_SIZE);
     renderer->framebufferMemory = TMMemoryPoolCreate(sizeof(TMFramebuffer), TM_RENDERER_MEMORY_BLOCK_SIZE);
     renderer->shaderBuffersMemory = TMMemoryPoolCreate(sizeof(TMShaderBuffer), TM_RENDERER_MEMORY_BLOCK_SIZE);
+    renderer->renderBatchsMemory = TMMemoryPoolCreate(sizeof(TMRenderBatch), TM_RENDERER_MEMORY_BLOCK_SIZE);
+    renderer->instanceRendererMemory = TMMemoryPoolCreate(sizeof(TMInstanceRenderer), TM_RENDERER_MEMORY_BLOCK_SIZE);
+
+
     
     renderer->width = window->width;
     renderer->height = window->height;
@@ -95,6 +122,8 @@ struct TMRenderer {
     TMMemoryPoolDestroy(renderer->shadersMemory);
     TMMemoryPoolDestroy(renderer->framebufferMemory);
     TMMemoryPoolDestroy(renderer->shaderBuffersMemory);
+    TMMemoryPoolDestroy(renderer->renderBatchsMemory);
+    TMMemoryPoolDestroy(renderer->instanceRendererMemory);
     free(renderer);
 }
 
@@ -401,8 +430,8 @@ void TMRendererShaderBufferUpdate(TMRenderer* renderer, TMShaderBuffer* shaderBu
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
      
     unsigned int format;
     switch(nrChannels) {
@@ -470,4 +499,243 @@ void TMRendererTextureBind(TMRenderer *renderer, TMTexture *texture, TMShader *s
 
  void TMRendererFramebufferDestroy(TMRenderer *renderer, TMFramebuffer *framebuffer) {
     TMMemoryPoolFree(renderer->framebufferMemory, (void *)framebuffer);
+}
+
+TMRenderBatch *TMRendererRenderBatchCreate(TMRenderer *renderer, TMShader *shader, TMTexture *texture, size_t size) {
+    TMRenderBatch *renderBatch = (TMRenderBatch *)TMMemoryPoolAlloc(renderer->renderBatchsMemory);
+
+    renderBatch->renderer = renderer;
+    renderBatch->shader = shader;
+    renderBatch->texture = texture;
+    renderBatch->size = size;
+    renderBatch->used = 0;
+    renderBatch->bufferSizeInBytes = sizeof(TMBatchVertex)*6*size;
+
+    unsigned int VAO, VBO;
+    
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, renderBatch->bufferSizeInBytes, NULL, GL_DYNAMIC_DRAW);
+    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TMBatchVertex), (void *)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TMBatchVertex), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    renderBatch->vao = VAO;
+    renderBatch->vbo = VBO;
+
+    renderBatch->batchBuffer = (TMBatchVertex *)malloc(renderBatch->bufferSizeInBytes);
+    memset(renderBatch->batchBuffer, 0, renderBatch->bufferSizeInBytes);
+
+    return renderBatch;
+}
+
+static void BatchQuadLocalToWorld(TMBatchVertex *quad, float x, float y, float z, float w, float h, float angle) {
+    // TODO: test the performance of this matrix multiplycation, maybe if fast to do it directly ...
+    TMMat4 world = TMMat4Translate(x, y, z) * TMMat4RotateZ(angle) * TMMat4Scale(w, h, 1);
+    for(int i = 0; i < 6; ++i) {
+        quad[i].position = TMMat4TransformPoint(world, quad[i].position);
+    }
+}
+
+static void BatchQuadHandleUVs(TMBatchVertex *quad, int sprite, float *uvs) {
+   int uvsIndex = sprite * 4;
+   float u0 = uvs[uvsIndex + 0]; 
+   float v0 = uvs[uvsIndex + 1];
+   float u1 = uvs[uvsIndex + 2];
+   float v1 = uvs[uvsIndex + 3];
+   quad[0].uvs = {u0, v0};
+   quad[1].uvs = {u1, v0};
+   quad[2].uvs = {u0, v1};
+   quad[3].uvs = {u0, v1};
+   quad[4].uvs = {u1, v0};
+   quad[5].uvs = {u1, v1};
+}
+
+static void AddQuadToBatchBuffer(TMRenderBatch *renderBatch, TMBatchVertex *quad) {
+    assert(renderBatch->used < renderBatch->size);
+    TMBatchVertex *vertex = renderBatch->batchBuffer + (renderBatch->used*6);
+    memcpy(vertex, quad, sizeof(TMBatchVertex)*6);
+    ++renderBatch->used;
+}
+
+void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                          float w, float h, float angle) {
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+    };
+    BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
+
+    if(renderBatch->used >= renderBatch->size) {
+        TMRendererRenderBatchDraw(renderBatch);
+    }
+    AddQuadToBatchBuffer(renderBatch, quad);
+}
+
+void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                          float w, float h, float angle,
+                                                          int sprite, float *uvs) {
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+    };
+    BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
+    BatchQuadHandleUVs(quad, sprite, uvs);
+
+    if(renderBatch->used >= renderBatch->size) {
+        TMRendererRenderBatchDraw(renderBatch);
+    }
+    AddQuadToBatchBuffer(renderBatch, quad);
+}
+
+void TMRendererRenderBatchDraw(TMRenderBatch *renderBatch) {
+    TMRenderer *renderer = renderBatch->renderer;
+    
+    glBindVertexArray(renderBatch->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, renderBatch->vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, renderBatch->used*sizeof(TMBatchVertex)*6, renderBatch->batchBuffer);    
+
+
+    TMRendererBindShader(renderer, renderBatch->shader);
+    TMRendererTextureBind(renderer, renderBatch->texture, renderBatch->shader, "uTexture", 0);
+    glDrawArrays(GL_TRIANGLES, 0, renderBatch->used*6);
+
+
+    renderBatch->used = 0;
+
+}
+
+void TMRendererRenderBatchDestroy(TMRenderer *renderer, TMRenderBatch *renderBatch) {
+    if(renderBatch->batchBuffer) free(renderBatch->batchBuffer);
+    if(glIsBuffer(renderBatch->vbo))     glDeleteBuffers(1, &renderBatch->vbo);
+    if(glIsVertexArray(renderBatch->vao)) glDeleteVertexArrays(1, &renderBatch->vao);
+    TMMemoryPoolFree(renderer->renderBatchsMemory, (void *)renderBatch);
+}
+
+// TODO: find a better place to put this kind of functions ....
+float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight) {
+    float width = (float)tileWidth / (float)texture->width;
+    float height = (float)tileHeight / (float)texture->height;
+    int cols = texture->width / tileWidth;
+    int rows = texture->height / tileHeight;
+    float *uvs = (float *)malloc(cols * rows * 4 * sizeof(float));
+    
+    float ux = 0.0f;
+    float uy = 0.0f;
+    float vx = width;
+    float vy = height;
+    
+    float *uvsPtr = uvs;
+    for(int j = 0; j < rows; ++j) {
+        for(int i = 0; i < cols; ++i) {
+            *uvsPtr++ = ux;
+            *uvsPtr++ = uy;
+            *uvsPtr++ = vx;
+            *uvsPtr++ = vy;
+
+            ux += width;
+            vx += width;
+        }
+        ux = 0;
+        vx = width;
+        uy += height;
+        vy += height;
+    }
+    return uvs;
+}
+
+
+TMInstanceRenderer *TMRendererInstanceRendererCreate(TMRenderer *renderer, TMShader *shader, unsigned int instCount, unsigned int instSize) {
+    TMInstanceRenderer *instanceRenderer = (TMInstanceRenderer *)TMMemoryPoolAlloc(renderer->instanceRendererMemory);
+
+    // create vertex buffer
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+    };
+
+    unsigned int VAO, vertVBO, instVBO;
+    
+
+
+    // create instance buffer
+    glGenBuffers(1, &instVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instVBO);
+    glBufferData(GL_ARRAY_BUFFER, instCount*instSize, NULL, GL_STATIC_DRAW);
+
+
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    // create vertex buffer
+    glGenBuffers(1, &vertVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, vertVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(TMBatchVertex)*6, quad, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TMBatchVertex), (void *)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TMBatchVertex), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, instVBO);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, instSize, (void *)0);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, instSize, (void *)(4 * sizeof(float)));
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, instSize, (void *)(8 * sizeof(float)));
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, instSize, (void *)(12 * sizeof(float)));
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, instSize, (void *)(16 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
+    glEnableVertexAttribArray(5);
+    glEnableVertexAttribArray(6);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glVertexAttribDivisor(2, 1);
+    glVertexAttribDivisor(3, 1);
+    glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
+    glVertexAttribDivisor(6, 1);
+
+    instanceRenderer->vao = VAO;
+    instanceRenderer->vertBuffer = vertVBO;
+    instanceRenderer->instBuffer = instVBO;
+    instanceRenderer->instCount = instCount;
+    instanceRenderer->instSize = instSize;
+
+    return instanceRenderer;
+}
+
+void TMRendererInstanceRendererDraw(TMRenderer *renderer, TMInstanceRenderer *instanceRenderer, void *buffer) {
+    
+    glBindBuffer(GL_ARRAY_BUFFER, instanceRenderer->instBuffer);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, instanceRenderer->instCount*instanceRenderer->instSize, buffer);    
+
+    glBindVertexArray(instanceRenderer->vao);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, instanceRenderer->instCount);  
+
+
+}
+
+void TMRendererInstanceRendererDestroy(TMRenderer *renderer, TMInstanceRenderer *instanceRenderer) {
+    if(glIsBuffer(instanceRenderer->vertBuffer)) glDeleteBuffers(1, &instanceRenderer->vertBuffer);
+    if(glIsBuffer(instanceRenderer->instBuffer)) glDeleteBuffers(1, &instanceRenderer->instBuffer);
+    if(glIsVertexArray(instanceRenderer->vao)) glDeleteVertexArrays(1, &instanceRenderer->vao);
+    TMMemoryPoolFree(renderer->instanceRendererMemory, (void *)instanceRenderer);
 }

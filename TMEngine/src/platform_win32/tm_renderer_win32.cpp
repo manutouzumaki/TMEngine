@@ -11,11 +11,6 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
-struct TMBatchVertex {
-    TMVec3 position;
-    TMVec2 uvs;
-};
-
 // TODO: try to remove this ...
 struct TMWindow {
     HWND hwndWindow;

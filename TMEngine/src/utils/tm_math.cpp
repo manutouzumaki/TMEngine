@@ -389,12 +389,6 @@ TMMat4 operator*(TMMat4 m, float f) {
     };
 }
 
-#define M4D(aRow, bCol) \
-    a.v[0 * 4 + aRow] * b.v[bCol * 4 + 0] + \
-    a.v[1 * 4 + aRow] * b.v[bCol * 4 + 1] + \
-    a.v[2 * 4 + aRow] * b.v[bCol * 4 + 2] + \
-    a.v[3 * 4 + aRow] * b.v[bCol * 4 + 3]
-
 TMMat4 operator*(TMMat4 a, TMMat4 b) {
     TMMat4 result {};
 #ifdef TM_WIN32
@@ -419,52 +413,9 @@ TMMat4 operator*(TMMat4 a, TMMat4 b) {
     }
 #endif
     return result;
-#if 0
-#ifdef TM_MACOS
-    return {
-		M4D(0, 0), M4D(1, 0), M4D(2, 0), M4D(3, 0), // Column 0
-		M4D(0, 1), M4D(1, 1), M4D(2, 1), M4D(3, 1), // Column 1
-		M4D(0, 2), M4D(1, 2), M4D(2, 2), M4D(3, 2), // Column 2
-		M4D(0, 3), M4D(1, 3), M4D(2, 3), M4D(3, 3)  // Column 3
-    };
-#elif TM_WIN32
-    return {
-        a.m00 * b.m00 + a.m01 * b.m10 + a.m02 * b.m20 + a.m03 * b.m30, 
-        a.m00 * b.m01 + a.m01 * b.m11 + a.m02 * b.m21 + a.m03 * b.m31, 
-        a.m00 * b.m02 + a.m01 * b.m12 + a.m02 * b.m22 + a.m03 * b.m32,
-        a.m00 * b.m03 + a.m01 * b.m13 + a.m02 * b.m23 + a.m03 * b.m33,
-        a.m10 * b.m00 + a.m11 * b.m10 + a.m12 * b.m20 + a.m13 * b.m30, 
-        a.m10 * b.m01 + a.m11 * b.m11 + a.m12 * b.m21 + a.m13 * b.m31, 
-        a.m10 * b.m02 + a.m11 * b.m12 + a.m12 * b.m22 + a.m13 * b.m32,
-        a.m10 * b.m03 + a.m11 * b.m13 + a.m12 * b.m23 + a.m13 * b.m33,
-        a.m20 * b.m00 + a.m21 * b.m10 + a.m22 * b.m20 + a.m23 * b.m30, 
-        a.m20 * b.m01 + a.m21 * b.m11 + a.m22 * b.m21 + a.m23 * b.m31, 
-        a.m20 * b.m02 + a.m21 * b.m12 + a.m22 * b.m22 + a.m23 * b.m32,
-        a.m20 * b.m03 + a.m21 * b.m13 + a.m22 * b.m23 + a.m23 * b.m33,
-        a.m30 * b.m00 + a.m31 * b.m10 + a.m32 * b.m20 + a.m33 * b.m30, 
-        a.m30 * b.m01 + a.m31 * b.m11 + a.m32 * b.m21 + a.m33 * b.m31, 
-        a.m30 * b.m02 + a.m31 * b.m12 + a.m32 * b.m22 + a.m33 * b.m32,
-        a.m30 * b.m03 + a.m31 * b.m13 + a.m32 * b.m23 + a.m33 * b.m33
-    };
-#endif
-#endif
 }
 
-#define M4V4D(mRow, x, y, z, w) \
-    x * m.v[0 * 4 + mRow] + \
-    y * m.v[1 * 4 + mRow] + \
-    z * m.v[2 * 4 + mRow] + \
-    w * m.v[3 * 4 + mRow]
-
 TMVec4 operator*(TMMat4 m, TMVec4 v) {
-#if 0
-    return {
-		M4V4D(0, v.x, v.y, v.z, v.w),
-		M4V4D(1, v.x, v.y, v.z, v.w),
-		M4V4D(2, v.x, v.y, v.z, v.w),
-		M4V4D(3, v.x, v.y, v.z, v.w)
-    };
-#endif
     TMVec4 result{};
 #ifdef TM_WIN32
     for(int row = 0; row < 4; ++row) {
@@ -484,13 +435,6 @@ TMVec3 TMMat4TransformVector(TMMat4 m, TMVec3 v) {
     vec4 = m * vec4;
     TMVec3 result = {vec4.x, vec4.y, vec4.z};
     return result;
-#if 0
-	return {
-		M4V4D(0, v.x, v.y, v.z, 0.0f),
-		M4V4D(1, v.x, v.y, v.z, 0.0f),
-		M4V4D(2, v.x, v.y, v.z, 0.0f)
-    };
-#endif
 }
 
 // TODO: fix this to work on Opengl and DirectX
@@ -499,13 +443,6 @@ TMVec3 TMMat4TransformPoint(TMMat4 m, TMVec3 v) {
     vec4 = m * vec4;
     TMVec3 result = {vec4.x, vec4.y, vec4.z};
     return result;
-#if 0
-	return {
-		M4V4D(0, v.x, v.y, v.z, 1.0f),
-		M4V4D(1, v.x, v.y, v.z, 1.0f),
-		M4V4D(2, v.x, v.y, v.z, 1.0f)
-    };
-#endif
 }
 
 // TODO: fix this to work on Opengl and DirectX
@@ -516,17 +453,6 @@ TMVec3 TMMat4TransformPoint(TMMat4 m, TMVec3 v, float *w) {
     *w = vec4.w;
     TMVec3 result = {vec4.x, vec4.y, vec4.z};
     return result;
-    
-
-#if 0
-	float _w = *w;
-	*w = M4V4D(3, v.x, v.y, v.z, _w);
-	return {
-		M4V4D(0, v.x, v.y, v.z, _w),
-		M4V4D(1, v.x, v.y, v.z, _w),
-		M4V4D(2, v.x, v.y, v.z, _w)
-    };
-#endif
 }
 
 #define M4SWAP(x, y) \
@@ -676,13 +602,13 @@ TMMat4 TMMat4Identity() {
 TMMat4 TMMat4LookAt(TMVec3 position, TMVec3 target, TMVec3 up) {
 #ifdef TM_MACOS
     // Remember, forward is negative z
-    TMVec3 f = TMVec3Normalized(target - position) * -1.0f;
-    TMVec3 r = TMVec3Cross(up, f); // Right handed
+    TMVec3 f = TMVec3Normalized(position - target);
+    TMVec3 r = TMVec3Cross(f, up);
     if (r == TMVec3{0, 0, 0}) {
         return {}; // Error
     }
     TMVec3Normalized(r);
-    TMVec3 u = TMVec3Normalized(TMVec3Cross(f, r)); // Right handed
+    TMVec3 u = TMVec3Normalized(TMVec3Cross(r, f));
     TMVec3 t = TMVec3{
             -TMVec3Dot(r, position),
             -TMVec3Dot(u, position),

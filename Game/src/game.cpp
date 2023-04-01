@@ -99,6 +99,12 @@ void GameInitialize(GameState *state, TMWindow *window) {
     state->cloneShader = TMRendererShaderCreate(state->renderer,
                                                 "../../assets/shaders/gltfVert.glsl",
                                                 "../../assets/shaders/gltfFrag.glsl");
+    state->batchShader = TMRendererShaderCreate(state->renderer,
+                                                "../../assets/shaders/batchVert.glsl",
+                                                "../../assets/shaders/batchFrag.glsl");
+    state->instShader = TMRendererShaderCreate(state->renderer,
+                                               "../../assets/shaders/instVert.glsl",
+                                               "../../assets/shaders/instFrag.glsl");
 #elif TM_WIN32
     state->shader = TMRendererShaderCreate(state->renderer,
                                            "../../assets/shaders/vert.hlsl",
@@ -175,7 +181,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMFileClose(&cloneData);
     TMJsonClose(clone);
 
-    TMRendererFaceCulling(state->renderer, true, TM_CULL_BACK);
+    TMRendererFaceCulling(state->renderer, false, TM_CULL_BACK);
    
     Matrices mats{};
     state->shaderBuffer = TMRendererShaderBufferCreate(state->renderer, &mats, sizeof(Matrices), 0);
@@ -192,11 +198,13 @@ void GameUpdate(GameState *state) {
 }
 
 void GameRender(GameState *state) {
+
     TMRendererClear(state->renderer, 1.0f, 0.0f, 0.0f, 1.0f, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
     
     float width = (float)TMRendererGetWidth(state->renderer);
     float height = (float)TMRendererGetHeight(state->renderer);
     static float angle = 0.0f;
+    angle += 0.02f;
 
     // TODO: improve the shaderBuffer upgrate API ...
 
@@ -222,10 +230,9 @@ void GameRender(GameState *state) {
     // Render Clone
     TMRendererTextureBind(state->renderer, state->cloneTexture, state->cloneShader, "moon", 0);
     mats.proj = TMMat4Perspective(60.0f, width/height, 0.01f, 100.0f);
-    mats.world = TMMat4Translate(0.0f, -2.0f, 5.0f) * TMMat4RotateY(angle) * TMMat4Scale(1.0f, 1.0f, 1.0f); 
+    mats.world = TMMat4Translate(0.0f, -2.0f, 5.0f) * TMMat4Scale(1.0f, 1.0f, 1.0f); 
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
     TMRendererDrawBufferElements(state->renderer, state->cloneBuffer);
-    angle += 0.02f;
 
     TMRendererDepthTestDisable(state->renderer);
 

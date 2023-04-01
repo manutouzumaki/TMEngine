@@ -93,21 +93,6 @@ struct TMMat3 {
 			/* column 2 */float yx; float yy; float yz;
 			/* column 3 */float zx; float zy; float zz;
 		};
-		struct {
-			float c0r0; float c0r1; float c0r2;
-			float c1r0; float c1r1; float c1r2;
-			float c2r0; float c2r1; float c2r2;
-		};
-		struct {
-			float r0c0; float r1c0; float r2c0;
-			float r0c1; float r1c1; float r2c1;
-			float r0c2; float r1c2; float r2c2;
-		};
-        struct {
-            float m00; float m01; float m02;
-            float m10; float m11; float m12;
-            float m20; float m21; float m22;
-        };
     };
 };
 
@@ -127,30 +112,6 @@ struct TMMat4 {
 			/* column 3 */float zx; float zy; float zz; float zw;
 			/* column 4 */float tx; float ty; float tz; float tw;
 		};
-		struct {
-			float c0r0; float c0r1; float c0r2; float c0r3;
-			float c1r0; float c1r1; float c1r2; float c1r3;
-			float c2r0; float c2r1; float c2r2; float c2r3;
-			float c3r0; float c3r1; float c3r2; float c3r3;
-		};
-		struct {
-			float r0c0; float r1c0; float r2c0; float r3c0;
-			float r0c1; float r1c1; float r2c1; float r3c1;
-			float r0c2; float r1c2; float r2c2; float r3c2;
-			float r0c3; float r1c3; float r2c3; float r3c3;
-		};
-
-        struct {
-            float m00; float m01; float m02; float m03;
-            float m10; float m11; float m12; float m13;
-            float m20; float m21; float m22; float m23;
-            float m30; float m31; float m32; float m33;
-        };
-
-//        a.m00 a.m01 a.m02 a.m03       b.m00 b.m01 b.m02 b.m03
-//        a.m10 a.m11 a.m12 a.m13   x   b.m10 b.m11 b.m12 b.m13
-//        a.m20 a.m21 a.m22 a.m23       b.m20 b.m21 b.m22 b.m23
-//        a.m30 a.m31 a.m32 a.m33       b.m30 b.m31 b.m32 b.m33
     };
 };
 

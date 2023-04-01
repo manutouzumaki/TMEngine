@@ -30,6 +30,11 @@ struct TMVertex {
     TMVec3 normal;
 };
 
+struct TMBatchVertex {
+    TMVec3 position;
+    TMVec2 uvs;
+};
+
 TM_EXPORT TMRenderer *TMRendererCreate(TMWindow *window);
 TM_EXPORT void TMRendererDestroy(TMRenderer *renderer);
 TM_EXPORT void TMRendererDepthTestEnable(TMRenderer* renderer);
