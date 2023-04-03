@@ -21,6 +21,7 @@ struct Matrices {
 struct WorldColorInstance {
     TMMat4 world;
     TMVec4 color;
+    TMVec4 uvs;
 };
 
 static float StringToFloat(const char *c, size_t size) {
@@ -193,8 +194,15 @@ void GameInitialize(GameState *state, TMWindow *window) {
     state->instanceRenderer = TMRendererInstanceRendererCreate(state->renderer, state->instShader, 4, sizeof(WorldColorInstance));
 }
 
-void GameUpdate(GameState *state) {
+void GameUpdate(GameState *state, float dt) {
 
+}
+
+void GameFixUpdate(GameState *state, float dt) {
+
+}
+
+void GamePostUpdate(GameState *state, float t) {
 }
 
 void GameRender(GameState *state) {
@@ -248,13 +256,17 @@ void GameRender(GameState *state) {
     // instance rendering test
     WorldColorInstance instBuffer[4] = {};
     instBuffer[0].world = TMMat4Translate(sinf(angle)*300, 0, 0) * TMMat4Scale(100, 50, 1);
-    instBuffer[0].color = {1, 0, 0, 1};
+    instBuffer[0].color = {1, 0.8, 0.8, 1};
+    instBuffer[0].uvs = {state->uvs[0], state->uvs[1], state->uvs[2], state->uvs[3]};
     instBuffer[1].world = TMMat4Translate(0, 200, 0) * TMMat4Scale(200, 200, 1);
-    instBuffer[1].color = {0.5, (sinf(3*angle) + 1)*0.5f, (cosf(angle) + 1)*0.5f, 1};
+    instBuffer[1].color = {1, 1, 1, 1};
+    instBuffer[1].uvs = {state->uvs[0+4*2], state->uvs[1+4*2], state->uvs[2+4*2], state->uvs[3+4*2]};
     instBuffer[2].world = TMMat4Translate(0, -200, 0) * TMMat4Scale(100, 50, 1);
-    instBuffer[2].color = {0, 0, 1, 1};
+    instBuffer[2].color = {1, 1, 1, 1};
+    instBuffer[2].uvs = {state->uvs[0+4*4], state->uvs[1+4*4], state->uvs[2+4*4], state->uvs[3+4*4]};
     instBuffer[3].world = TMMat4Translate(width*0.5f, 0, 0) * TMMat4Scale(100, 300, 1);
-    instBuffer[3].color = {1, 0, 1, 1};
+    instBuffer[3].color = {1, 1, 1, 1};
+    instBuffer[3].uvs = {state->uvs[0+4*6], state->uvs[1+4*6], state->uvs[2+4*6], state->uvs[3+4*6]};
 
     TMRendererBindShader(state->renderer, state->instShader);
     TMRendererInstanceRendererDraw(state->renderer, state->instanceRenderer, instBuffer);

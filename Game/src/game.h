@@ -30,7 +30,9 @@ struct GameState {
 };
 
 void GameInitialize(GameState *state, TMWindow *window);
-void GameUpdate(GameState *state);
+void GameUpdate(GameState *state, float dt);
+void GameFixUpdate(GameState *state, float dt);
+void GamePostUpdate(GameState *state, float t); // NOTE: this is use for position interpolation before rendering
 void GameRender(GameState *state);
 void GameShutdown(GameState *state);
 
