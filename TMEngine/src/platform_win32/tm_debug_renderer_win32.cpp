@@ -214,7 +214,7 @@ void TMDebugRendererDrawCircle_(float x, float y, float radio, unsigned int colo
     TMDarrayDestroy(circle);
 }
 
-void TMDebugRendererDrawCapsule(float x, float y, float radio, float halfHeight, float rotation,
+void TMDebugRendererDrawCapsule_(float x, float y, float radio, float halfHeight, float rotation,
                                 unsigned int color, unsigned int vertNum) {
 
     DebugVertex *capsule = NULL;

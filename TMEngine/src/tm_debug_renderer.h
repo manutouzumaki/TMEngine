@@ -11,6 +11,8 @@ struct TMRenderer;
 #define TMDebugRendererShutdown() TMDebugRendererShutdown_()
 #define TMDebugRendererDrawQuad(x, y, w, h, angle, color) TMDebugRendererDrawQuad_(x, y, w, h, angle, color)
 #define TMDebugRendererDrawCircle(x, y, radio, color, vertNum) TMDebugRendererDrawCircle_(x, y, radio, color, vertNum)
+#define TMDebugRendererDrawCapsule(x, y, radio, halfHeight, rotation, color, vertNum) TMDebugRendererDrawCapsule_(x, y, radio, halfHeight, rotation, color, vertNum)
+
 #define TMDebugRenderDraw() TMDebugRenderDraw_()
 
 #elif
@@ -19,6 +21,7 @@ struct TMRenderer;
 #define TMDebugRendererShutdown()
 #define TMDebugRendererDrawQuad(x, y, w, h, angle, color)
 #define TMDebugRendererDrawCircle(x, y, radio, color, vertNum)
+#define TMDebugRendererDrawCapsule(x, y, radio, halfHeight, rotation, color, vertNum)
 #define TMDebugRenderDraw()
 
 #endif
@@ -30,8 +33,8 @@ TM_EXPORT void TMDebugRendererDrawQuad_(float x, float y, float w, float h,
                                         float angle, unsigned int color);
 TM_EXPORT void TMDebugRendererDrawCircle_(float x, float y, float radio,
                                           unsigned int color, unsigned int vertNum);
-TM_EXPORT void TMDebugRendererDrawCapsule(float x, float y, float radio, float halfHeight, float rotation,
-                                          unsigned int color, unsigned int vertNum);
+TM_EXPORT void TMDebugRendererDrawCapsule_(float x, float y, float radio, float halfHeight, float rotation,
+                                           unsigned int color, unsigned int vertNum);
 TM_EXPORT void TMDebugRenderDraw_();
  
 #endif
