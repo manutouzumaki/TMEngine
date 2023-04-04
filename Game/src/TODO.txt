@@ -21,12 +21,12 @@
 ###################################################################################################################################
 ### tmLibs: 
 ###################################################################################################################################
-### - add sound system
 ### - add write files support (binary, json, xml)
-### - add animations 2d and 3d
 ### - debug visualisation tool, for rays and bounding volumes (this functions should be define only on debug builds)
 ### - collision detection library
 ### - physic and collision resolution library
+### - add sound system
+### - add animations 2d and 3d
 ### -
 ### -
 ### -

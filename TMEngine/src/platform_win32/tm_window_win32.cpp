@@ -1,15 +1,8 @@
-#include <windows.h>
-#include <windowsx.h>
 #include <stdlib.h>
 
+#include "tm_window_win32.h"
 #include "../tm_window.h"
 #include "../tm_input.h"
-
-struct TMWindow {
-    HWND hwndWindow;
-    int width;
-    int height;
-};
 
 TMInput gCurrentInput;
 TMInput gLastInput;

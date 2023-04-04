@@ -66,6 +66,8 @@ TM_EXPORT void TMRendererDrawBufferElements(TMRenderer* renderer, TMBuffer *buff
 TM_EXPORT void TMRendererDrawBufferArray(TMRenderer* renderer, TMBuffer *buffer);
 
 TM_EXPORT TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, const char *fragPath);
+TM_EXPORT TMShader *TMRendererShaderCreateFromString(TMRenderer *renderer, const char *vertSource, size_t vertSize,
+                                                                           const char *fragSource, size_t fragSize);
 TM_EXPORT void TMRendererShaderDestroy(TMRenderer *renderer, TMShader *shader);
 TM_EXPORT void TMRendererBindShader(TMRenderer* renderer, TMShader *shader);
 
@@ -94,5 +96,8 @@ TM_EXPORT void TMRendererInstanceRendererDestroy(TMRenderer *renderer, TMInstanc
 
 // this uvs should be free calling free(uvs)
 TM_EXPORT float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight);
+
+
+
 
 #endif

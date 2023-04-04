@@ -5,6 +5,7 @@
 #include <tm_input.h>
 #include <utils/tm_darray.h>
 #include <utils/tm_json.h>
+#include <tm_debug_renderer.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -192,6 +193,10 @@ void GameInitialize(GameState *state, TMWindow *window) {
     state->uvs = TMGenerateUVs(state->charactersTexture, 24, 24);
 
     state->instanceRenderer = TMRendererInstanceRendererCreate(state->renderer, state->instShader, 4, sizeof(WorldColorInstance));
+
+    TMDebugRendererInitialize(state->renderer, 100);
+
+
 }
 
 void GameUpdate(GameState *state, float dt) {
@@ -248,7 +253,7 @@ void GameRender(GameState *state) {
     mats.world = TMMat4Identity(); 
     mats.proj = TMMat4Ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 100.0f);
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
-    TMRendererRenderBatchAdd(state->renderBatch, 0, 0, 1, 100, 100, 0, 13, state->uvs);
+    TMRendererRenderBatchAdd(state->renderBatch, 0, sinf(angle)*100.0f, 1, 100, 100, 0, 13, state->uvs);
     TMRendererRenderBatchAdd(state->renderBatch, 200, 0, 1, 100, 100, 0, 24, state->uvs);
     
     TMRendererRenderBatchDraw(state->renderBatch);
@@ -271,10 +276,16 @@ void GameRender(GameState *state) {
     TMRendererBindShader(state->renderer, state->instShader);
     TMRendererInstanceRendererDraw(state->renderer, state->instanceRenderer, instBuffer);
 
+
+    TMDebugRendererDrawQuad(0, 0, 200, 200, 0, 0xFF00FF00);
+    TMDebugRendererDrawQuad(300, 0, 200, 200, 45, 0xFFFF00FF);
+    TMDebugRenderDraw();
+
     TMRendererPresent(state->renderer);
 }
 
 void GameShutdown(GameState *state) {
+    TMDebugRendererShutdown();
     TMRendererInstanceRendererDestroy(state->renderer, state->instanceRenderer);
     if(state->uvs) free(state->uvs);
     TMRendererRenderBatchDestroy(state->renderer, state->renderBatch);

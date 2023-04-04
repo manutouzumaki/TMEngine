@@ -8,99 +8,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <d3d11.h>
-#include <d3dcompiler.h>
-
-// TODO: try to remove this ...
-struct TMWindow {
-    HWND hwndWindow;
-    int width;
-    int height;
-};
-
-struct TMBuffer {
-    ID3D11Buffer* vertices[3];
-    ID3D11Buffer* indices;
-    ID3D11InputLayout* layout;
-    unsigned int verticesCount;
-    unsigned int indicesCount;
-    unsigned int numBuffers;
-    unsigned int stride[3];
-    unsigned int offset[3];
-    DXGI_FORMAT indexBufferFormat;
-
-};
-
-struct TMShader {
-    ID3D11VertexShader* vertex;
-    ID3D11PixelShader* pixel;
-    ID3DBlob* vertexShaderCompiled;
-    ID3DBlob* fragmentShaderCompile;
-};
-
-struct TMShaderBuffer {
-    ID3D11Buffer *buffer;
-};
-
-struct TMTexture {
-    int width;
-    int height;
-    ID3D11ShaderResourceView* colorMap;
-    ID3D11SamplerState* colorMapSampler;
-};
-
-struct TMRenderBatch {
-    TMRenderer *renderer;
-    TMShader *shader;
-    TMTexture *texture;
-
-    ID3D11Buffer *buffer;
-    ID3D11InputLayout *layout;
-    TMBatchVertex *batchBuffer;
-    unsigned int bufferSizeInBytes;
-    unsigned int size;
-    unsigned int used;
-};
-
-struct TMInstanceRenderer {
-    ID3D11InputLayout *layout;
-    ID3D11Buffer *vertBuffer;
-    ID3D11Buffer *instBuffer;
-    unsigned int instCount;
-    unsigned int instSize;
-};
-
-struct TMFramebuffer {
-    unsigned int id;
-};
-
-struct TMRenderer {
-    int width;
-    int height;
-    TMMemoryPool* buffersMemory;
-    TMMemoryPool* texturesMemory;
-    TMMemoryPool* shadersMemory;
-    TMMemoryPool* framebufferMemory;
-    TMMemoryPool* shaderBuffersMemory;
-    TMMemoryPool* renderBatchsMemory;
-    TMMemoryPool* instanceRendererMemory;
-
-    ID3D11Device* device;
-    ID3D11DeviceContext* deviceContext;
-    IDXGISwapChain* swapChain;
-    ID3D11RenderTargetView* renderTargetView;
-
-    ID3D11DepthStencilView* depthStencilView;
-    ID3D11RasterizerState* wireFrameRasterizer;
-    ID3D11RasterizerState* fillRasterizerCullBack;
-    ID3D11RasterizerState* fillRasterizerCullFront;
-    ID3D11RasterizerState* fillRasterizerCullNone;
-    ID3D11DepthStencilState* depthStencilOn;
-    ID3D11DepthStencilState* depthStencilOff;
-    ID3D11BlendState* alphaBlendEnable;
-    ID3D11BlendState* alphaBlendDisable;
-
-};
+#include "tm_window_win32.h"
+#include "tm_renderer_win32.h"
 
 void InitD3D11(TMRenderer* renderer, TMWindow *window) {
     int clientWidth = window->width;
@@ -636,8 +545,56 @@ TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, con
         shader->fragmentShaderCompile->GetBufferSize(), 0,
         &shader->pixel);
 
+    // free the memory use by TMFile
+    TMFileClose(&vertFile);
+    TMFileClose(&fragFile);
+
     return shader;
 }
+
+TMShader *TMRendererShaderCreateFromString(TMRenderer *renderer, const char *vertSource, size_t vertSize,
+                                                                 const char *fragSource, size_t fragSize) {
+    TMShader* shader = (TMShader*)TMMemoryPoolAlloc(renderer->shadersMemory);
+
+    HRESULT result = {};
+    ID3DBlob* errorVertexShader = 0;
+    result = D3DCompile((void*)vertSource, vertSize,
+        0, 0, 0, "VS_Main", "vs_4_0",
+        D3DCOMPILE_ENABLE_STRICTNESS, 0,
+        &shader->vertexShaderCompiled, &errorVertexShader);
+    if (errorVertexShader != 0) {
+        const char* errorString = (const char*)errorVertexShader->GetBufferPointer();
+        printf("ERROR VERTEX SHADER: %s\n", errorString);
+        errorVertexShader->Release();
+
+        return NULL;
+    }
+
+    ID3DBlob* errorFragmentShader = 0;
+    result = D3DCompile((void*)fragSource, fragSize,
+        0, 0, 0, "PS_Main", "ps_4_0",
+        D3DCOMPILE_ENABLE_STRICTNESS, 0,
+        &shader->fragmentShaderCompile, &errorFragmentShader);
+    if (errorFragmentShader != 0) {
+        const char* errorString = (const char*)errorFragmentShader->GetBufferPointer();
+        printf("ERROR PIXEL SHADER: %s\n", errorString);
+        errorFragmentShader->Release();
+    }
+
+    // create vertex and fragment shaders
+    result = renderer->device->CreateVertexShader(
+        shader->vertexShaderCompiled->GetBufferPointer(),
+        shader->vertexShaderCompiled->GetBufferSize(), 0,
+        &shader->vertex);
+    result = renderer->device->CreatePixelShader(
+        shader->fragmentShaderCompile->GetBufferPointer(),
+        shader->fragmentShaderCompile->GetBufferSize(), 0,
+        &shader->pixel);
+
+    return shader;
+}
+
+
 
 void TMRendererShaderDestroy(TMRenderer* renderer, TMShader* shader) {
     if(shader->vertexShaderCompiled) shader->vertexShaderCompiled->Release();

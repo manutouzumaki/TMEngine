@@ -4,8 +4,6 @@
 #include <stdio.h>
 
 
-// TODO: delta time
-
 int main() {
     TMWindow *window = TMWindowCreate(800, 600, "TM Engine");
     GameState gameState{};
@@ -14,9 +12,6 @@ int main() {
     TMTimerStart(&timer);
 
     GameInitialize(&gameState, window);
-    
-    // TODO: add delta time and fix update functions ...
-    // TODO: fix update ...
     
     float accumulator = 0.0;
     float dt = 1.0f/60.0f;
