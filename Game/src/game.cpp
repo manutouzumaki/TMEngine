@@ -243,7 +243,7 @@ void GameRender(GameState *state) {
     // Render Clone
     TMRendererTextureBind(state->renderer, state->cloneTexture, state->cloneShader, "moon", 0);
     mats.proj = TMMat4Perspective(60.0f, width/height, 0.01f, 100.0f);
-    mats.world = TMMat4Translate(0.0f, -2.0f, 5.0f) * TMMat4Scale(1.0f, 1.0f, 1.0f); 
+    mats.world = TMMat4Translate(0.0f, -2.0f, 5.0f) *TMMat4RotateY(angle) * TMMat4Scale(1.0f, 1.0f, 1.0f); 
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
     TMRendererDrawBufferElements(state->renderer, state->cloneBuffer);
 
@@ -263,7 +263,7 @@ void GameRender(GameState *state) {
     instBuffer[0].world = TMMat4Translate(sinf(angle)*300, 0, 0) * TMMat4Scale(100, 50, 1);
     instBuffer[0].color = {1, 0.8, 0.8, 1};
     instBuffer[0].uvs = {state->uvs[0], state->uvs[1], state->uvs[2], state->uvs[3]};
-    instBuffer[1].world = TMMat4Translate(0, 200, 0) * TMMat4Scale(200, 200, 1);
+    instBuffer[1].world = TMMat4Translate(-200, 200, 0) * TMMat4Scale(200, 200, 1);
     instBuffer[1].color = {1, 1, 1, 1};
     instBuffer[1].uvs = {state->uvs[0+4*2], state->uvs[1+4*2], state->uvs[2+4*2], state->uvs[3+4*2]};
     instBuffer[2].world = TMMat4Translate(0, -200, 0) * TMMat4Scale(100, 50, 1);
@@ -276,15 +276,10 @@ void GameRender(GameState *state) {
     TMRendererBindShader(state->renderer, state->instShader);
     TMRendererInstanceRendererDraw(state->renderer, state->instanceRenderer, instBuffer);
 
-
     TMDebugRendererDrawQuad(0, 0, 200, 200, 0, 0xFF00FF00);
     TMDebugRendererDrawQuad(300, 0, 200, 200, angle, 0xFFFF00FF);
-    
-
     TMDebugRendererDrawCircle(0, 0, 100, 0xFFFF0000, 20);
-
     TMDebugRendererDrawCapsule(300, 0, 50, 50, angle, 0xFFFFFF00, 20);
-
     TMDebugRenderDraw();
 
     TMRendererPresent(state->renderer);
