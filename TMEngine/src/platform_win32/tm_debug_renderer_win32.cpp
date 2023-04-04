@@ -1,10 +1,12 @@
 #include "../tm_debug_renderer.h"
 #include "../utils/tm_math.h"
+#include "../utils/tm_darray.h"
 
 #include "../tm_renderer.h"
 #include "tm_renderer_win32.h"
 
 #include <assert.h>
+#include <math.h>
 
 
 
@@ -114,10 +116,23 @@ void TMDebugRendererShutdown_() {
 }
 
 static void LocalToWorld(DebugVertex *quad, unsigned int count, float x, float y, float z, float w, float h, float angle) {
-    // TODO: test the performance of this matrix multiplycation, maybe if fast to do it directly ...
     TMMat4 world = TMMat4Translate(x, y, z) * TMMat4RotateZ(angle) * TMMat4Scale(w, h, 1);
     for(int i = 0; i < count; ++i) {
         quad[i].position = TMMat4TransformPoint(world, quad[i].position);
+    }
+}
+
+static void LocalToWorld(DebugVertex *circle, unsigned int count, float x, float y, float z, float radio) {
+    TMMat4 world = TMMat4Translate(x, y, z) * TMMat4Scale(radio, radio, 1);
+    for(int i = 0; i < count; ++i) {
+        circle[i].position = TMMat4TransformPoint(world, circle[i].position);
+    }
+}
+
+static void LocalToWorld(DebugVertex *capsule, unsigned int count, float x, float y, float z, float radio, float angle) {
+    TMMat4 world = TMMat4Translate(x, y, z) * TMMat4RotateZ(angle) * TMMat4Scale(radio, radio, 1);
+    for(int i = 0; i < count; ++i) {
+        capsule[i].position = TMMat4TransformPoint(world, capsule[i].position);
     }
 }
 
@@ -134,6 +149,7 @@ static void SetColor(DebugVertex *quad, unsigned int count, unsigned int color) 
 
 static void AddFigureToBuffer(DebugVertex *quad, unsigned int count) {
     assert(gBufferUsed < gBufferSize);
+    assert(count < gBufferSize);
     DebugVertex *vertex = gCPUBuffer + gBufferUsed;
     memcpy(vertex, quad, sizeof(DebugVertex)*count);
     gBufferUsed += count;
@@ -162,6 +178,103 @@ void TMDebugRendererDrawQuad_(float x, float y, float w, float h, float angle, u
         TMDebugRenderDraw_();
     }
     AddFigureToBuffer(quad, 8);
+}
+
+
+void TMDebugRendererDrawCircle_(float x, float y, float radio, unsigned int color, unsigned int vertNum) {
+
+    DebugVertex *circle = NULL;
+    float angle = 0; 
+    float angleIncrement = (2*TM_PI)/vertNum;
+    DebugVertex lastVertex{};
+
+    for(int i = 0; i < vertNum + 1; ++i) {
+        
+        DebugVertex currentVertex = {
+            {cosf(angle), sinf(angle), 1},
+            {0, 0, 0, 1}
+        };
+
+        if(i >= 1) {
+            TMDarrayPush(circle, lastVertex, DebugVertex);
+            TMDarrayPush(circle, currentVertex, DebugVertex);
+        }
+        angle += angleIncrement;
+        lastVertex = currentVertex;
+    }
+
+    LocalToWorld(circle, TMDarraySize(circle), x, y, 0, radio);
+    SetColor(circle, TMDarraySize(circle), color);
+
+    if(gBufferUsed >= gBufferSize) {
+        TMDebugRenderDraw_();
+    }
+    AddFigureToBuffer(circle, TMDarraySize(circle));
+    
+    TMDarrayDestroy(circle);
+}
+
+void TMDebugRendererDrawCapsule(float x, float y, float radio, float halfHeight, float rotation,
+                                unsigned int color, unsigned int vertNum) {
+
+    DebugVertex *capsule = NULL;
+
+    float angle = 0; 
+    float angleIncrement = (2*TM_PI)/vertNum;
+    float offset = halfHeight/radio;
+    
+    DebugVertex lastVertex{};
+
+    for(int i = 0; i < (vertNum/2) + 1; ++i) {
+        DebugVertex currentVertex = {
+            {cosf(angle), sinf(angle)+offset, 1},
+            {0, 0, 0, 1}
+        };
+
+        if(i >= 1) {
+            TMDarrayPush(capsule, lastVertex, DebugVertex);
+            TMDarrayPush(capsule, currentVertex, DebugVertex);
+        }
+
+        if(i < vertNum/2) angle += angleIncrement;
+        lastVertex = currentVertex;
+    }
+        
+    TMDarrayPush(capsule, lastVertex, DebugVertex);
+    lastVertex.position.y -= offset*2;
+    TMDarrayPush(capsule, lastVertex, DebugVertex);
+
+    for(int i = 0; i < (vertNum/2) + 1; ++i) {
+        
+        DebugVertex currentVertex = {
+            {cosf(angle), sinf(angle)-offset, 1},
+            {0, 0, 0, 1}
+        };
+
+        if(i >= 1) {
+            TMDarrayPush(capsule, lastVertex, DebugVertex);
+            TMDarrayPush(capsule, currentVertex, DebugVertex);
+        }
+        angle += angleIncrement;
+        lastVertex = currentVertex;
+    }
+
+    TMDarrayPush(capsule, lastVertex, DebugVertex);
+    lastVertex.position.y += offset*2;
+    TMDarrayPush(capsule, lastVertex, DebugVertex);
+
+
+    LocalToWorld(capsule, TMDarraySize(capsule), x, y, 0, radio, rotation);
+    SetColor(capsule, TMDarraySize(capsule), color);
+
+    if(gBufferUsed >= gBufferSize) {
+        TMDebugRenderDraw_();
+    }
+    AddFigureToBuffer(capsule, TMDarraySize(capsule));
+
+
+    TMDarrayDestroy(capsule);
+
 }
 
 void TMDebugRenderDraw_() {

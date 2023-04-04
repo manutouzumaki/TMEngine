@@ -194,7 +194,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     state->instanceRenderer = TMRendererInstanceRendererCreate(state->renderer, state->instShader, 4, sizeof(WorldColorInstance));
 
-    TMDebugRendererInitialize(state->renderer, 100);
+    TMDebugRendererInitialize(state->renderer, 200);
 
 
 }
@@ -278,7 +278,13 @@ void GameRender(GameState *state) {
 
 
     TMDebugRendererDrawQuad(0, 0, 200, 200, 0, 0xFF00FF00);
-    TMDebugRendererDrawQuad(300, 0, 200, 200, 45, 0xFFFF00FF);
+    TMDebugRendererDrawQuad(300, 0, 200, 200, angle, 0xFFFF00FF);
+    
+
+    TMDebugRendererDrawCircle(0, 0, 100, 0xFFFF0000, 20);
+
+    TMDebugRendererDrawCapsule(300, 0, 50, 50, angle, 0xFFFFFF00, 20);
+
     TMDebugRenderDraw();
 
     TMRendererPresent(state->renderer);
