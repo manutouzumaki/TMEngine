@@ -16,7 +16,10 @@ enum TMValueType {
 };
 
 struct TMJsonValue {
-    const char *value;
+    union {
+        const char *value;
+        float valueFloat;
+    };
     size_t size;
 };
 
@@ -32,7 +35,9 @@ struct TMJsonObject {
 
     TMJsonObject *childs;
     size_t childsCount;
+    bool isFloat;
 };
+
 
 struct TMJson {
     TMFile file;
@@ -42,5 +47,20 @@ struct TMJson {
 TM_EXPORT TMJson *TMJsonOpen(const char *filepath);
 TM_EXPORT void TMJsonClose(TMJson *json);
 TM_EXPORT TMJsonObject *TMJsonFindChildByName(TMJsonObject *object, const char *name);
+
+
+
+TM_EXPORT void TMJsonObjectSetName(TMJsonObject *object, const char *name);
+TM_EXPORT void TMJsonObjectSetValue(TMJsonObject *object, const char *value);
+TM_EXPORT void TMJsonObjectSetValue(TMJsonObject *object, float value);
+TM_EXPORT void TMJsonObjectSetValue(TMJsonObject *object, TMJsonObject *value);
+TM_EXPORT void TMJsonObjectAddChild(TMJsonObject *parent, TMJsonObject *child);
+
+TM_EXPORT void TMJsonObjectStringify(TMJsonObject *object, char *buffer, int *position);
+
+
+TM_EXPORT TMJsonObject TMJsonObjectCreate();
+TM_EXPORT void TMJsonObjectFree(TMJsonObject *object);
+
 
 #endif

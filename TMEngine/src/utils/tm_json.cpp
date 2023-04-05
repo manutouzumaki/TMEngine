@@ -394,3 +394,110 @@ TMJsonObject *TMJsonFindChildByName(TMJsonObject *object, const char *name) {
     }
     return result;
 }
+
+// TODO: make this function part of the engine API
+// right now is define here and in tm_debug_renderer_win32 files
+static size_t StringLength(const char *string) {
+    size_t counter = 0;
+    char *byte = (char *)string;
+    while(*byte++ != '\0') counter++;
+    return counter;
+}
+
+void TMJsonObjectSetName(TMJsonObject *object, const char *name) {
+    object->name = name;
+    object->nameSize = StringLength(name);
+}
+
+void TMJsonObjectSetValue(TMJsonObject *object, const char *value) {
+    TMJsonValue jsonValue{};
+    jsonValue.value = value;
+    jsonValue.size = StringLength(value);
+    TMDarrayPush(object->values, jsonValue, TMJsonValue);
+    object->valuesCount++;
+    object->type = TM_JSON_VALUE;
+}
+
+void TMJsonObjectSetValue(TMJsonObject *object, float value) {
+    TMJsonValue jsonValue{};
+    jsonValue.valueFloat = value;
+    jsonValue.size = 0;
+    TMDarrayPush(object->values, jsonValue, TMJsonValue);
+    object->valuesCount++;
+    object->type = TM_JSON_VALUE;
+    object->isFloat = true;
+}
+
+void TMJsonObjectSetValue(TMJsonObject *object, TMJsonObject *value) {
+    TMDarrayPush(object->objects, *value, TMJsonObject);
+    object->valuesCount++;
+    object->type = TM_JSON_OBJECT;
+}
+
+void TMJsonObjectAddChild(TMJsonObject *parent, TMJsonObject *child) {
+    TMDarrayPush(parent->childs, *child, TMJsonObject);
+    parent->childsCount++;
+}
+
+TMJsonObject TMJsonObjectCreate() {
+    return {};
+}
+
+
+void TMJsonObjectFree(TMJsonObject *object) {
+    JsonObjectFree(object);
+}
+
+static void Stringify(TMJsonObject *object, char *buffer, int *position) {
+    
+
+    if(object->nameSize) {
+        if(object->childsCount) {
+            int bytesWriten = sprintf(buffer + *position, "\"%s\": {\n", object->name);
+            *position += bytesWriten;
+        }
+        else {
+            int bytesWriten = sprintf(buffer + *position, "\"%s\": ", object->name);
+            *position += bytesWriten;
+        }
+    }
+
+    if(object->type == TM_JSON_VALUE) {
+        if(object->isFloat) {
+            TMJsonValue *value = object->values;
+            int bytesWriten = sprintf(buffer + *position, "%f", value->valueFloat);
+            *position += bytesWriten;
+        }
+        else {
+            TMJsonValue *value = object->values;
+            int bytesWriten = sprintf(buffer + *position, "\"%s\"", value->value);
+            *position += bytesWriten;
+        }
+    }
+
+    if(object->childsCount) {
+        for(int i = 0; i < object->childsCount; ++i) {
+            TMJsonObject *child = object->childs + i;
+            Stringify(child, buffer, position);
+            if(i == object->childsCount-1) {
+                int bytesWriten = sprintf(buffer + *position, "\n}");
+                *position += bytesWriten;
+            }
+            else {
+                int bytesWriten = sprintf(buffer + *position, ",\n");
+                *position += bytesWriten;
+            }
+        }
+    }
+
+
+}
+
+void TMJsonObjectStringify(TMJsonObject *object, char *buffer, int *position) {
+    int bytesWriten = sprintf(buffer + *position, "{");
+    *position += bytesWriten;
+    Stringify(object, buffer, position);
+    bytesWriten = sprintf(buffer + *position, "}");
+    *position += bytesWriten;
+
+}

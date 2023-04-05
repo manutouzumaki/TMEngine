@@ -197,6 +197,52 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMDebugRendererInitialize(state->renderer, 200);
 
 
+    TMJsonObject x = TMJsonObjectCreate();
+    TMJsonObjectSetName(&x, "x");
+    TMJsonObjectSetValue(&x, -50);
+    TMJsonObject y = TMJsonObjectCreate();
+    TMJsonObjectSetName(&y, "y");
+    TMJsonObjectSetValue(&y, 200);
+
+    TMJsonObject position = TMJsonObjectCreate();
+    TMJsonObjectSetName(&position, "position");
+    TMJsonObjectAddChild(&position, &x);
+    TMJsonObjectAddChild(&position, &y);
+    
+    TMJsonObject w = TMJsonObjectCreate();
+    TMJsonObjectSetName(&w, "w");
+    TMJsonObjectSetValue(&w, 100);
+    TMJsonObject h = TMJsonObjectCreate();
+    TMJsonObjectSetName(&h, "h");
+    TMJsonObjectSetValue(&h, 100);
+
+    TMJsonObject size = TMJsonObjectCreate();
+    TMJsonObjectSetName(&size, "size");
+    TMJsonObjectAddChild(&size, &w);
+    TMJsonObjectAddChild(&size, &h);
+
+    TMJsonObject texture = TMJsonObjectCreate();
+    TMJsonObjectSetName(&texture, "texture");
+    TMJsonObjectSetValue(&texture, "../../assets/images/moon.png");
+
+    TMJsonObject player = TMJsonObjectCreate(); 
+    TMJsonObjectSetName(&player, "player");
+    TMJsonObjectAddChild(&player, &position);
+    TMJsonObjectAddChild(&player, &size);
+    TMJsonObjectAddChild(&player, &texture);
+
+
+    char buffer[255];
+    int bytesWriten = 0;
+    TMJsonObjectStringify(&player, buffer, &bytesWriten);
+    TMJsonObjectFree(&player);
+    printf("%s", buffer);
+
+    TMFileWriteText("../../assets/json/player.json", buffer, bytesWriten);
+
+
+    TMJson *playerFromFile = TMJsonOpen("../../assets/json/player.json");
+    TMJsonClose(playerFromFile);
 }
 
 void GameUpdate(GameState *state, float dt) {
@@ -279,7 +325,7 @@ void GameRender(GameState *state) {
     TMDebugRendererDrawQuad(0, 0, 200, 200, 0, 0xFF00FF00);
     TMDebugRendererDrawQuad(300, 0, 200, 200, angle, 0xFFFF00FF);
     TMDebugRendererDrawCircle(0, 0, 100, 0xFFFF0000, 20);
-    TMDebugRendererDrawCapsule(300, 0, 50, 50, angle, 0xFFFFFF00, 20);
+    TMDebugRendererDrawCapsule(300, 0, 50, 100, angle, 0xFFFFFF00, 20);
     TMDebugRenderDraw();
 
     TMRendererPresent(state->renderer);
