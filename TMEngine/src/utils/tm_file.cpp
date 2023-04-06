@@ -54,3 +54,16 @@ bool TMFileWriteText(const char *filepath, void *data, size_t size) {
     fclose(file);
     return true;
 }
+
+
+bool TMFileWriteBinary(const char *filepath, void *data, size_t size) {
+    FILE *file = fopen(filepath, "wb");
+    if(!file) {
+        printf("Error writing TMFile %s\n", filepath);
+        return false;
+    }
+    size_t itemsWriten = fwrite(data, size, 1, file);
+    assert(itemsWriten >= 1);
+    fclose(file);
+    return true;
+}
