@@ -15,6 +15,12 @@ enum TMValueType {
     TM_JSON_OBJECT = 2
 };
 
+enum TMValueFormat {
+    TM_VALUE_FORMAT_NONE,
+    TM_VALUE_FORMAT_STRING,
+    TM_VALUE_FORMAT_FLOAT
+};
+
 struct TMJsonValue {
     union {
         const char *value;
@@ -32,10 +38,10 @@ struct TMJsonObject {
     };
     size_t valuesCount;
     TMValueType type;
+    TMValueFormat format;
 
     TMJsonObject *childs;
     size_t childsCount;
-    bool isFloat;
 };
 
 

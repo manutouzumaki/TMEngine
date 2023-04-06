@@ -416,6 +416,7 @@ void TMJsonObjectSetValue(TMJsonObject *object, const char *value) {
     TMDarrayPush(object->values, jsonValue, TMJsonValue);
     object->valuesCount++;
     object->type = TM_JSON_VALUE;
+    object->format = TM_VALUE_FORMAT_STRING;
 }
 
 void TMJsonObjectSetValue(TMJsonObject *object, float value) {
@@ -425,13 +426,15 @@ void TMJsonObjectSetValue(TMJsonObject *object, float value) {
     TMDarrayPush(object->values, jsonValue, TMJsonValue);
     object->valuesCount++;
     object->type = TM_JSON_VALUE;
-    object->isFloat = true;
+    object->format = TM_VALUE_FORMAT_FLOAT;
 }
 
 void TMJsonObjectSetValue(TMJsonObject *object, TMJsonObject *value) {
+    assert(value->name == NULL);
     TMDarrayPush(object->objects, *value, TMJsonObject);
     object->valuesCount++;
     object->type = TM_JSON_OBJECT;
+    object->format = TM_VALUE_FORMAT_NONE;
 }
 
 void TMJsonObjectAddChild(TMJsonObject *parent, TMJsonObject *child) {
@@ -448,33 +451,103 @@ void TMJsonObjectFree(TMJsonObject *object) {
     JsonObjectFree(object);
 }
 
-static void Stringify(TMJsonObject *object, char *buffer, int *position) {
-    
-
+static void StringifyName(TMJsonObject *object, char *buffer, int *position) {
     if(object->nameSize) {
         if(object->childsCount) {
             int bytesWriten = sprintf(buffer + *position, "\"%s\": {\n", object->name);
             *position += bytesWriten;
         }
         else {
-            int bytesWriten = sprintf(buffer + *position, "\"%s\": ", object->name);
-            *position += bytesWriten;
+            if(object->valuesCount <= 1) {
+                int bytesWriten = sprintf(buffer + *position, "\"%s\": ", object->name);
+                *position += bytesWriten;
+            }else {
+                if(object->type == TM_JSON_VALUE) {
+                    int bytesWriten = sprintf(buffer + *position, "\"%s\": [\n", object->name);
+                    *position += bytesWriten;
+                }
+                else {
+                    int bytesWriten = sprintf(buffer + *position, "\"%s\": ", object->name);
+                    *position += bytesWriten;
+                }
+            }
         }
     }
+}
+
+static void StringifyValues(TMJsonObject *object, char *buffer, int *position) {
 
     if(object->type == TM_JSON_VALUE) {
-        if(object->isFloat) {
-            TMJsonValue *value = object->values;
-            int bytesWriten = sprintf(buffer + *position, "%f", value->valueFloat);
-            *position += bytesWriten;
+        if(object->format == TM_VALUE_FORMAT_FLOAT) {
+            for(int i = 0; i < object->valuesCount; ++i) {
+                TMJsonValue *value = object->values + i;
+                int bytesWriten = sprintf(buffer + *position, "%f", value->valueFloat);
+                *position += bytesWriten;
+                if(object->valuesCount > 1) {
+                    if(i < object->valuesCount - 1) {
+                        bytesWriten = sprintf(buffer + *position, ",\n");
+                        *position += bytesWriten;
+                    }
+                    else {
+                        bytesWriten = sprintf(buffer + *position, "\n]");
+                        *position += bytesWriten;
+                    }
+                }
+            }
         }
         else {
-            TMJsonValue *value = object->values;
-            int bytesWriten = sprintf(buffer + *position, "\"%s\"", value->value);
-            *position += bytesWriten;
+            for(int i = 0; i < object->valuesCount; ++i) {
+                TMJsonValue *value = object->values + i;
+                int bytesWriten = sprintf(buffer + *position, "\"%s\"", value->value);
+                *position += bytesWriten;
+                if(object->valuesCount > 1) {
+                    if(i < object->valuesCount - 1) {
+                        bytesWriten = sprintf(buffer + *position, ",\n");
+                        *position += bytesWriten;
+                    }
+                    else {
+                        bytesWriten = sprintf(buffer + *position, "\n]");
+                        *position += bytesWriten;
+                    }
+                }
+            }
         }
     }
 
+}
+
+static void Stringify(TMJsonObject *object, char *buffer, int *position);
+
+static void StringifyObjects(TMJsonObject *object, char *buffer, int *position) {
+
+    if(object->type == TM_JSON_OBJECT) {
+        
+        int bytesWriten = sprintf(buffer + *position, "[\n");
+        *position += bytesWriten;
+        
+        for(int i = 0; i < object->valuesCount; ++i) {
+            
+            int bytesWriten = sprintf(buffer + *position, "{\n");
+            *position += bytesWriten;
+            
+            TMJsonObject *value = object->objects + i;
+            Stringify(value, buffer, position); 
+
+
+            if(i < object->valuesCount - 1) {
+                int bytesWriten = sprintf(buffer + *position, ",\n");
+                *position += bytesWriten;
+            }
+            else {
+                int bytesWriten = sprintf(buffer + *position, "\n]");
+                *position += bytesWriten;
+            }
+        }
+    }
+
+}
+
+static void StringifyChilds(TMJsonObject *object, char *buffer, int *position) {
     if(object->childsCount) {
         for(int i = 0; i < object->childsCount; ++i) {
             TMJsonObject *child = object->childs + i;
@@ -489,15 +562,21 @@ static void Stringify(TMJsonObject *object, char *buffer, int *position) {
             }
         }
     }
+}
 
+static void Stringify(TMJsonObject *object, char *buffer, int *position) {
+    
+    StringifyName(object, buffer, position);
+    StringifyValues(object, buffer, position);
+    StringifyObjects(object, buffer, position);
+    StringifyChilds(object, buffer, position);
 
 }
 
 void TMJsonObjectStringify(TMJsonObject *object, char *buffer, int *position) {
-    int bytesWriten = sprintf(buffer + *position, "{");
+    int bytesWriten = sprintf(buffer + *position, "{\n");
     *position += bytesWriten;
     Stringify(object, buffer, position);
-    bytesWriten = sprintf(buffer + *position, "}");
+    bytesWriten = sprintf(buffer + *position, "\n}");
     *position += bytesWriten;
-
 }

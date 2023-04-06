@@ -200,6 +200,8 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMJsonObject x = TMJsonObjectCreate();
     TMJsonObjectSetName(&x, "x");
     TMJsonObjectSetValue(&x, -50);
+    TMJsonObjectSetValue(&x, 255);
+    TMJsonObjectSetValue(&x, 25);
     TMJsonObject y = TMJsonObjectCreate();
     TMJsonObjectSetName(&y, "y");
     TMJsonObjectSetValue(&y, 200);
@@ -224,15 +226,45 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMJsonObject texture = TMJsonObjectCreate();
     TMJsonObjectSetName(&texture, "texture");
     TMJsonObjectSetValue(&texture, "../../assets/images/moon.png");
+    TMJsonObjectSetValue(&texture, "../../assets/images/clone.png");
+
+
+    TMJsonObject empty2 = TMJsonObjectCreate();
+    TMJsonObject distance2 = TMJsonObjectCreate();
+    TMJsonObjectSetName(&distance2, "distance");
+    TMJsonObjectSetValue(&distance2, 800);
+    TMJsonObjectAddChild(&empty2, &distance2);
+    TMJsonObject life2 = TMJsonObjectCreate();
+    TMJsonObjectSetName(&life2, "life");
+    TMJsonObjectSetValue(&life2, 100);
+    TMJsonObjectAddChild(&empty2, &life2);
+
+
+    TMJsonObject empty = TMJsonObjectCreate();
+    TMJsonObject distance = TMJsonObjectCreate();
+    TMJsonObjectSetName(&distance, "distance");
+    TMJsonObjectSetValue(&distance, 800);
+    TMJsonObjectAddChild(&empty, &distance);
+    TMJsonObject life = TMJsonObjectCreate();
+    TMJsonObjectSetName(&life, "life");
+    TMJsonObjectSetValue(&life, 100);
+    TMJsonObjectAddChild(&empty, &life);
+
+    TMJsonObject target = TMJsonObjectCreate();
+    TMJsonObjectSetName(&target, "target");
+    TMJsonObjectSetValue(&target, &empty);
+    TMJsonObjectSetValue(&target, &empty2);
+
 
     TMJsonObject player = TMJsonObjectCreate(); 
     TMJsonObjectSetName(&player, "player");
     TMJsonObjectAddChild(&player, &position);
     TMJsonObjectAddChild(&player, &size);
+    TMJsonObjectAddChild(&player, &target);
     TMJsonObjectAddChild(&player, &texture);
 
 
-    char buffer[255];
+    char buffer[20000];
     int bytesWriten = 0;
     TMJsonObjectStringify(&player, buffer, &bytesWriten);
     TMJsonObjectFree(&player);
