@@ -168,9 +168,6 @@ static void ScanToken(JsonScanner *scanner) {
             break;
         case '\n':
             scanner->line++;
-            if(scanner->line > 2124) {
-                int stopHere = 0;
-            };
             break;
         case '"': ScannerAddStringToken(scanner); break;
         default: {
@@ -573,10 +570,144 @@ static void Stringify(TMJsonObject *object, char *buffer, int *position) {
 
 }
 
+// TODO: try to hard code some values to improve the performance and safety of this code.
+// this goes for all the count bytes functions
+static void CountBytesInName(TMJsonObject *object, int *position) {
+    char buffer[32000];
+    if(object->nameSize) {
+        if(object->childsCount) {
+
+            int bytesWriten = sprintf(buffer, "\"%s\": {\n", object->name);
+            *position += bytesWriten;
+        }
+        else {
+            if(object->valuesCount <= 1) {
+                int bytesWriten = sprintf(buffer, "\"%s\": ", object->name);
+                *position += bytesWriten;
+            }else {
+                if(object->type == TM_JSON_VALUE) {
+                    int bytesWriten = sprintf(buffer, "\"%s\": [\n", object->name);
+                    *position += bytesWriten;
+                }
+                else {
+                    int bytesWriten = sprintf(buffer, "\"%s\": ", object->name);
+                    *position += bytesWriten;
+                }
+            }
+        }
+    }
+}
+
+static void CountBytesInValues(TMJsonObject *object, int *position) {
+    char buffer[32000];
+    if(object->type == TM_JSON_VALUE) {
+        if(object->format == TM_VALUE_FORMAT_FLOAT) {
+            for(int i = 0; i < object->valuesCount; ++i) {
+                TMJsonValue *value = object->values + i;
+                int bytesWriten = sprintf(buffer, "%f", value->valueFloat);
+                *position += bytesWriten;
+                if(object->valuesCount > 1) {
+                    if(i < object->valuesCount - 1) {
+                        bytesWriten = sprintf(buffer, ",\n");
+                        *position += bytesWriten;
+                    }
+                    else {
+                        bytesWriten = sprintf(buffer, "\n]");
+                        *position += bytesWriten;
+                    }
+                }
+            }
+        }
+        else {
+            for(int i = 0; i < object->valuesCount; ++i) {
+                TMJsonValue *value = object->values + i;
+                int bytesWriten = sprintf(buffer, "\"%s\"", value->value);
+                *position += bytesWriten;
+                if(object->valuesCount > 1) {
+                    if(i < object->valuesCount - 1) {
+                        bytesWriten = sprintf(buffer, ",\n");
+                        *position += bytesWriten;
+                    }
+                    else {
+                        bytesWriten = sprintf(buffer, "\n]");
+                        *position += bytesWriten;
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void CountByteToWrite(TMJsonObject *object, int *position);
+
+static void CountBytesInObjects(TMJsonObject *object, int *position) {
+    char buffer[32000];
+    if(object->type == TM_JSON_OBJECT) {
+        
+        int bytesWriten = sprintf(buffer, "[\n");
+        *position += bytesWriten;
+        
+        for(int i = 0; i < object->valuesCount; ++i) {
+            
+            int bytesWriten = sprintf(buffer, "{\n");
+            *position += bytesWriten;
+            
+            TMJsonObject *value = object->objects + i;
+            CountByteToWrite(value, position); 
+
+
+            if(i < object->valuesCount - 1) {
+                int bytesWriten = sprintf(buffer, ",\n");
+                *position += bytesWriten;
+            }
+            else {
+                int bytesWriten = sprintf(buffer, "\n]");
+                *position += bytesWriten;
+            }
+        }
+    }
+
+}
+
+static void CountBytesInChilds(TMJsonObject *object, int *position) {
+    char buffer[32000];
+    if(object->childsCount) {
+        for(int i = 0; i < object->childsCount; ++i) {
+            TMJsonObject *child = object->childs + i;
+            CountByteToWrite(child, position);
+            if(i == object->childsCount-1) {
+                int bytesWriten = sprintf(buffer, "\n}");
+                *position += bytesWriten;
+            }
+            else {
+                int bytesWriten = sprintf(buffer, ",\n");
+                *position += bytesWriten;
+            }
+        }
+    }
+}
+
+
+static void CountByteToWrite(TMJsonObject *object, int *position) {
+    CountBytesInName(object, position);
+    CountBytesInValues(object, position);
+    CountBytesInObjects(object, position);
+    CountBytesInChilds(object, position);
+}
+
 void TMJsonObjectStringify(TMJsonObject *object, char *buffer, int *position) {
-    int bytesWriten = sprintf(buffer + *position, "{\n");
-    *position += bytesWriten;
-    Stringify(object, buffer, position);
-    bytesWriten = sprintf(buffer + *position, "\n}");
-    *position += bytesWriten;
+    if(buffer) {
+        int bytesWriten = sprintf(buffer + *position, "{\n");
+        *position += bytesWriten;
+        Stringify(object, buffer, position);
+        bytesWriten = sprintf(buffer + *position, "\n}");
+        *position += bytesWriten;
+        printf("BYTES WRITEN: %d\n", *position);
+    }
+    else {
+        *position += 2;
+        CountByteToWrite(object, position);
+        *position += 2;
+        printf("BYTES COUNTED: %d\n", *position);
+    }
 }

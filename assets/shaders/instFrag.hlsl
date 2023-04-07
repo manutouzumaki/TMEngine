@@ -9,5 +9,6 @@ struct PS_Input {
 
 float4 PS_Main(PS_Input frag) : SV_TARGET {
     float4 textureColor = colorMap.Sample(colorSampler, frag.tex0.xy);
-    return textureColor * frag.color;
+    float t = (frag.color.w != 0) ? 1 : 0;
+    return (1 - t)*textureColor + t*frag.color;
 }

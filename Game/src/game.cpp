@@ -263,18 +263,37 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMJsonObjectAddChild(&player, &target);
     TMJsonObjectAddChild(&player, &texture);
 
+    int bytesCount = 0;
+    TMJsonObjectStringify(&player, NULL, &bytesCount);
 
-    char buffer[20000];
+    char *buffer = (char *)malloc(bytesCount);
     int bytesWriten = 0;
     TMJsonObjectStringify(&player, buffer, &bytesWriten);
     TMJsonObjectFree(&player);
     printf("%s", buffer);
 
     TMFileWriteText("../../assets/json/player.json", buffer, bytesWriten);
+    free(buffer);
 
 
     TMJson *playerFromFile = TMJsonOpen("../../assets/json/player.json");
     TMJsonClose(playerFromFile);
+
+
+    
+    state->root = TMUIElementCreate({-300, 0}, {200, 200}, {1, 0, 0, 1}, TM_UI_ORIENTATION_VERTICAL,   TM_UI_TYPE_BUTTON, state->renderBatch);
+    TMUIElementAddChild(state->root, TM_UI_ORIENTATION_VERTICAL ,  {0, 1, 0, 0.5}, state->renderBatch);
+    TMUIElementAddChild(state->root, TM_UI_ORIENTATION_HORIZONTAL, {0, 0, 1, 1}, state->renderBatch);
+    TMUIElementAddChild(state->root, TM_UI_ORIENTATION_VERTICAL,   {1, 0, 1, 1}, state->renderBatch);
+
+    
+    TMUIElement *child = TMUIElementGetChild(state->root, 1);
+    TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {1, 1, 0, 1}, state->renderBatch);
+    TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {0, 1, 1, 0}, state->renderBatch);
+    TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {0.5, 1, 0.2, 1}, state->renderBatch);
+    TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {1, 0.2, 0.5, 1}, state->renderBatch);
+
+
 }
 
 void GameUpdate(GameState *state, float dt) {
@@ -333,22 +352,27 @@ void GameRender(GameState *state) {
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
     TMRendererRenderBatchAdd(state->renderBatch, 0, sinf(angle)*100.0f, 1, 100, 100, 0, 13, state->uvs);
     TMRendererRenderBatchAdd(state->renderBatch, 200, 0, 1, 100, 100, 0, 24, state->uvs);
+    TMRendererRenderBatchAdd(state->renderBatch, 0, 0, 1, 100, 100, 0);
+    TMRendererRenderBatchAdd(state->renderBatch, 0, 100, 1, 100, 100, 0, 0, 1, 0, 0.2);
+
+    TMUIElementDraw(state->root);
     
     TMRendererRenderBatchDraw(state->renderBatch);
+
 
     // instance rendering test
     WorldColorInstance instBuffer[4] = {};
     instBuffer[0].world = TMMat4Translate(sinf(angle)*300, 0, 0) * TMMat4Scale(100, 50, 1);
-    instBuffer[0].color = {1, 0.8, 0.8, 1};
+    instBuffer[0].color = {1, 0.8, 0.8, 0};
     instBuffer[0].uvs = {state->uvs[0], state->uvs[1], state->uvs[2], state->uvs[3]};
     instBuffer[1].world = TMMat4Translate(-200, 200, 0) * TMMat4Scale(200, 200, 1);
-    instBuffer[1].color = {1, 1, 1, 1};
+    instBuffer[1].color = {1, 0, 0, 1};
     instBuffer[1].uvs = {state->uvs[0+4*2], state->uvs[1+4*2], state->uvs[2+4*2], state->uvs[3+4*2]};
     instBuffer[2].world = TMMat4Translate(0, -200, 0) * TMMat4Scale(100, 50, 1);
-    instBuffer[2].color = {1, 1, 1, 1};
+    instBuffer[2].color = {1, 1, 1, 0};
     instBuffer[2].uvs = {state->uvs[0+4*4], state->uvs[1+4*4], state->uvs[2+4*4], state->uvs[3+4*4]};
     instBuffer[3].world = TMMat4Translate(width*0.5f, 0, 0) * TMMat4Scale(100, 300, 1);
-    instBuffer[3].color = {1, 1, 1, 1};
+    instBuffer[3].color = {1, 1, 1, 0};
     instBuffer[3].uvs = {state->uvs[0+4*6], state->uvs[1+4*6], state->uvs[2+4*6], state->uvs[3+4*6]};
 
     TMRendererBindShader(state->renderer, state->instShader);
@@ -358,12 +382,16 @@ void GameRender(GameState *state) {
     TMDebugRendererDrawQuad(300, 0, 200, 200, angle, 0xFFFF00FF);
     TMDebugRendererDrawCircle(0, 0, 100, 0xFFFF0000, 20);
     TMDebugRendererDrawCapsule(300, 0, 50, 100, angle, 0xFFFFFF00, 20);
+
+    TMDebugRendererDrawLine(-200, 0, 200, 100, 0xFF0000FF);
+
     TMDebugRenderDraw();
 
     TMRendererPresent(state->renderer);
 }
 
 void GameShutdown(GameState *state) {
+    TMUIElementDestroy(state->root);
     TMDebugRendererShutdown();
     TMRendererInstanceRendererDestroy(state->renderer, state->instanceRenderer);
     if(state->uvs) free(state->uvs);

@@ -33,6 +33,7 @@ struct TMVertex {
 struct TMBatchVertex {
     TMVec3 position;
     TMVec2 uvs;
+    TMVec4 color;
 };
 
 TM_EXPORT TMRenderer *TMRendererCreate(TMWindow *window);
@@ -85,6 +86,9 @@ TM_EXPORT void TMRendererFramebufferDestroy(TMRenderer *renderer, TMFramebuffer 
 
 TM_EXPORT TMRenderBatch *TMRendererRenderBatchCreate(TMRenderer *renderer, TMShader *shader, TMTexture *texture, size_t size);
 TM_EXPORT void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z, float w, float h, float angle);
+TM_EXPORT void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                                    float w, float h, float angle,
+                                                                    float r, float g, float b, float a);
 TM_EXPORT void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z, float w, float h, float angle, int sprite, float *uvs);
 TM_EXPORT void TMRendererRenderBatchDraw(TMRenderBatch *renderBatch);
 TM_EXPORT void TMRendererRenderBatchDestroy(TMRenderer *renderer, TMRenderBatch *renderBatch);

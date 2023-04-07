@@ -760,7 +760,9 @@ TMRenderBatch *TMRendererRenderBatchCreate(TMRenderer *renderer, TMShader *shade
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
          0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,
-        0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+        0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT,
+        0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
     int totalLayoutElements = ARRAY_LENGTH(inputLayoutDesc);
     result = renderer->device->CreateInputLayout(inputLayoutDesc,
@@ -809,12 +811,12 @@ static void AddQuadToBatchBuffer(TMRenderBatch *renderBatch, TMBatchVertex *quad
 void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
                                                           float w, float h, float angle) {
     TMBatchVertex quad[] = {
-        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
-        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
-        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
-        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
-        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
-        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec4{}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{}}  // 3
     };
     BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
 
@@ -826,14 +828,34 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
 
 void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
                                                           float w, float h, float angle,
+                                                          float r, float g, float b, float a) {
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec4{r, g, b, a}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{r, g, b, a}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{r, g, b, a}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{r, g, b, a}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{r, g, b, a}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{r, g, b, a}}  // 3
+    };
+    BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
+
+    if(renderBatch->used >= renderBatch->size) {
+        TMRendererRenderBatchDraw(renderBatch);
+    }
+    AddQuadToBatchBuffer(renderBatch, quad);
+}
+
+
+void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                          float w, float h, float angle,
                                                           int sprite, float *uvs) {
     TMBatchVertex quad[] = {
-        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
-        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
-        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
-        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
-        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
-        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec4{}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{}}  // 3
     };
     BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
     BatchQuadHandleUVs(quad, sprite, uvs);
@@ -842,7 +864,6 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
         TMRendererRenderBatchDraw(renderBatch);
     }
     AddQuadToBatchBuffer(renderBatch, quad);
-
 }
 
 void TMRendererRenderBatchDraw(TMRenderBatch *renderBatch) {

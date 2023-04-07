@@ -115,21 +115,29 @@ void TMDebugRendererShutdown_() {
     if(gCPUBuffer) free(gCPUBuffer);
 }
 
-static void LocalToWorld(DebugVertex *quad, unsigned int count, float x, float y, float z, float w, float h, float angle) {
+
+static void LocalToWorldLine(DebugVertex *line, unsigned int count, float ax, float ay, float bx, float by)  {
+    TMMat4 world = TMMat4Translate(ax, ay, 1);
+    line[0].position = TMMat4TransformPoint(world, line[0].position);
+    world = TMMat4Translate(bx, by, 1);
+    line[1].position = TMMat4TransformPoint(world, line[1].position);
+}
+
+static void LocalToWorldQuad(DebugVertex *quad, unsigned int count, float x, float y, float z, float w, float h, float angle) {
     TMMat4 world = TMMat4Translate(x, y, z) * TMMat4RotateZ(angle) * TMMat4Scale(w, h, 1);
     for(int i = 0; i < count; ++i) {
         quad[i].position = TMMat4TransformPoint(world, quad[i].position);
     }
 }
 
-static void LocalToWorld(DebugVertex *circle, unsigned int count, float x, float y, float z, float radio) {
+static void LocalToWorldCircle(DebugVertex *circle, unsigned int count, float x, float y, float z, float radio) {
     TMMat4 world = TMMat4Translate(x, y, z) * TMMat4Scale(radio, radio, 1);
     for(int i = 0; i < count; ++i) {
         circle[i].position = TMMat4TransformPoint(world, circle[i].position);
     }
 }
 
-static void LocalToWorld(DebugVertex *capsule, unsigned int count, float x, float y, float z, float radio, float angle) {
+static void LocalToWorldCapsule(DebugVertex *capsule, unsigned int count, float x, float y, float z, float radio, float angle) {
     TMMat4 world = TMMat4Translate(x, y, z) * TMMat4RotateZ(angle) * TMMat4Scale(radio, radio, 1);
     for(int i = 0; i < count; ++i) {
         capsule[i].position = TMMat4TransformPoint(world, capsule[i].position);
@@ -155,6 +163,19 @@ static void AddFigureToBuffer(DebugVertex *quad, unsigned int count) {
     gBufferUsed += count;
 }
 
+void TMDebugRendererDrawLine_(float ax, float ay, float bx, float by, unsigned int color) {
+
+    DebugVertex line[2] = {};
+    LocalToWorldLine(line, 2, ax, ay, bx, by);
+    SetColor(line, 2, color);
+
+    if(gBufferUsed >= gBufferSize) {
+        TMDebugRenderDraw_();
+    }
+    AddFigureToBuffer(line, 2);
+
+}
+
 void TMDebugRendererDrawQuad_(float x, float y, float w, float h, float angle, unsigned int color) {
 
     DebugVertex quad[] = {
@@ -170,7 +191,7 @@ void TMDebugRendererDrawQuad_(float x, float y, float w, float h, float angle, u
         {TMVec3{-0.5f,  -0.5f, 1}, TMVec4{0, 1, 0, 1}},
         {TMVec3{-0.5f,   0.5f, 1}, TMVec4{0, 1, 0, 1}} 
     };
-    LocalToWorld(quad, 8, x, y, 0, w, h, angle);
+    LocalToWorldQuad(quad, 8, x, y, 0, w, h, angle);
     SetColor(quad, 8, color);
 
 
@@ -203,7 +224,7 @@ void TMDebugRendererDrawCircle_(float x, float y, float radio, unsigned int colo
         lastVertex = currentVertex;
     }
 
-    LocalToWorld(circle, TMDarraySize(circle), x, y, 0, radio);
+    LocalToWorldCircle(circle, TMDarraySize(circle), x, y, 0, radio);
     SetColor(circle, TMDarraySize(circle), color);
 
     if(gBufferUsed >= gBufferSize) {
@@ -264,7 +285,7 @@ void TMDebugRendererDrawCapsule_(float x, float y, float radio, float halfHeight
     TMDarrayPush(capsule, lastVertex, DebugVertex);
 
 
-    LocalToWorld(capsule, TMDarraySize(capsule), x, y, 0, radio, rotation);
+    LocalToWorldCapsule(capsule, TMDarraySize(capsule), x, y, 0, radio, rotation);
     SetColor(capsule, TMDarraySize(capsule), color);
 
     if(gBufferUsed >= gBufferSize) {

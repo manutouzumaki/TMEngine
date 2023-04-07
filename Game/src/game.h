@@ -3,6 +3,7 @@
 #define _GAME_H_
 
 #include <tm_renderer.h>
+#include <tm_ui.h>
 
 struct GameState {
     TMRenderer *renderer;
@@ -27,6 +28,8 @@ struct GameState {
     float *uvs;
 
     TMInstanceRenderer *instanceRenderer;
+
+    TMUIElement *root;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);

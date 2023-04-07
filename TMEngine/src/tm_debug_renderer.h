@@ -9,6 +9,7 @@ struct TMRenderer;
 
 #define TMDebugRendererInitialize(renderer, bufferSize) TMDebugRendererInitialize_(renderer, bufferSize)
 #define TMDebugRendererShutdown() TMDebugRendererShutdown_()
+#define TMDebugRendererDrawLine(ax, ay, bx, by, color) TMDebugRendererDrawLine_(ax, ay, bx, by, color)
 #define TMDebugRendererDrawQuad(x, y, w, h, angle, color) TMDebugRendererDrawQuad_(x, y, w, h, angle, color)
 #define TMDebugRendererDrawCircle(x, y, radio, color, vertNum) TMDebugRendererDrawCircle_(x, y, radio, color, vertNum)
 #define TMDebugRendererDrawCapsule(x, y, radio, halfHeight, rotation, color, vertNum) TMDebugRendererDrawCapsule_(x, y, radio, halfHeight, rotation, color, vertNum)
@@ -19,6 +20,7 @@ struct TMRenderer;
 
 #define TMDebugRendererInitialize(renderer, bufferSize)
 #define TMDebugRendererShutdown()
+#define TMDebugRendererDrawLine(ax, ay, bx, by, color)
 #define TMDebugRendererDrawQuad(x, y, w, h, angle, color)
 #define TMDebugRendererDrawCircle(x, y, radio, color, vertNum)
 #define TMDebugRendererDrawCapsule(x, y, radio, halfHeight, rotation, color, vertNum)
@@ -29,6 +31,11 @@ struct TMRenderer;
 
 TM_EXPORT void TMDebugRendererInitialize_(TMRenderer *renderer, size_t bufferSize);
 TM_EXPORT void TMDebugRendererShutdown_();
+
+
+TM_EXPORT void TMDebugRendererDrawLine_(float ax, float ay,
+                                        float bx, float by,
+                                        unsigned int color);
 TM_EXPORT void TMDebugRendererDrawQuad_(float x, float y, float w, float h,
                                         float angle, unsigned int color);
 TM_EXPORT void TMDebugRendererDrawCircle_(float x, float y, float radio,
