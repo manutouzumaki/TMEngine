@@ -25,6 +25,7 @@ struct TMUIElement {
     TMVec2 position;
     TMVec2 size;
     TMVec4 color;
+    TMVec4 oldColor;
 
     TMUIOrientation orientation;
     TMUIType type;
@@ -40,5 +41,8 @@ TM_EXPORT void TMUIElementDestroy(TMUIElement *element);
 TM_EXPORT void TMUIElementAddChild(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color, TMRenderBatch *renderBatch);
 TM_EXPORT TMUIElement *TMUIElementGetChild(TMUIElement *element, int index);
 TM_EXPORT void TMUIElementDraw(TMUIElement *element);
+TM_EXPORT void TMUIElementProcessInput(TMUIElement *element,
+                                       int width, int height,
+                                       TMMat4 proj, TMMat4 view);
 
 #endif

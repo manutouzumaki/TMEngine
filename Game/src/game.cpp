@@ -281,10 +281,12 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
 
     
-    state->root = TMUIElementCreate({-300, 0}, {200, 200}, {1, 0, 0, 1}, TM_UI_ORIENTATION_VERTICAL,   TM_UI_TYPE_BUTTON, state->renderBatch);
+    state->root = TMUIElementCreate({0, 300}, {400, 600}, {1, 0, 0, 1}, TM_UI_ORIENTATION_VERTICAL,   TM_UI_TYPE_BUTTON, state->renderBatch);
     TMUIElementAddChild(state->root, TM_UI_ORIENTATION_VERTICAL ,  {0, 1, 0, 0.5}, state->renderBatch);
+    TMUIElementAddChild(state->root, TM_UI_ORIENTATION_VERTICAL ,  {1, 1, 0, 0.8}, state->renderBatch);
+    TMUIElementAddChild(state->root, TM_UI_ORIENTATION_VERTICAL ,  {0, 1, 1, 0.2}, state->renderBatch);
     TMUIElementAddChild(state->root, TM_UI_ORIENTATION_HORIZONTAL, {0, 0, 1, 1}, state->renderBatch);
-    TMUIElementAddChild(state->root, TM_UI_ORIENTATION_VERTICAL,   {1, 0, 1, 1}, state->renderBatch);
+    TMUIElementAddChild(state->root, TM_UI_ORIENTATION_HORIZONTAL,   {1, 0, 1, 1}, state->renderBatch);
 
     
     TMUIElement *child = TMUIElementGetChild(state->root, 1);
@@ -293,11 +295,25 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {0.5, 1, 0.2, 1}, state->renderBatch);
     TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {1, 0.2, 0.5, 1}, state->renderBatch);
 
+    child = TMUIElementGetChild(state->root, 3);
+    TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {1, 1, 0, 1}, state->renderBatch);
+    TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {0, 1, 1, 0}, state->renderBatch);
+    TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {0.5, 1, 0.2, 1}, state->renderBatch);
+    TMUIElementAddChild(child, TM_UI_ORIENTATION_VERTICAL, {1, 0.2, 0.5, 1}, state->renderBatch);
+
+
 
 }
 
 void GameUpdate(GameState *state, float dt) {
-
+    int width = TMRendererGetWidth(state->renderer);
+    int height = TMRendererGetHeight(state->renderer);
+    TMVec3 pos = {0, 0, 0};
+    TMVec3 tar = {0, 0, 1};
+    TMVec3 up  = {0, 1, 0};
+    TMMat4 view = TMMat4LookAt(pos, pos + tar, up);
+    TMMat4 proj = TMMat4Ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 100.0f);
+    TMUIElementProcessInput(state->root, width, height, proj, view);
 }
 
 void GameFixUpdate(GameState *state, float dt) {
@@ -346,19 +362,10 @@ void GameRender(GameState *state) {
 
     TMRendererDepthTestDisable(state->renderer);
 
-    // batch rendering test
     mats.world = TMMat4Identity(); 
     mats.proj = TMMat4Ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 100.0f);
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
-    TMRendererRenderBatchAdd(state->renderBatch, 0, sinf(angle)*100.0f, 1, 100, 100, 0, 13, state->uvs);
-    TMRendererRenderBatchAdd(state->renderBatch, 200, 0, 1, 100, 100, 0, 24, state->uvs);
-    TMRendererRenderBatchAdd(state->renderBatch, 0, 0, 1, 100, 100, 0);
-    TMRendererRenderBatchAdd(state->renderBatch, 0, 100, 1, 100, 100, 0, 0, 1, 0, 0.2);
-
-    TMUIElementDraw(state->root);
-    
-    TMRendererRenderBatchDraw(state->renderBatch);
-
+    TMRendererTextureBind(state->renderer, state->charactersTexture, state->instShader, "moon", 0);
 
     // instance rendering test
     WorldColorInstance instBuffer[4] = {};
@@ -366,7 +373,7 @@ void GameRender(GameState *state) {
     instBuffer[0].color = {1, 0.8, 0.8, 0};
     instBuffer[0].uvs = {state->uvs[0], state->uvs[1], state->uvs[2], state->uvs[3]};
     instBuffer[1].world = TMMat4Translate(-200, 200, 0) * TMMat4Scale(200, 200, 1);
-    instBuffer[1].color = {1, 0, 0, 1};
+    instBuffer[1].color = {1, 0, 0, 0};
     instBuffer[1].uvs = {state->uvs[0+4*2], state->uvs[1+4*2], state->uvs[2+4*2], state->uvs[3+4*2]};
     instBuffer[2].world = TMMat4Translate(0, -200, 0) * TMMat4Scale(100, 50, 1);
     instBuffer[2].color = {1, 1, 1, 0};
@@ -386,6 +393,16 @@ void GameRender(GameState *state) {
     TMDebugRendererDrawLine(-200, 0, 200, 100, 0xFF0000FF);
 
     TMDebugRenderDraw();
+
+    // batch rendering test
+    TMRendererRenderBatchAdd(state->renderBatch, 0, sinf(angle)*100.0f, 1, 100, 100, 0, 13, state->uvs);
+    TMRendererRenderBatchAdd(state->renderBatch, 200, 0, 1, 100, 100, 0, 24, state->uvs);
+    TMRendererRenderBatchAdd(state->renderBatch, 0, 0, 1, 100, 100, 0);
+    TMRendererRenderBatchAdd(state->renderBatch, 0, 100, 1, 100, 100, 0, 0, 1, 0, 0.2);
+
+    TMUIElementDraw(state->root);
+    
+    TMRendererRenderBatchDraw(state->renderBatch);
 
     TMRendererPresent(state->renderer);
 }
