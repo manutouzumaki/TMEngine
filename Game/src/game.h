@@ -1,35 +1,25 @@
-
 #ifndef _GAME_H_
 #define _GAME_H_
 
 #include <tm_renderer.h>
-#include <tm_ui.h>
+#include <utils/tm_math.h>
+
+#include "entity.h"
 
 struct GameState {
+    
     TMRenderer *renderer;
-    
+    TMRenderBatch *batchRenderer;
     TMShader *shader;
-    TMShader *cloneShader;
-    TMShader *batchShader;
-    TMShader *instShader;
-
-    TMBuffer *buffer;
-    TMBuffer *cubeBuffer;
-    TMBuffer *cloneBuffer;
-    
     TMTexture *texture;
-    TMTexture *cubeTexture;
-    TMTexture *cloneTexture;
-    TMTexture *charactersTexture;
-    
     TMShaderBuffer *shaderBuffer;
+
+    TMMat4 view;
+    TMMat4 proj;
+
+    Entity **entities;
+
     
-    TMRenderBatch *renderBatch;
-    float *uvs;
-
-    TMInstanceRenderer *instanceRenderer;
-
-    TMUIElement *root;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);

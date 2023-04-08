@@ -190,9 +190,6 @@ TMRenderer* TMRendererCreate(TMWindow *window) {
     renderer->deviceContext->OMSetBlendState(renderer->alphaBlendEnable, 0, 0xffffffff);
     renderer->deviceContext->RSSetState(renderer->fillRasterizerCullBack);
 
-    ShowWindow(window->hwndWindow, SW_SHOW);
-    UpdateWindow(window->hwndWindow);
-
     return renderer;
 }
 

@@ -7,7 +7,7 @@ build_win32:
 	-DTM_DEBUG -DTM_WIN32 \
 	-I$(INCL_PATH) \
 	*.cpp \
-	/Fo../build/ /Fe../build/ /Fm../build/ /Fd../build/ \
+	/Fo../build/ /Fe../build/game.exe /Fm../build/ /Fd../build/ \
 	-link tmlib.lib /LIBPATH:$(LINK_PATH) \
 	/SUBSYSTEM:CONSOLE
 

@@ -18,4 +18,6 @@ TM_EXPORT void TMMemoryPoolDestroy(TMMemoryPool *memoryPool);
 TM_EXPORT void *TMMemoryPoolAlloc(TMMemoryPool *memoryPool);
 TM_EXPORT void TMMemoryPoolFree(TMMemoryPool *memoryPool, void *mem);
 
+// TODO: reset memory pool to be use again
+
 #endif

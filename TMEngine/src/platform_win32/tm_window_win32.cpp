@@ -98,6 +98,9 @@ void win32PollEvents() {
 
     gRunning = true;
 
+    ShowWindow(window->hwndWindow, SW_SHOW);
+    UpdateWindow(window->hwndWindow);
+
     return window;
 }
 
