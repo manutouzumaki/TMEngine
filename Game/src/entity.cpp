@@ -2,6 +2,7 @@
 
 #include <utils/tm_memory_pool.h>
 #include <memory.h>
+#include <assert.h>
 
 static unsigned int entityCount;
 static TMMemoryPool *entityMem;
@@ -33,6 +34,7 @@ Entity *EntityCreate() {
 }
 
 void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color) {
+    assert(entity->graphics == NULL);
     entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
     entity->graphics->position = position;
     entity->graphics->size = size;
@@ -40,12 +42,14 @@ void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TM
 }
 
 void EntityAddPhysicsComponent(Entity *entity, TMVec2 velocity, TMVec2 acceleration) {
+    assert(entity->physics == NULL);
     entity->physics = (PhysicsComponent *)TMMemoryPoolAlloc(physicsComponentMem);
     entity->physics->velocity = velocity;
     entity->physics->acceleration = acceleration;
 }
 
 void EntityAddInputComponent(Entity *entity) {
+    assert(entity->input == NULL);
     entity->input = (InputComponent *)TMMemoryPoolAlloc(inputComponentMem);
 }
 

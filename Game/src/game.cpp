@@ -48,6 +48,11 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntityAddGraphicsComponent(floor, {0, -199}, {800, 100}, {1, 1, 0, 1});
     TMDarrayPush(state->entities, floor, Entity *);
 
+    // create the cealing
+    Entity *ceal = EntityCreate();
+    EntityAddGraphicsComponent(ceal, {0, 199}, {800, 100}, {1, 1, 0, 1});
+    TMDarrayPush(state->entities, ceal, Entity *);
+
     // create the player
     Entity *player = EntityCreate();
     EntityAddGraphicsComponent(player, {0, 0}, {80, 120}, {1, 0, 0, 1});
