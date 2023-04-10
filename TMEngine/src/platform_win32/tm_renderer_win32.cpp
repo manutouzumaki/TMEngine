@@ -271,8 +271,8 @@ void TMRendererClear(TMRenderer *renderer, float r, float g, float b, float a, u
     }
 }
 
-void TMRendererPresent(TMRenderer* renderer) {
-    renderer->swapChain->Present(1, 0);
+void TMRendererPresent(TMRenderer* renderer, int vsync) {
+    renderer->swapChain->Present(vsync, 0);
 }
 
 

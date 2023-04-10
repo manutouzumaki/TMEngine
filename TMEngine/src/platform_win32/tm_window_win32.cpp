@@ -136,3 +136,7 @@ void win32PollEvents() {
  void TMWindowPresent(TMWindow* window) {
     gLastInput = gCurrentInput;
 }
+
+TM_EXPORT void TMSleep(float milliseconds) {
+    Sleep(milliseconds);
+}

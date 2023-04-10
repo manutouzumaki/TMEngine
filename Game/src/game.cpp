@@ -3,6 +3,9 @@
 #include <utils/tm_darray.h>
 #include <tm_input.h>
 
+#include <math.h>
+#include <stdio.h>
+
 struct ShaderMatrix {
     TMMat4 proj;
     TMMat4 view;
@@ -36,7 +39,6 @@ void GameInitialize(GameState *state, TMWindow *window) {
     mats.world = TMMat4Identity();
     state->shaderBuffer = TMRendererShaderBufferCreate(state->renderer, &mats, sizeof(ShaderMatrix), 0);
 
-    TMRendererFaceCulling(state->renderer, false, 0);
     TMRendererDepthTestDisable(state->renderer);
 
 
@@ -56,49 +58,78 @@ void GameInitialize(GameState *state, TMWindow *window) {
     // create the player
     Entity *player = EntityCreate();
     EntityAddGraphicsComponent(player, {0, 0}, {80, 120}, {1, 0, 0, 1});
-    EntityAddPhysicsComponent(player, {0, 0}, {0, 0});
+    EntityAddPhysicsComponent(player, {0, 0}, {0, 0}, {0, 0}, 0.01f);
     EntityAddInputComponent(player);
     TMDarrayPush(state->entities, player, Entity *);
-
-
 
 }
 
 void GameUpdate(GameState *state, float dt) {
-    int stopHere = 0;
+    
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
         Entity *entity = state->entities[i];
 
 
-        if(entity->input && entity->graphics) {
-            GraphicsComponent *graphics = entity->graphics;
+        if(entity->input && entity->physics) {
+            PhysicsComponent *physics = entity->physics;
+            TMVec2 acceleration = {};
             if(TMInputKeyboardKeyIsDown('D')) {
-                graphics->position.x += 100.0f * dt;
+                acceleration.x = 1.0f;
             }
             if(TMInputKeyboardKeyIsDown('A')) {
-                graphics->position.x -= 100.0f * dt;
+                acceleration.x = -1.0f;
             }
             if(TMInputKeyboardKeyIsDown('W')) {
-                graphics->position.y += 100.0f * dt;
+                acceleration.y = 1.0f;
             }
             if(TMInputKeyboardKeyIsDown('S')) {
-                graphics->position.y -= 100.0f * dt;
+                acceleration.y = -1.0f;
             }
+            if(TMVec2LenSq(acceleration) > 0) {
+              physics->acceleration = TMVec2Normalized(acceleration) * 2000.0f;
+            }
+            else {
+                physics->acceleration = acceleration;
+            }
+        
         }
-
-
     }
+
 }
 
 void GameFixUpdate(GameState *state, float dt) {
+    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+        Entity *entity = state->entities[i];
+        if(entity->physics) {
+            PhysicsComponent *physics = entity->physics;
 
+            physics->lastPosition = physics->position;
+            
+            physics->velocity = physics->velocity + physics->acceleration * dt;
+            physics->position = physics->position + physics->velocity * dt;
+
+            float damping = powf(physics->damping, dt);
+            physics->velocity = physics->velocity * damping;
+        }
+    }
 }
 
 void GamePostUpdate(GameState *state, float t) {
+    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+        Entity *entity = state->entities[i];
+        if(entity->graphics && entity->physics) {
+
+            GraphicsComponent *graphics = entity->graphics;
+            PhysicsComponent *physics = entity->physics;
+            TMVec2 position = physics->position * t + physics->lastPosition * (1.0f - t);
+            graphics->position = position;
+        }
+    }
+
 }
 
 void GameRender(GameState *state) {
-    TMRendererClear(state->renderer, 0.2, 0.2, 0.4, 1, TM_COLOR_BUFFER_BIT);
+    TMRendererClear(state->renderer, 0.2, 0.2, 0.4, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
 
     
     TMRendererBindShader(state->renderer, state->shader);
@@ -119,7 +150,7 @@ void GameRender(GameState *state) {
     TMRendererRenderBatchDraw(state->batchRenderer);
     
 
-    TMRendererPresent(state->renderer);
+    TMRendererPresent(state->renderer, 1);
 }
 
 void GameShutdown(GameState *state) {

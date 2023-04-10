@@ -14,5 +14,7 @@ TM_EXPORT void TMWindowDestroy(TMWindow *window);
 TM_EXPORT bool TMWindowShouldClose(TMWindow *window);
 TM_EXPORT void TMWindowFlushEventQueue(TMWindow *window);
 TM_EXPORT void TMWindowPresent(TMWindow *window);
+// TODO: implement this for macos
+TM_EXPORT void TMSleep(float milliseconds);
 
 #endif

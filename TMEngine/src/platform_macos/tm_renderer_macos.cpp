@@ -179,7 +179,7 @@ struct TMRenderer {
 }
 
 // TODO(manuel): see where this functio should be implemented
- void TMRendererPresent(TMRenderer *renderer) {
+ void TMRendererPresent(TMRenderer *renderer, int vsync) {
     // TODO ...
 }
 

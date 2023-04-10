@@ -14,6 +14,10 @@ struct TMVec2 {
         };
         float v[2];
     };
+
+    float operator[](unsigned int index) {
+        return v[index];
+    }
 };
 
 TM_EXPORT TMVec2 operator+(TMVec2 a, TMVec2 b);
@@ -47,6 +51,9 @@ struct TMVec3 {
         };
         float v[3];
     };
+    float operator[](unsigned int index) {
+        return v[index];
+    }
 };
 
 TM_EXPORT TMVec3 operator+(TMVec3 a, TMVec3 b);
@@ -82,6 +89,9 @@ struct TMVec4 {
         };
         float v[4];
     };
+    float operator[](unsigned int index) {
+        return v[index];
+    }
 };
 
 struct TMMat3 {

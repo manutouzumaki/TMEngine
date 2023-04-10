@@ -41,11 +41,13 @@ void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TM
     entity->graphics->color = color;
 }
 
-void EntityAddPhysicsComponent(Entity *entity, TMVec2 velocity, TMVec2 acceleration) {
+void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity, TMVec2 acceleration, float damping) {
     assert(entity->physics == NULL);
     entity->physics = (PhysicsComponent *)TMMemoryPoolAlloc(physicsComponentMem);
+    entity->physics->position = position;
     entity->physics->velocity = velocity;
     entity->physics->acceleration = acceleration;
+    entity->physics->damping = damping;
 }
 
 void EntityAddInputComponent(Entity *entity) {

@@ -4,12 +4,10 @@
 #include "tm_defines.h"
 
 struct TMTimer {
-    double start;
-    double invFrequency;
+    unsigned long long frequency;
 };
 
 TM_EXPORT void TMTimerStart(TMTimer *timer);
-TM_EXPORT double TMTimerGetCurrentTime(TMTimer *timer);
-TM_EXPORT double TMTimerGetElapsedTime(TMTimer *timer);
+TM_EXPORT unsigned long long TMTimerGetCurrentTime(TMTimer *timer);
 
 #endif

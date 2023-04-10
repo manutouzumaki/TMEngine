@@ -1,26 +1,24 @@
 #include "../tm_timer.h"
 
 #include <windows.h>
+#include <stdio.h>
+
+static bool firstTime;
 
 void TMTimerStart(TMTimer *timer) {
+    if(!firstTime) {
+        printf("timeBeginPeriod\n");
+        timeBeginPeriod(1);
+        firstTime = true;
+    }
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
-    timer->invFrequency = 1.0/(double)frequency.QuadPart;
-
-    LARGE_INTEGER start;
-    QueryPerformanceCounter(&start);
-    timer->start = (double)start.QuadPart;
+    timer->frequency = frequency.QuadPart;
 }
 
-double TMTimerGetCurrentTime(TMTimer *timer) {
+unsigned long long TMTimerGetCurrentTime(TMTimer *timer) {
     LARGE_INTEGER current;
     QueryPerformanceCounter(&current);
-    return (double)current.QuadPart * timer->invFrequency;
-}
-
-double TMTimerGetElapsedTime(TMTimer *timer) {
-    LARGE_INTEGER current;
-    QueryPerformanceCounter(&current);
-    return (double)current.QuadPart*timer->invFrequency - timer->start;
+    return current.QuadPart;
 }
 

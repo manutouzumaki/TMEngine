@@ -11,8 +11,11 @@ struct GraphicsComponent {
 };
 
 struct PhysicsComponent {
+    TMVec2 position;
+    TMVec2 lastPosition;
     TMVec2 velocity;
     TMVec2 acceleration;
+    float damping;
 
 };
 
@@ -35,7 +38,7 @@ Entity *EntityCreate();
 void EntityDestroy(Entity *entity);
 
 void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color);
-void EntityAddPhysicsComponent(Entity *entity, TMVec2 velocity, TMVec2 acceleration);
+void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity, TMVec2 acceleration, float damping);
 void EntityAddInputComponent(Entity *entity);
 
 

@@ -45,7 +45,7 @@ TM_EXPORT int TMRendererGetWidth(TMRenderer *renderer);
 TM_EXPORT int TMRendererGetHeight(TMRenderer *renderer);
 TM_EXPORT bool TMRendererUpdateRenderArea(TMRenderer *renderer);
 TM_EXPORT void TMRendererClear(TMRenderer* renderer, float r, float g, float b, float a, unsigned  int flags);
-TM_EXPORT void TMRendererPresent(TMRenderer *renderer);
+TM_EXPORT void TMRendererPresent(TMRenderer *renderer, int vsync);
 
 
 TM_EXPORT TMBuffer *TMRendererBufferCreate(TMRenderer *renderer,
