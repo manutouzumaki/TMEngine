@@ -16,7 +16,7 @@ int main() {
     float accumulator = 0.0f;
     float dt = 1.0f/60.0f;
 
-    float targetFrameTime = 1.0f/20.0f;
+    float targetFrameTime = 1.0f/60.0f;
 
     unsigned int framesCounter = 0;
     float time = 0.0f;
