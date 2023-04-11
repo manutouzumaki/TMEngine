@@ -11,6 +11,7 @@ struct GraphicsComponent {
 };
 
 struct PhysicsComponent {
+    TMVec2 potetialPosition;
     TMVec2 position;
     TMVec2 lastPosition;
     TMVec2 velocity;

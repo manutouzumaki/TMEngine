@@ -5,6 +5,7 @@
 #include <utils/tm_math.h>
 
 #include "entity.h"
+#include "collision.h"
 
 struct GameState {
     
@@ -18,6 +19,8 @@ struct GameState {
     TMMat4 proj;
 
     Entity **entities;
+    AABB colliders[3];
+    TMVec2 mouseP;
 
     
 };
