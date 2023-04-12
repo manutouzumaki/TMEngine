@@ -14,6 +14,8 @@ struct ShaderMatrix {
     TMMat4 world;
 };
 
+static TMVec2 closestPoint;
+
 void GameInitialize(GameState *state, TMWindow *window) {
     state->renderer = TMRendererCreate(window);
 
@@ -51,7 +53,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the floor
     Entity *floor = EntityCreate();
-    EntityAddGraphicsComponent(floor, {0, -199}, {800, 100}, {1, 1, 0, 1});
+    EntityAddGraphicsComponent(floor, {0, -199}, {800, 100}, {0, 0.2, 0.4, 1});
     TMDarrayPush(state->entities, floor, Entity *);
     aabb->min = {0 - 400, -199 - 50};
     aabb->max = {0 + 400, -199 + 50};
@@ -59,12 +61,19 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the cealing
     Entity *ceal = EntityCreate();
-    EntityAddGraphicsComponent(ceal, {0, 199}, {800, 100}, {1, 1, 0, 1});
+    EntityAddGraphicsComponent(ceal, {0, 199}, {400, 100}, {0, 0.2, 0.4, 1});
     TMDarrayPush(state->entities, ceal, Entity *);
     aabb->min = {0 - 400, 199 - 50};
     aabb->max = {0 + 400, 199 + 50};
     aabb++;
 
+    // create the cealing
+    Entity *ceal1 = EntityCreate();
+    EntityAddGraphicsComponent(ceal1, {-400, 199}, {400, 100}, {0.5, 0.2, 0.4, 1});
+    TMDarrayPush(state->entities, ceal1, Entity *);
+    aabb->min = {-400 - 400, 199 - 50};
+    aabb->max = {-400 + 400, 199 + 50};
+    aabb++;
 
     // create the player
     Entity *player = EntityCreate();
@@ -108,26 +117,6 @@ void GameUpdate(GameState *state, float dt) {
         
         }
     }
-    
-
-    int width = TMRendererGetWidth(state->renderer);
-    int height = TMRendererGetHeight(state->renderer);
-    int mouseX = TMInputMousePositionX();
-    int mouseY = TMInputMousePositionY();
-    // TODO: mouse picking ...
-    TMMat4 invView = TMMat4Inverse(state->view);
-    TMMat4 invProj = TMMat4Inverse(state->proj);
-    TMVec4 rayClip;
-    rayClip.x = (2.0f * mouseX) / (float)width - 1.0f;
-    rayClip.y = 1.0f - (2.0f * mouseY) / height;
-    rayClip.z = 1.0f;
-    rayClip.w = 1.0f;
-    TMVec4 rayEye = invProj * rayClip;
-    rayEye.z = 1.0f;
-    rayEye.w = 0.0f;
-    TMVec4 rayWorld = invView * rayEye;
-    state->mouseP.x = rayWorld.x;
-    state->mouseP.y = rayWorld.y;
 }
 
 void GameFixUpdate(GameState *state, float dt) {
@@ -149,9 +138,6 @@ void GameFixUpdate(GameState *state, float dt) {
                 if(other != entity) {
                     AABB entityAABB = state->colliders[i];
                     AABB otherAABB  = state->colliders[j];
-                    if(TestAABBAABB(entityAABB, otherAABB)) { 
-                    }
-
 
                     TMVec2 d = physics->potetialPosition - physics->position;
                     Ray r{};
@@ -168,37 +154,33 @@ void GameFixUpdate(GameState *state, float dt) {
                     expand.min = {otherAABB.min.x - width*0.5f, otherAABB.min.y - height*0.5f};
                     expand.max = {otherAABB.max.x + width*0.5f, otherAABB.max.y + height*0.5f};
                     if(RayAAABB(r.o, r.d, expand, t, p) && t*t < TMVec2LenSq(d)) {
-                        TMVec2 hitP = r.o + r.d * t;
+                        t /= TMVec2Len(d); 
+                        TMVec2 hitP = r.o + d * t;
                         TMVec2 closestP;
                         ClosestPtPointAABB(hitP, otherAABB, closestP);
+                        closestPoint = closestP;
                         TMVec2 normal = TMVec2Normalized(hitP - closestP);
-                       
-#if 0
-                        TMVec2 n[4] = {
-                            { 1.0f,  0.0f},
-                            {-1.0f,  0.0f},
-                            { 0.0f,  1.0f},
-                            { 0.0f, -1.0f}
-                        };
-
-                        float bigger = FLT_MIN;
-                        TMVec2 selectedNormal = normal;
-                        for(int index = 0; index < 4; ++index) {
-                            float proj = TMVec2Dot(normal, n[index]);
-                            if(proj > bigger) {
-                                bigger = proj;
-                                selectedNormal = n[index];
-                            } 
+                        if(otherAABB.max.x <= entityAABB.min.x) {
+                            normal = {1.0f, 0.0f};
                         }
-                        normal = selectedNormal;
-#endif
-                        printf("x: %f, y: %f\n", normal.x, normal.y);
+                        if(otherAABB.min.x >= entityAABB.max.x) {
+                            normal = {-1.0f, 0.0f};
+                        }
+                        if(otherAABB.max.y <= entityAABB.min.y) {
+                            normal = {0.0f, 1.0f};
+                        }
+                        if(otherAABB.min.y >= entityAABB.max.y) {
+                            normal = {0.0f, -1.0f};
+                        }
                         
 
-
                         physics->velocity = physics->velocity - TMVec2Project(physics->velocity, normal);
-                        TMVec2 scaleVelocity = physics->velocity * (1.0f - t);
+
+                        TMVec2 scaleVelocity = physics->velocity * (1.0f - t );
+
                         physics->potetialPosition = hitP + (normal * 0.002f);
+                        
+
                         physics->potetialPosition = physics->potetialPosition + scaleVelocity * dt;
                     }  
 
@@ -223,6 +205,17 @@ void GamePostUpdate(GameState *state, float t) {
             PhysicsComponent *physics = entity->physics;
             TMVec2 position = physics->position * t + physics->lastPosition * (1.0f - t);
             graphics->position = position;
+
+
+            TMVec3 pos = {graphics->position.x, graphics->position.y, 0};
+            TMVec3 tar = {0, 0, 1};
+            TMVec3 up  = {0, 1, 0};
+            state->view = TMMat4LookAt(pos, pos + tar, up);
+            ShaderMatrix mats{};
+            mats.proj = state->proj;
+            mats.view = state->view;
+            mats.world = TMMat4Identity();
+            state->shaderBuffer = TMRendererShaderBufferCreate(state->renderer, &mats, sizeof(ShaderMatrix), 0);
         }
     }
 
@@ -233,10 +226,14 @@ void GamePostUpdate(GameState *state, float t) {
     aabb->max = {graphics->position.x + 400, graphics->position.y + 50};
     aabb++;
     graphics = entity[1]->graphics;
-    aabb->min = {graphics->position.x - 400, graphics->position.y - 50};
+    aabb->min = {graphics->position.x - 200, graphics->position.y - 50};
     aabb->max = {graphics->position.x + 200, graphics->position.y + 50};
     aabb++;
     graphics = entity[2]->graphics;
+    aabb->min = {graphics->position.x - 200, graphics->position.y - 50};
+    aabb->max = {graphics->position.x + 200, graphics->position.y + 50};
+    aabb++;
+    graphics = entity[3]->graphics;
     aabb->min = {graphics->position.x - 40, graphics->position.y - 60};
     aabb->max = {graphics->position.x + 40, graphics->position.y + 60};
 }
@@ -256,11 +253,13 @@ void GameRender(GameState *state) {
                                      graphics->size.x, graphics->size.y, 0,
                                      graphics->color.x, graphics->color.y,
                                      graphics->color.z, graphics->color.w);
+
+            TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, 5, 0xFF22FF22, 10);
         }
     }
     TMRendererRenderBatchDraw(state->batchRenderer);
 
-    for(int i = 0; i < 3; ++i) {
+    for(int i = 0; i < 4; ++i) {
         AABB aabb = state->colliders[i];
         float width = aabb.max.x - aabb.min.x;
         float height = aabb.max.y - aabb.min.y;
@@ -269,17 +268,16 @@ void GameRender(GameState *state) {
         TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
 
 
-        Ray r{};
-        r.d = TMVec2Normalized(state->mouseP);
-        float t = -1.0f;
-        TMVec2 p;
-        if(RayAAABB(r.o, r.d, aabb, t, p) && t*t < TMVec2LenSq(state->mouseP)) {
-            TMDebugRendererDrawCircle(p.x, p.y, 5, 0xFFFFAAFF, 10);
-        }    
-
+        aabb.min = {aabb.min.x - 40, aabb.min.y - 60};
+        aabb.max = {aabb.max.x + 40, aabb.max.y + 60};
+        width = aabb.max.x - aabb.min.x;
+        height = aabb.max.y - aabb.min.y;
+        x = aabb.min.x + width*0.5f;
+        y = aabb.min.y + height*0.5f;
+        TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
     }
 
-    TMDebugRendererDrawLine(0, 0, state->mouseP.x, state->mouseP.y, 0xFF00AAFF);
+    TMDebugRendererDrawCircle(closestPoint.x, closestPoint.y, 5, 0xFF2FFFF2, 10);
     TMDebugRenderDraw();
     
 

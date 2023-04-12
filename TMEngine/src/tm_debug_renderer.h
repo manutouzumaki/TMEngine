@@ -13,10 +13,9 @@ struct TMRenderer;
 #define TMDebugRendererDrawQuad(x, y, w, h, angle, color) TMDebugRendererDrawQuad_(x, y, w, h, angle, color)
 #define TMDebugRendererDrawCircle(x, y, radio, color, vertNum) TMDebugRendererDrawCircle_(x, y, radio, color, vertNum)
 #define TMDebugRendererDrawCapsule(x, y, radio, halfHeight, rotation, color, vertNum) TMDebugRendererDrawCapsule_(x, y, radio, halfHeight, rotation, color, vertNum)
-
 #define TMDebugRenderDraw() TMDebugRenderDraw_()
 
-#elif
+#else
 
 #define TMDebugRendererInitialize(renderer, bufferSize)
 #define TMDebugRendererShutdown()

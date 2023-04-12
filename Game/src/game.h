@@ -19,8 +19,7 @@ struct GameState {
     TMMat4 proj;
 
     Entity **entities;
-    AABB colliders[3];
-    TMVec2 mouseP;
+    AABB colliders[4];
 
     
 };
