@@ -6,6 +6,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <float.h>
 
 struct ShaderMatrix {
     TMMat4 proj;
@@ -171,6 +172,30 @@ void GameFixUpdate(GameState *state, float dt) {
                         TMVec2 closestP;
                         ClosestPtPointAABB(hitP, otherAABB, closestP);
                         TMVec2 normal = TMVec2Normalized(hitP - closestP);
+                       
+#if 0
+                        TMVec2 n[4] = {
+                            { 1.0f,  0.0f},
+                            {-1.0f,  0.0f},
+                            { 0.0f,  1.0f},
+                            { 0.0f, -1.0f}
+                        };
+
+                        float bigger = FLT_MIN;
+                        TMVec2 selectedNormal = normal;
+                        for(int index = 0; index < 4; ++index) {
+                            float proj = TMVec2Dot(normal, n[index]);
+                            if(proj > bigger) {
+                                bigger = proj;
+                                selectedNormal = n[index];
+                            } 
+                        }
+                        normal = selectedNormal;
+#endif
+                        printf("x: %f, y: %f\n", normal.x, normal.y);
+                        
+
+
                         physics->velocity = physics->velocity - TMVec2Project(physics->velocity, normal);
                         TMVec2 scaleVelocity = physics->velocity * (1.0f - t);
                         physics->potetialPosition = hitP + (normal * 0.002f);
@@ -253,6 +278,7 @@ void GameRender(GameState *state) {
         }    
 
     }
+
     TMDebugRendererDrawLine(0, 0, state->mouseP.x, state->mouseP.y, 0xFF00AAFF);
     TMDebugRenderDraw();
     

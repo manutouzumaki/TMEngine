@@ -155,9 +155,8 @@ static void SetColor(DebugVertex *quad, unsigned int count, unsigned int color) 
 }
 
 
-static void AddFigureToBuffer(DebugVertex *quad, unsigned int count) {
-    assert(gBufferUsed < gBufferSize);
-    assert(count < gBufferSize);
+static void AddFigureToBuffer(DebugVertex *quad, unsigned int count) { 
+    assert(gBufferUsed + count < gBufferSize);
     DebugVertex *vertex = gCPUBuffer + gBufferUsed;
     memcpy(vertex, quad, sizeof(DebugVertex)*count);
     gBufferUsed += count;
@@ -169,7 +168,7 @@ void TMDebugRendererDrawLine_(float ax, float ay, float bx, float by, unsigned i
     LocalToWorldLine(line, 2, ax, ay, bx, by);
     SetColor(line, 2, color);
 
-    if(gBufferUsed >= gBufferSize) {
+    if(gBufferUsed + 2 >= gBufferSize) {
         TMDebugRenderDraw_();
     }
     AddFigureToBuffer(line, 2);
@@ -195,12 +194,13 @@ void TMDebugRendererDrawQuad_(float x, float y, float w, float h, float angle, u
     SetColor(quad, 8, color);
 
 
-    if(gBufferUsed >= gBufferSize) {
+    if(gBufferUsed + 8 >= gBufferSize) {
         TMDebugRenderDraw_();
     }
     AddFigureToBuffer(quad, 8);
 }
 
+#include <stdio.h>
 
 void TMDebugRendererDrawCircle_(float x, float y, float radio, unsigned int color, unsigned int vertNum) {
 
@@ -227,9 +227,10 @@ void TMDebugRendererDrawCircle_(float x, float y, float radio, unsigned int colo
     LocalToWorldCircle(circle, TMDarraySize(circle), x, y, 0, radio);
     SetColor(circle, TMDarraySize(circle), color);
 
-    if(gBufferUsed >= gBufferSize) {
+    if(gBufferUsed + TMDarraySize(circle) >= gBufferSize) {
         TMDebugRenderDraw_();
     }
+    
     AddFigureToBuffer(circle, TMDarraySize(circle));
     
     TMDarrayDestroy(circle);
@@ -288,7 +289,7 @@ void TMDebugRendererDrawCapsule_(float x, float y, float radio, float halfHeight
     LocalToWorldCapsule(capsule, TMDarraySize(capsule), x, y, 0, radio, rotation);
     SetColor(capsule, TMDarraySize(capsule), color);
 
-    if(gBufferUsed >= gBufferSize) {
+    if(gBufferUsed + TMDarraySize(capsule) >= gBufferSize) {
         TMDebugRenderDraw_();
     }
     AddFigureToBuffer(capsule, TMDarraySize(capsule));

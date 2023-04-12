@@ -575,7 +575,7 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
     };
     BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
 
-    if(renderBatch->used >= renderBatch->size) {
+    if(renderBatch->used + 1 >= renderBatch->size) {
         TMRendererRenderBatchDraw(renderBatch);
     }
     AddQuadToBatchBuffer(renderBatch, quad);
@@ -595,7 +595,7 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
     BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
     BatchQuadHandleUVs(quad, sprite, uvs);
 
-    if(renderBatch->used >= renderBatch->size) {
+    if(renderBatch->used + 1 >= renderBatch->size) {
         TMRendererRenderBatchDraw(renderBatch);
     }
     AddQuadToBatchBuffer(renderBatch, quad);
