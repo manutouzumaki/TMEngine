@@ -19,9 +19,7 @@ struct GameState {
     TMMat4 proj;
 
     Entity **entities;
-    AABB colliders[4];
-
-    
+    Entity *player;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);

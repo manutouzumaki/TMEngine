@@ -12,6 +12,7 @@
 ###################################################################################################################################
 ### GAME: 
 ###################################################################################################################################
+### - fix proj matrix to have top-down instead of center projection !!!
 ### - implemet a minimal level base platformer (design the game loop for levels and menus from the start)
 ### -
 ### -

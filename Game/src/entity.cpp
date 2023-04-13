@@ -4,11 +4,14 @@
 #include <memory.h>
 #include <assert.h>
 
+
+// TODO: create and entity manager for all this shit!!!
 static unsigned int entityCount;
 static TMMemoryPool *entityMem;
 static TMMemoryPool *graphicsComponenMem;
 static TMMemoryPool *physicsComponentMem;
 static TMMemoryPool *inputComponentMem;
+static TMMemoryPool *collisionComponentMem;
 
 
 void EntitySystemInitialize(int maxEntityCount) {
@@ -17,6 +20,7 @@ void EntitySystemInitialize(int maxEntityCount) {
     graphicsComponenMem = TMMemoryPoolCreate(sizeof(GraphicsComponent), maxEntityCount);
     physicsComponentMem = TMMemoryPoolCreate(sizeof(PhysicsComponent), maxEntityCount);
     inputComponentMem = TMMemoryPoolCreate(sizeof(InputComponent), maxEntityCount);
+    collisionComponentMem = TMMemoryPoolCreate(sizeof(CollisionComponent), maxEntityCount);
 }
 
 void EntitySystemShutdown() {
@@ -24,6 +28,7 @@ void EntitySystemShutdown() {
     TMMemoryPoolDestroy(graphicsComponenMem);
     TMMemoryPoolDestroy(physicsComponentMem);
     TMMemoryPoolDestroy(inputComponentMem);
+    TMMemoryPoolDestroy(collisionComponentMem);
 
 }
 
@@ -55,11 +60,40 @@ void EntityAddInputComponent(Entity *entity) {
     entity->input = (InputComponent *)TMMemoryPoolAlloc(inputComponentMem);
 }
 
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, AABB aabb) {
+    assert(entity->collision == NULL);
+    entity->collision = (CollisionComponent *)TMMemoryPoolAlloc(collisionComponentMem);
+    entity->collision->type = type;
+    entity->collision->aabb = aabb;
+}
+
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, OBB obb) {
+    assert(entity->collision == NULL);
+    entity->collision = (CollisionComponent *)TMMemoryPoolAlloc(collisionComponentMem);
+    entity->collision->type = type;
+    entity->collision->obb = obb;
+}
+
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circle) {
+    assert(entity->collision == NULL);
+    entity->collision = (CollisionComponent *)TMMemoryPoolAlloc(collisionComponentMem);
+    entity->collision->type = type;
+    entity->collision->circle = circle;
+}
+
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule) {
+    assert(entity->collision == NULL);
+    entity->collision = (CollisionComponent *)TMMemoryPoolAlloc(collisionComponentMem);
+    entity->collision->type = type;
+    entity->collision->capsule = capsule;
+}
+
 
 void EntityDestroy(Entity *entity) {
     if(entity->graphics) TMMemoryPoolFree(graphicsComponenMem, (void *)entity->graphics);
     if(entity->physics) TMMemoryPoolFree(physicsComponentMem, (void *)entity->physics);
     if(entity->input) TMMemoryPoolFree(inputComponentMem, (void *)entity->input);
+    if(entity->collision) TMMemoryPoolFree(collisionComponentMem, (void *)entity->collision);
     TMMemoryPoolFree(entityMem, (void *)entity);
     memset(entity, 0, sizeof(Entity));
 }
