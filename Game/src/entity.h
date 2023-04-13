@@ -40,8 +40,6 @@ struct CollisionComponent {
     };
 };
 
-
-
 struct Entity {
     unsigned int id;
     GraphicsComponent *graphics;
@@ -65,6 +63,11 @@ void EntityAddCollisionComponent(Entity *entity, CollisionType type, AABB aabb);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, OBB obb);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circle);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule);
+
+struct GameState;
+
+void PhysicSystemUpdate(GameState *state, Entity *entity, float dt);
+void PhysicSystemPostUpdate(Entity *entity, float t);
 
 
 

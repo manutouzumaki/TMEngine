@@ -14,8 +14,6 @@ struct ShaderMatrix {
     TMMat4 world;
 };
 
-static TMVec2 closestPoint;
-
 void GameInitialize(GameState *state, TMWindow *window) {
     state->renderer = TMRendererCreate(window);
 
@@ -131,91 +129,14 @@ void GameUpdate(GameState *state, float dt) {
 void GameFixUpdate(GameState *state, float dt) {
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
         Entity *entity = state->entities[i];
-        if(entity->physics) {
-            PhysicsComponent *physics = entity->physics;
-
-            physics->lastPosition = physics->position;
-            
-            physics->velocity = physics->velocity + physics->acceleration * dt;
-            physics->potetialPosition = physics->position + physics->velocity * dt;
-
-            float damping = powf(physics->damping, dt);
-            physics->velocity = physics->velocity * damping;
-
-            for(int j = 0; j < TMDarraySize(state->entities); ++j) {
-                Entity *other = state->entities[j];
-                if(other != entity && other->collision && entity->collision) {
-                    
-                    AABB entityAABB = entity->collision->aabb;
-                    AABB otherAABB  = other->collision->aabb;
-
-                    TMVec2 d = physics->potetialPosition - physics->position;
-                    Ray r{};
-                    r.o = physics->position;
-                    r.d = TMVec2Normalized(d);
-                    float t = -1.0f;
-                    TMVec2 p;
-
-
-                    float width = entityAABB.max.x - entityAABB.min.x;
-                    float height = entityAABB.max.y - entityAABB.min.y;
-
-                    AABB expand;
-                    expand.min = {otherAABB.min.x - width*0.5f, otherAABB.min.y - height*0.5f};
-                    expand.max = {otherAABB.max.x + width*0.5f, otherAABB.max.y + height*0.5f};
-                    if(RayAAABB(r.o, r.d, expand, t, p) && t*t < TMVec2LenSq(d)) {
-                        t /= TMVec2Len(d); 
-                        TMVec2 hitP = r.o + d * t;
-                        TMVec2 closestP;
-                        ClosestPtPointAABB(hitP, otherAABB, closestP);
-                        closestPoint = closestP;
-                        TMVec2 normal = TMVec2Normalized(hitP - closestP);
-                        if(otherAABB.max.x <= entityAABB.min.x) {
-                            normal = {1.0f, 0.0f};
-                        }
-                        if(otherAABB.min.x >= entityAABB.max.x) {
-                            normal = {-1.0f, 0.0f};
-                        }
-                        if(otherAABB.max.y <= entityAABB.min.y) {
-                            normal = {0.0f, 1.0f};
-                        }
-                        if(otherAABB.min.y >= entityAABB.max.y) {
-                            normal = {0.0f, -1.0f};
-                        }
-                        
-
-                        physics->velocity = physics->velocity - TMVec2Project(physics->velocity, normal);
-
-                        TMVec2 scaleVelocity = physics->velocity * (1.0f - t );
-
-                        physics->potetialPosition = hitP + (normal * 0.002f);
-                        
-
-                        physics->potetialPosition = physics->potetialPosition + scaleVelocity * dt;
-                    }  
-
-
-                }
-            }
-
-            physics->position = physics->potetialPosition;
-
-        }
-
-
+        PhysicSystemUpdate(state, entity, dt);
     }
 }
 
 void GamePostUpdate(GameState *state, float t) {
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
         Entity *entity = state->entities[i];
-        if(entity->graphics && entity->physics) {
-
-            GraphicsComponent *graphics = entity->graphics;
-            PhysicsComponent *physics = entity->physics;
-            TMVec2 position = physics->position * t + physics->lastPosition * (1.0f - t);
-            graphics->position = position;
-        }
+        PhysicSystemPostUpdate(entity, t);
 
         if(entity->collision, entity->graphics) {
             GraphicsComponent *graphics = entity->graphics;
@@ -288,7 +209,6 @@ void GameRender(GameState *state) {
             TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, 5, 0xFF22FF22, 10);
         }
     }
-    TMDebugRendererDrawCircle(closestPoint.x, closestPoint.y, 5, 0xFF2FFFF2, 10);
     TMDebugRenderDraw();
     
 

@@ -12,7 +12,9 @@
 ###################################################################################################################################
 ### GAME: 
 ###################################################################################################################################
-### - fix proj matrix to have top-down instead of center projection !!!
+### - IMPORTANT: fix proj matrix to have top-down instead of center projection !!!
+### - IMPORTANT: change the scale to not be using pixel units, use customs units instead
+### - VERY IMPORTANT: change component storage to slotmaps for linear processing
 ### - implemet a minimal level base platformer (design the game loop for levels and menus from the start)
 ### -
 ### -
@@ -22,6 +24,7 @@
 ###################################################################################################################################
 ### tmLibs: 
 ###################################################################################################################################
+### - IMPORTANT: update macos engine, to be featured complete
 ### - collision detection library
 ### - physic and collision resolution library
 ### - add sound system

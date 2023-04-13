@@ -6,6 +6,7 @@
 
 
 // TODO: create and entity manager for all this shit!!!
+// TODO: change this for slotmaps for linear processing
 static unsigned int entityCount;
 static TMMemoryPool *entityMem;
 static TMMemoryPool *graphicsComponenMem;
