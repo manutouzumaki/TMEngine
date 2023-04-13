@@ -14,6 +14,8 @@ struct ShaderMatrix {
     TMMat4 world;
 };
 
+static float MetersToPixel = 100;
+
 void GameInitialize(GameState *state, TMWindow *window) {
     state->renderer = TMRendererCreate(window);
 
@@ -30,11 +32,11 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     int width = TMRendererGetWidth(state->renderer);
     int height = TMRendererGetHeight(state->renderer);
-    TMVec3 pos = {0, 0, 0};
+    TMVec3 pos = {(-width*0.5f)/MetersToPixel, (-height*0.5f)/MetersToPixel, 0};
     TMVec3 tar = {0, 0, 1};
     TMVec3 up  = {0, 1, 0};
     state->view = TMMat4LookAt(pos, pos + tar, up);
-    state->proj = TMMat4Ortho(-width*0.5f, width*0.5f, -height*0.5f, height*0.5f, 0.0f, 100.0f);
+    state->proj = TMMat4Ortho(0, width/MetersToPixel, 0, height/MetersToPixel, 0.0f, 100.0f);
 
     ShaderMatrix mats{};
     mats.proj = state->proj;
@@ -43,6 +45,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     state->shaderBuffer = TMRendererShaderBufferCreate(state->renderer, &mats, sizeof(ShaderMatrix), 0);
 
     TMRendererDepthTestDisable(state->renderer);
+    TMRendererFaceCulling(state->renderer, false, 0);
 
 
     EntitySystemInitialize(100);
@@ -51,44 +54,44 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the floor
     Entity *floor = EntityCreate();
-    EntityAddGraphicsComponent(floor, {0, -199}, {800, 100}, {0, 0.2, 0.4, 1});
-    aabb.min = {0 - 400, -199 - 50};
-    aabb.max = {0 + 400, -199 + 50};
+    EntityAddGraphicsComponent(floor, {0, -1.9}, {8, 1}, {0, 0.2, 0.4, 1});
+    aabb.min = {0 - 4, -1.9 - 0.5};
+    aabb.max = {0 + 4, -1.9 + 0.5};
     EntityAddCollisionComponent(floor, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor, Entity *);
 
     // create the cealing
     Entity *ceal = EntityCreate();
-    EntityAddGraphicsComponent(ceal, {0, 199}, {400, 100}, {0, 0.2, 0.4, 1});
-    aabb.min = {0 - 200, 199 - 50};
-    aabb.max = {0 + 200, 199 + 50};
+    EntityAddGraphicsComponent(ceal, {0, 1.9}, {4, 1}, {0, 0.2, 0.4, 1});
+    aabb.min = {0 - 2, 1.9 - 0.5};
+    aabb.max = {0 + 2, 1.9 + 0.5};
     EntityAddCollisionComponent(ceal, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, ceal, Entity *);
 
     // create the cealing
     Entity *ceal1 = EntityCreate();
-    EntityAddGraphicsComponent(ceal1, {-400, 199}, {400, 100}, {0.5, 0.2, 0.4, 1});
-    aabb.min = {-400 - 200, 199 - 50};
-    aabb.max = {-400 + 200, 199 + 50};
+    EntityAddGraphicsComponent(ceal1, {-4, 1.9}, {4, 1}, {0.5, 0.2, 0.4, 1});
+    aabb.min = {-4 - 2, 1.9 - 0.5};
+    aabb.max = {-4 + 2, 1.9 + 0.5};
     EntityAddCollisionComponent(ceal1, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, ceal1, Entity *);
 
     // create the player
     Entity *player = EntityCreate();
     state->player = player;
-    EntityAddGraphicsComponent(player, {0, 0}, {80, 120}, {1, 0, 0, 1});
+    EntityAddGraphicsComponent(player, {0, 0}, {0.8, 1.2}, {1, 0, 0, 1});
     EntityAddPhysicsComponent(player, {0, 0}, {0, 0}, {0, 0}, 0.01f);
     EntityAddInputComponent(player);
-    aabb.min = {0 - 40, 0 - 60};
-    aabb.max = {0 + 40, 0 + 60};
+    aabb.min = {0 - 0.4, 0 - 0.6};
+    aabb.max = {0 + 0.4, 0 + 0.6};
     EntityAddCollisionComponent(player, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player, Entity *);
 
     Entity *player2 = EntityCreate();
-    EntityAddGraphicsComponent(player2, {90, 30}, {80, 100}, {1, 0.2, 0.5, 1});
-    EntityAddPhysicsComponent(player2, {90, 30}, {0, 0}, {0, 0}, 0.0001f);
-    aabb.min = {90 - 40, 30 - 50};
-    aabb.max = {90 + 40, 30 + 50};
+    EntityAddGraphicsComponent(player2, {0.9, 0.4}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    EntityAddPhysicsComponent(player2, {0.9, 0.4}, {0, 0}, {0, 0}, 0.0001f);
+    aabb.min = {0.9 - 0.4, 0.4 - 0.5};
+    aabb.max = {0.9 + 0.4, 0.4 + 0.5};
     EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player2, Entity *);
 
@@ -116,11 +119,14 @@ void GameUpdate(GameState *state, float dt) {
                 acceleration.y = -1.0f;
             }
             if(TMVec2LenSq(acceleration) > 0) {
-              physics->acceleration = TMVec2Normalized(acceleration) * 2000.0f;
+              physics->acceleration = TMVec2Normalized(acceleration) * 20.0f;
             }
             else {
                 physics->acceleration = acceleration;
             }
+
+
+            printf("player x: %f, player y: %f\n", physics->position.x, physics->position.y);
         
         }
     }
@@ -150,8 +156,12 @@ void GamePostUpdate(GameState *state, float t) {
         }
     }
 
+    int width = TMRendererGetWidth(state->renderer);
+    int height = TMRendererGetHeight(state->renderer);
     GraphicsComponent *graphics = state->player->graphics;
-    TMVec3 pos = {graphics->position.x, graphics->position.y, 0};
+    TMVec3 pos = {graphics->position.x - (width*0.5f)/MetersToPixel,
+                  graphics->position.y - (height*0.5f)/MetersToPixel,
+                  0};
     TMVec3 tar = {0, 0, 1};
     TMVec3 up  = {0, 1, 0};
     state->view = TMMat4LookAt(pos, pos + tar, up);
@@ -160,6 +170,7 @@ void GamePostUpdate(GameState *state, float t) {
     mats.view = state->view;
     mats.world = TMMat4Identity();
     TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
+
 
 }
 
@@ -193,9 +204,11 @@ void GameRender(GameState *state) {
             float x = aabb.min.x + width*0.5f;
             float y = aabb.min.y + height*0.5f;
             TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
+            TMDebugRendererDrawCircle(aabb.min.x, aabb.min.y, 5.0f/MetersToPixel, 0xFFFFFF00, 10);
+            TMDebugRendererDrawCircle(aabb.max.x, aabb.max.y, 5.0f/MetersToPixel, 0xFF00FFFF, 10);
 
-            aabb.min = {aabb.min.x - 40, aabb.min.y - 60};
-            aabb.max = {aabb.max.x + 40, aabb.max.y + 60};
+            aabb.min = {aabb.min.x - 0.4f, aabb.min.y - 0.6f};
+            aabb.max = {aabb.max.x + 0.4f, aabb.max.y + 0.6f};
             width = aabb.max.x - aabb.min.x;
             height = aabb.max.y - aabb.min.y;
             x = aabb.min.x + width*0.5f;
@@ -206,7 +219,7 @@ void GameRender(GameState *state) {
         }
         if(entity->graphics) {
             GraphicsComponent *graphics = entity->graphics;
-            TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, 5, 0xFF22FF22, 10);
+            TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, 5.0f/MetersToPixel, 0xFF22FF22, 10);
         }
     }
     TMDebugRenderDraw();

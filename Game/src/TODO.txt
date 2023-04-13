@@ -12,9 +12,9 @@
 ###################################################################################################################################
 ### GAME: 
 ###################################################################################################################################
-### - IMPORTANT: fix proj matrix to have top-down instead of center projection !!!
-### - IMPORTANT: change the scale to not be using pixel units, use customs units instead
-### - VERY IMPORTANT: change component storage to slotmaps for linear processing
+### - HANDLE FOR NOW BUT NEED TO BE REVISITED: fix proj matrix to have top-down instead of center projection !!!
+### - HANDLE FOR NOW BUT NEED TO BE REVISITED: change the scale to not be using pixel units, use customs units instead
+### - NOTE: change component storage to slotmaps for linear processing
 ### - implemet a minimal level base platformer (design the game loop for levels and menus from the start)
 ### -
 ### -

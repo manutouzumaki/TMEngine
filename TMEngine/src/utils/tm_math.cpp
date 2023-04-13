@@ -578,12 +578,22 @@ TMMat4 TMMat4Ortho(float l, float r, float b, float t, float n, float f) {
         -((r + l) / (r - l)), -((t + b) / (t - b)), -((f + n) / (f - n)), 1
     };
 #elif TM_WIN32
+#if 1
     TMMat4 result = {
-       2.0f / (r - l), 0, 0, (r + l) / (r - l),
-       0, 2.0f / (t - b), 0, (t + b) / (t - b),
-       0, 0, 1.0f / (f - n), -n / (f - n),
+       2.0f / (r - l), 0, 0, -((r + l) / (r - l)),
+       0, 2.0f / (t - b), 0, -(t + b) / (t - b),
+       0, 0, 1.0f / (f - n), -(n / (f - n)),
        0, 0, 0, 1
     };
+#else
+    TMMat4 result = {
+       2.0f / (r - l), 0, 0, 0,
+       0, 2.0f / (t - b), 0, 0,
+       0, 0, 1.0f / (f - n), 0,
+       0, 0, n / (n - f), 1
+    };
+#endif
+
 #endif
 
     return result;
