@@ -14,15 +14,14 @@ static void IntegrationStep(PhysicsComponent *physics, float dt) {
     physics->velocity = physics->velocity * damping;
 }
 
+
 static void CollisionResolution(Entity *entity, TMVec2 normal, TMVec2 hitP, float t, float dt) {
     PhysicsComponent *physics = entity->physics;
+    physics->potetialPosition = hitP + (normal * 0.002f);
     physics->velocity = physics->velocity - TMVec2Project(physics->velocity, normal);
     TMVec2 scaleVelocity = physics->velocity * (1.0f - t );
-    physics->potetialPosition = hitP + (normal * 0.002f);
     physics->potetialPosition = physics->potetialPosition + scaleVelocity * dt;
 }
-
-
 
 
 void PhysicSystemOnMessage(MessageType type, void *sender, void *listener, Message message) {
@@ -58,7 +57,10 @@ void PhysicSystemUpdate(Entity **entities, float dt) {
             Message message{};
             message.ptr[0] = (void *)entities;
             message.f32[2] = dt;
-            MessageFireFirstHit(MESSAGE_TYPE_COLLISION_AABBAABB, (void *)entity, message);
+            // TODO: try other solution for this
+            for(int j = 0; j < 3; ++j) {
+                MessageFireFirstHit(MESSAGE_TYPE_COLLISION_DETECTION, (void *)entity, message);
+            }
             physics->position = physics->potetialPosition;
         }
     }

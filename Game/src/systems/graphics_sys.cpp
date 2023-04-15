@@ -4,10 +4,6 @@
 #include <tm_debug_renderer.h>
 #include "../message.h"
 
-static float MetersToPixel = 100;
-
-
-
 static void GraphicsUpdatePositions(Entity *entity, TMVec2 position) {
     if(entity->graphics) {
         entity->graphics->position = position;
@@ -55,28 +51,36 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
     // draw debug geometry
     for(int i = 0; i < TMDarraySize(entities); ++i) {
         Entity *entity = entities[i];
-        if(entity->collision) {
+        if(entity->collision, entity->graphics) {
             CollisionComponent *collision = entity->collision;
-            AABB aabb = collision->aabb;
-            float width = aabb.max.x - aabb.min.x;
-            float height = aabb.max.y - aabb.min.y;
-            float x = aabb.min.x + width*0.5f;
-            float y = aabb.min.y + height*0.5f;
-            TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
-            TMDebugRendererDrawCircle(aabb.min.x, aabb.min.y, 5.0f/MetersToPixel, 0xFFFFFF00, 10);
-            TMDebugRendererDrawCircle(aabb.max.x, aabb.max.y, 5.0f/MetersToPixel, 0xFF00FFFF, 10);
+            GraphicsComponent *graphics = entity->graphics;
 
-            aabb.min = {aabb.min.x - 0.4f, aabb.min.y - 0.6f};
-            aabb.max = {aabb.max.x + 0.4f, aabb.max.y + 0.6f};
-            width = aabb.max.x - aabb.min.x;
-            height = aabb.max.y - aabb.min.y;
-            x = aabb.min.x + width*0.5f;
-            y = aabb.min.y + height*0.5f;
-            TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
+            switch(collision->type) {
+                    case COLLISION_TYPE_AABB: {
+                        AABB aabb = collision->aabb;
+                        float width = aabb.max.x - aabb.min.x;
+                        float height = aabb.max.y - aabb.min.y;
+                        float x = aabb.min.x + width*0.5f;
+                        float y = aabb.min.y + height*0.5f;
+                        TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
+                        //TMDebugRendererDrawCircle(aabb.min.x, aabb.min.y, 0.05, 0xFFFFFF00, 10);
+                        //TMDebugRendererDrawCircle(aabb.max.x, aabb.max.y, 0.05, 0xFF00FFFF, 10);
+                    }break;
+                    case COLLISION_TYPE_CIRCLE: {
+                        Circle circle = collision->circle;
+                        TMDebugRendererDrawCircle(circle.c.x, circle.c.y, circle.r, 0xFF00FF00, 20);
+                    }break;
+                    case COLLISION_TYPE_OBB: {
+
+                    }break;
+                    case COLLISION_TYPE_CAPSULE: {
+
+                    }break;           
+            }
         }
         if(entity->graphics) {
             GraphicsComponent *graphics = entity->graphics;
-            TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, 5.0f/MetersToPixel, 0xFF22FF22, 10);
+            TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, 0.05f, 0xFF22FF22, 10);
         }
     }
     TMDebugRenderDraw();

@@ -91,6 +91,14 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntityAddCollisionComponent(floor, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor, Entity *);
 
+    Entity *player2 = EntityCreate();
+    EntityAddGraphicsComponent(player2, {0.9, 0.2}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    //EntityAddPhysicsComponent(player2, {0.9, 1.0}, {0, 0}, {0, 0}, 0.0001f);
+    aabb.min = {0.9 - 0.4, 0.2 - 0.5};
+    aabb.max = {0.9 + 0.4, 0.2 + 0.5};
+    EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
+    TMDarrayPush(state->entities, player2, Entity *);
+
     // create the cealing
     Entity *ceal = EntityCreate();
     EntityAddGraphicsComponent(ceal, {0, 1.9}, {4, 1}, {0, 0.2, 0.4, 1});
@@ -110,21 +118,19 @@ void GameInitialize(GameState *state, TMWindow *window) {
     // create the player
     Entity *player = EntityCreate();
     state->player = player;
-    EntityAddGraphicsComponent(player, {0, 0}, {0.8, 1.2}, {1, 0, 0, 1});
-    EntityAddPhysicsComponent(player, {0, 0}, {0, 0}, {0, 0}, 0.01f);
     EntityAddInputComponent(player);
-    aabb.min = {0 - 0.4, 0 - 0.6};
-    aabb.max = {0 + 0.4, 0 + 0.6};
-    EntityAddCollisionComponent(player, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, player, Entity *);
+    EntityAddGraphicsComponent(player, {0, 0}, {0.8, 0.8}, {1, 0, 0, 1});
+    EntityAddPhysicsComponent(player, {0, 0}, {0, 0}, {0, 0}, 0.01f);
+    Circle circle;
+    circle.c = {0, 0};
+    circle.r = {0.4};
+    EntityAddCollisionComponent(player, COLLISION_TYPE_CIRCLE, circle);
+    //aabb.min = {0 - 0.4, 0 - 0.6};
+    //aabb.max = {0 + 0.4, 0 + 0.6};
+    //EntityAddCollisionComponent(player, COLLISION_TYPE_AABB, aabb);
 
-    Entity *player2 = EntityCreate();
-    EntityAddGraphicsComponent(player2, {0.9, 0.4}, {0.8, 1}, {1, 0.2, 0.5, 1});
-    EntityAddPhysicsComponent(player2, {0.9, 0.4}, {0, 0}, {0, 0}, 0.0001f);
-    aabb.min = {0.9 - 0.4, 0.4 - 0.5};
-    aabb.max = {0.9 + 0.4, 0.4 + 0.5};
-    EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, player2, Entity *);
+
+    TMDarrayPush(state->entities, player, Entity *);
 
 }
 
@@ -146,6 +152,20 @@ void GameRender(GameState *state) {
     TMRendererClear(state->renderer, 0.2, 0.2, 0.4, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
     TMRendererBindShader(state->renderer, state->shader);
     GraphicsSystemDraw(state->batchRenderer, state->entities);
+
+
+    // TODO: closest point in circle test ...
+    TMDebugRendererDrawCircle(5, 0, 1, 0xFFFF33FF, 20);
+    Circle circle;
+    circle.c = {5, 0};
+    circle.r = 1;
+    TMVec2 closest;
+    ClosestPtPointCircle(state->player->graphics->position, 
+                         circle, closest);
+    TMDebugRendererDrawCircle(closest.x, closest.y, 0.05f, 0xFF0aa234, 10);
+
+    TMDebugRenderDraw();
+
     TMRendererPresent(state->renderer, 1);
 }
 
