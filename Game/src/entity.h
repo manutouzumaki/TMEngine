@@ -64,10 +64,8 @@ void EntityAddCollisionComponent(Entity *entity, CollisionType type, OBB obb);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circle);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule);
 
-struct GameState;
+void InputSystemUpdate(Entity **entities);
 
-void PhysicSystemUpdate(GameState *state, Entity *entity, float dt);
-void PhysicSystemPostUpdate(Entity *entity, float t);
 
 
 

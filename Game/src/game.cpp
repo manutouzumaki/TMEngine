@@ -1,8 +1,11 @@
 #include "game.h"
 
 #include <utils/tm_darray.h>
-#include <tm_input.h>
 #include <tm_debug_renderer.h>
+#include "message.h"
+#include "systems/physics_sys.h"
+#include "systems/collision_sys.h"
+#include "systems/graphics_sys.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -15,6 +18,27 @@ struct ShaderMatrix {
 };
 
 static float MetersToPixel = 100;
+
+void UpdateCameraToFollowTarget(GameState *state, Entity *target) {
+
+    if(target->graphics) {
+        int width = TMRendererGetWidth(state->renderer);
+        int height = TMRendererGetHeight(state->renderer);
+        GraphicsComponent *graphics = target->graphics;
+        TMVec3 pos = {graphics->position.x - (width*0.5f)/MetersToPixel,
+                      graphics->position.y - (height*0.5f)/MetersToPixel,
+                      0};
+        TMVec3 tar = {0, 0, 1};
+        TMVec3 up  = {0, 1, 0};
+        state->view = TMMat4LookAt(pos, pos + tar, up);
+        ShaderMatrix mats{};
+        mats.proj = state->proj;
+        mats.view = state->view;
+        mats.world = TMMat4Identity();
+        TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
+    }
+
+}
 
 void GameInitialize(GameState *state, TMWindow *window) {
     state->renderer = TMRendererCreate(window);
@@ -46,6 +70,13 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     TMRendererDepthTestDisable(state->renderer);
     TMRendererFaceCulling(state->renderer, false, 0);
+
+
+    MessageSystemInitialize();
+
+    PhysicSystemInitialize();
+    CollisionSystemInitialize();
+    GraphicsSystemInitialize();
 
 
     EntitySystemInitialize(100);
@@ -95,145 +126,40 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player2, Entity *);
 
-
 }
 
 void GameUpdate(GameState *state, float dt) {
-    
-    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
-        Entity *entity = state->entities[i];
-
-        if(entity->input && entity->physics) {
-            PhysicsComponent *physics = entity->physics;
-            TMVec2 acceleration = {};
-            if(TMInputKeyboardKeyIsDown('D')) {
-                acceleration.x = 1.0f;
-            }
-            if(TMInputKeyboardKeyIsDown('A')) {
-                acceleration.x = -1.0f;
-            }
-            if(TMInputKeyboardKeyIsDown('W')) {
-                acceleration.y = 1.0f;
-            }
-            if(TMInputKeyboardKeyIsDown('S')) {
-                acceleration.y = -1.0f;
-            }
-            if(TMVec2LenSq(acceleration) > 0) {
-              physics->acceleration = TMVec2Normalized(acceleration) * 20.0f;
-            }
-            else {
-                physics->acceleration = acceleration;
-            }
-
-
-            printf("player x: %f, player y: %f\n", physics->position.x, physics->position.y);
-        
-        }
-    }
+    InputSystemUpdate(state->entities); 
 }
 
 void GameFixUpdate(GameState *state, float dt) {
-    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
-        Entity *entity = state->entities[i];
-        PhysicSystemUpdate(state, entity, dt);
-    }
+    PhysicSystemUpdate(state->entities, dt);
 }
 
 void GamePostUpdate(GameState *state, float t) {
-    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
-        Entity *entity = state->entities[i];
-        PhysicSystemPostUpdate(entity, t);
-
-        if(entity->collision, entity->graphics) {
-            GraphicsComponent *graphics = entity->graphics;
-            AABB *aabb = &entity->collision->aabb;
-            float width = aabb->max.x - aabb->min.x;
-            float height = aabb->max.y - aabb->min.y;
-            float x = aabb->min.x + width*0.5f;
-            float y = aabb->min.y + height*0.5f;
-            aabb->min = {graphics->position.x - width*0.5f, graphics->position.y - height*0.5f};
-            aabb->max = {graphics->position.x + width*0.5f, graphics->position.y + height*0.5f};
-        }
-    }
-
-    int width = TMRendererGetWidth(state->renderer);
-    int height = TMRendererGetHeight(state->renderer);
-    GraphicsComponent *graphics = state->player->graphics;
-    TMVec3 pos = {graphics->position.x - (width*0.5f)/MetersToPixel,
-                  graphics->position.y - (height*0.5f)/MetersToPixel,
-                  0};
-    TMVec3 tar = {0, 0, 1};
-    TMVec3 up  = {0, 1, 0};
-    state->view = TMMat4LookAt(pos, pos + tar, up);
-    ShaderMatrix mats{};
-    mats.proj = state->proj;
-    mats.view = state->view;
-    mats.world = TMMat4Identity();
-    TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
-
-
+    PhysicSystemPostUpdate(state->entities, t);
+    CollisionSystemUpdate(state->entities);
+    UpdateCameraToFollowTarget(state, state->player);
 }
 
 void GameRender(GameState *state) {
     TMRendererClear(state->renderer, 0.2, 0.2, 0.4, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
-
-    
     TMRendererBindShader(state->renderer, state->shader);
-
-    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
-        Entity *entity = state->entities[i];
-        if(entity->graphics) {
-            GraphicsComponent *graphics = entity->graphics;
-            TMRendererRenderBatchAdd(state->batchRenderer,
-                                     graphics->position.x, graphics->position.y, 1,
-                                     graphics->size.x, graphics->size.y, 0,
-                                     graphics->color.x, graphics->color.y,
-                                     graphics->color.z, graphics->color.w);
-        }
-    }
-    TMRendererRenderBatchDraw(state->batchRenderer);
-
-    // draw debug geometry
-    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
-        Entity *entity = state->entities[i];
-        if(entity->collision) {
-            CollisionComponent *collision = entity->collision;
-            AABB aabb = collision->aabb;
-            float width = aabb.max.x - aabb.min.x;
-            float height = aabb.max.y - aabb.min.y;
-            float x = aabb.min.x + width*0.5f;
-            float y = aabb.min.y + height*0.5f;
-            TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
-            TMDebugRendererDrawCircle(aabb.min.x, aabb.min.y, 5.0f/MetersToPixel, 0xFFFFFF00, 10);
-            TMDebugRendererDrawCircle(aabb.max.x, aabb.max.y, 5.0f/MetersToPixel, 0xFF00FFFF, 10);
-
-            aabb.min = {aabb.min.x - 0.4f, aabb.min.y - 0.6f};
-            aabb.max = {aabb.max.x + 0.4f, aabb.max.y + 0.6f};
-            width = aabb.max.x - aabb.min.x;
-            height = aabb.max.y - aabb.min.y;
-            x = aabb.min.x + width*0.5f;
-            y = aabb.min.y + height*0.5f;
-            TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
-
-
-        }
-        if(entity->graphics) {
-            GraphicsComponent *graphics = entity->graphics;
-            TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, 5.0f/MetersToPixel, 0xFF22FF22, 10);
-        }
-    }
-    TMDebugRenderDraw();
-    
-
+    GraphicsSystemDraw(state->batchRenderer, state->entities);
     TMRendererPresent(state->renderer, 1);
 }
 
 void GameShutdown(GameState *state) {
+    // TODO: this should be handle by the entity system not the game directly
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
         Entity *entity = state->entities[i];
         EntityDestroy(entity);
     }
     EntitySystemShutdown();
+    GraphicsSystemShutdown();
+    CollisionSystemShutdown();
+    PhysicSystemShutdown();
+    MessageSystemShoutdown();
     TMDebugRendererShutdown();
     TMRendererRenderBatchDestroy(state->renderer, state->batchRenderer);
     TMRendererTextureDestroy(state->renderer, state->texture);

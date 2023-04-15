@@ -1,10 +1,10 @@
-#include "../game.h"
 #include "../entity.h"
 #include <utils/tm_darray.h>
+#include "../message.h"
 
 #include <math.h>
 
-void IntegrationStep(PhysicsComponent *physics, float dt) {
+static void IntegrationStep(PhysicsComponent *physics, float dt) {
     physics->lastPosition = physics->position;
     
     physics->velocity = physics->velocity + physics->acceleration * dt;
@@ -14,72 +14,71 @@ void IntegrationStep(PhysicsComponent *physics, float dt) {
     physics->velocity = physics->velocity * damping;
 }
 
-void CollisionDetectionAndResolution(Entity *entity, Entity **entities, float dt) {
-    for(int j = 0; j < TMDarraySize(entities); ++j) {
-        Entity *other = entities[j];
-        if(other != entity && other->collision && entity->collision) {
+static void CollisionResolution(Entity *entity, TMVec2 normal, TMVec2 hitP, float t, float dt) {
+    PhysicsComponent *physics = entity->physics;
+    physics->velocity = physics->velocity - TMVec2Project(physics->velocity, normal);
+    TMVec2 scaleVelocity = physics->velocity * (1.0f - t );
+    physics->potetialPosition = hitP + (normal * 0.002f);
+    physics->potetialPosition = physics->potetialPosition + scaleVelocity * dt;
+}
+
+
+
+
+void PhysicSystemOnMessage(MessageType type, void *sender, void *listener, Message message) {
+    switch(type) {
+        case MESSAGE_TYPE_COLLISION_RESOLUTION: {
+            Entity *entity = (Entity *)sender;
+            TMVec2 normal = message.v2[0];
+            TMVec2 hitP = message.v2[1];
+            float t = message.f32[4];
+            float dt = message.f32[5];
+            CollisionResolution(entity, normal, hitP, t, dt);
+        } break;
+    }
+
+}
+
+void PhysicSystemInitialize() {
+    MessageRegister(MESSAGE_TYPE_COLLISION_RESOLUTION, NULL, PhysicSystemOnMessage);
+}
+
+
+void PhysicSystemShutdown() {
+
+}
+
+void PhysicSystemUpdate(Entity **entities, float dt) {
+
+    for(int i = 0; i < TMDarraySize(entities); ++i) {
+        Entity *entity = entities[i];
+        if(entity->physics) {
             PhysicsComponent *physics = entity->physics;
-            
-            AABB entityAABB = entity->collision->aabb;
-            AABB otherAABB  = other->collision->aabb;
-
-            TMVec2 d = physics->potetialPosition - physics->position;
-            Ray r{};
-            r.o = physics->position;
-            r.d = TMVec2Normalized(d);
-            float t = -1.0f;
-            TMVec2 p;
-
-            float width = entityAABB.max.x - entityAABB.min.x;
-            float height = entityAABB.max.y - entityAABB.min.y;
-
-            AABB expand;
-            expand.min = {otherAABB.min.x - width*0.5f, otherAABB.min.y - height*0.5f};
-            expand.max = {otherAABB.max.x + width*0.5f, otherAABB.max.y + height*0.5f};
-            if(RayAAABB(r.o, r.d, expand, t, p) && t*t < TMVec2LenSq(d)) {
-                t /= TMVec2Len(d); 
-                TMVec2 hitP = r.o + d * t;
-                TMVec2 closestP;
-                ClosestPtPointAABB(hitP, otherAABB, closestP);
-                TMVec2 normal = TMVec2Normalized(hitP - closestP);
-                if(otherAABB.max.x <= entityAABB.min.x) {
-                    normal = {1.0f, 0.0f};
-                }
-                if(otherAABB.min.x >= entityAABB.max.x) {
-                    normal = {-1.0f, 0.0f};
-                }
-                if(otherAABB.max.y <= entityAABB.min.y) {
-                    normal = {0.0f, 1.0f};
-                }
-                if(otherAABB.min.y >= entityAABB.max.y) {
-                    normal = {0.0f, -1.0f};
-                }
-
-                physics->velocity = physics->velocity - TMVec2Project(physics->velocity, normal);
-                TMVec2 scaleVelocity = physics->velocity * (1.0f - t );
-                physics->potetialPosition = hitP + (normal * 0.002f);
-                physics->potetialPosition = physics->potetialPosition + scaleVelocity * dt;
-            }  
+            IntegrationStep(physics, dt);
+            Message message{};
+            message.ptr[0] = (void *)entities;
+            message.f32[2] = dt;
+            MessageFireFirstHit(MESSAGE_TYPE_COLLISION_AABBAABB, (void *)entity, message);
+            physics->position = physics->potetialPosition;
         }
     }
+
 }
 
-void PhysicSystemUpdate(GameState *state, Entity *entity, float dt) {
-    if(entity->physics) {
-        PhysicsComponent *physics = entity->physics;
-        IntegrationStep(physics, dt);
-        CollisionDetectionAndResolution(entity, state->entities, dt);
-        physics->position = physics->potetialPosition;
-    }
-}
+void PhysicSystemPostUpdate(Entity **entities, float t) {
 
-void PhysicSystemPostUpdate(Entity *entity, float t) {
-    if(entity->graphics && entity->physics) {
-        GraphicsComponent *graphics = entity->graphics;
-        PhysicsComponent *physics = entity->physics;
-        TMVec2 position = physics->position * t + physics->lastPosition * (1.0f - t);
-        graphics->position = position;
+    for(int i = 0; i < TMDarraySize(entities); ++i) {
+        Entity *entity = entities[i];
+        if(entity->physics && entity->graphics) {
+            GraphicsComponent *graphics = entity->graphics;
+            PhysicsComponent *physics = entity->physics;
+            TMVec2 position = physics->position * t + physics->lastPosition * (1.0f - t);
+            Message message{};
+            message.v2[0] = position;
+            MessageFireFirstHit(MESSAGE_TYPE_GRAPHICS_UPDATE_POSITIONS, (void *)entity, message);
+        }
     }
+
 }
 
 
