@@ -96,37 +96,45 @@ int IntersectMovingCircleAABB(Circle circle, TMVec2 d, AABB b, float &t) {
     int u = 0, v = 0;
     if(p.x < b.min.x) u |= 1;
     if(p.x > b.max.x) v |= 1;
-    if(p.y < b.min.x) u |= 2;
-    if(p.y > b.max.x) v |= 2;
+    if(p.y < b.min.y) u |= 2;
+    if(p.y > b.max.y) v |= 2;
 
     int m = u + v;
 
     Segment seg = {circle.c, circle.c + d};
+    TMVec2 q;
 
     if(m == 3) {
-
-        float tmin = FLT_MAX;
-
-        TMVec2 q;
-        if(IntersectSegmentCapsule(seg, Corner(b, v), Corner(b, v ^ 1), circle.r, t, q)) {
-            tmin = Min(t, tmin);
-        }
-        if(IntersectSegmentCapsule(seg, Corner(b, v), Corner(b, v ^ 2), circle.r, t, q)) {
-            tmin = Min(t, tmin);
-        }
-        if(tmin == FLT_MAX) return 0;
-        t = tmin;
-        return 1;
+        // Vertex region
+        TMVec2 collisionCircleP;
+        ClosestPtPointAABB(circle.c, b, collisionCircleP);
+        Circle collisionCircle;
+        collisionCircle.c = collisionCircleP;
+        collisionCircle.r = circle.r;
+        return RayCircle(circle.c, d, collisionCircle, t, q); 
     }
 
     if((m & (m - 1)) == 0) { 
         return 1;
     }
     
-    TMVec2 q;
-    return IntersectSegmentCapsule(seg, Corner(b, u ^ 3), Corner(b, v), circle.r, t, q);
+    // Face region
+    return RayAABB(circle.c, d, b, t, q);
+
 }
 
+
+int VorornoiRegionAABB(Circle circle, AABB b) {
+    int u = 0, v = 0;
+    TMVec2 p = circle.c;
+    if(p.x < b.min.x) u |= 1;
+    if(p.x > b.max.x) v |= 1;
+    if(p.y < b.min.y) u |= 2;
+    if(p.y > b.max.y) v |= 2;
+    int m = u + v;
+
+    return m;
+}
 
 
 void ClosestPtPointAABB(TMVec2 p, AABB b, TMVec2 &q) {

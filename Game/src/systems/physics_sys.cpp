@@ -58,7 +58,8 @@ void PhysicSystemUpdate(Entity **entities, float dt) {
             message.ptr[0] = (void *)entities;
             message.f32[2] = dt;
             // TODO: try other solution for this
-            for(int j = 0; j < 3; ++j) {
+            // TODO: this is not a full solution
+            for(int j = 0; j < 4; ++j) {
                 MessageFireFirstHit(MESSAGE_TYPE_COLLISION_DETECTION, (void *)entity, message);
             }
             physics->position = physics->potetialPosition;

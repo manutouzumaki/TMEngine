@@ -1,6 +1,7 @@
 #include "../entity.h"
 #include <utils/tm_darray.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "../message.h"
 #include <tm_debug_renderer.h>
 
@@ -146,6 +147,11 @@ static void CircleAABBCollisionDetection(Entity *entity, Entity *other, float dt
     circle.c = physics->position;
     circle.r = entity->collision->circle.r;
     AABB aabb  = other->collision->aabb;
+    
+    int region = VorornoiRegionAABB(circle, aabb);
+    
+    printf("region: %d\n", region);
+
 
     float t = 0.0f;
     if(IntersectMovingCircleAABB(circle, d, aabb, t)) {

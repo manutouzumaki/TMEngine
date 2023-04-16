@@ -82,7 +82,6 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntitySystemInitialize(100);
     
     AABB aabb{};
-
     // create the floor
     Entity *floor = EntityCreate();
     EntityAddGraphicsComponent(floor, {0, -1.9}, {8, 1}, {0, 0.2, 0.4, 1});
@@ -92,10 +91,10 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMDarrayPush(state->entities, floor, Entity *);
 
     Entity *player2 = EntityCreate();
-    EntityAddGraphicsComponent(player2, {0.9, 0.2}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    EntityAddGraphicsComponent(player2, {1.3, 0.2}, {0.8, 1}, {1, 0.2, 0.5, 1});
     //EntityAddPhysicsComponent(player2, {0.9, 1.0}, {0, 0}, {0, 0}, 0.0001f);
-    aabb.min = {0.9 - 0.4, 0.2 - 0.5};
-    aabb.max = {0.9 + 0.4, 0.2 + 0.5};
+    aabb.min = {1.3 - 0.4, 0.2 - 0.5};
+    aabb.max = {1.3 + 0.4, 0.2 + 0.5};
     EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player2, Entity *);
 
@@ -106,7 +105,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     aabb.max = {0 + 2, 1.9 + 0.5};
     EntityAddCollisionComponent(ceal, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, ceal, Entity *);
-
+    
     // create the cealing
     Entity *ceal1 = EntityCreate();
     EntityAddGraphicsComponent(ceal1, {-4, 1.9}, {4, 1}, {0.5, 0.2, 0.4, 1});
@@ -125,8 +124,8 @@ void GameInitialize(GameState *state, TMWindow *window) {
     circle.c = {0, 0};
     circle.r = {0.4};
     EntityAddCollisionComponent(player, COLLISION_TYPE_CIRCLE, circle);
-    //aabb.min = {0 - 0.4, 0 - 0.6};
-    //aabb.max = {0 + 0.4, 0 + 0.6};
+    //aabb.min = {0 - 0.4, 0 - 0.4};
+    //aabb.max = {0 + 0.4, 0 + 0.4};
     //EntityAddCollisionComponent(player, COLLISION_TYPE_AABB, aabb);
 
 
