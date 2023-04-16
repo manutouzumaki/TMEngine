@@ -48,6 +48,26 @@ int TestCircleCircle(Circle a, Circle b) {
     return dist2 <= radiusSum * radiusSum;
 }
 
+int TestCircleAABB(Circle a, AABB b) {
+    TMVec2 p;
+    ClosestPtPointAABB(a.c, b, p);
+
+    TMVec2 v = a.c - p;
+    return TMVec2Dot(v, v) <= a.r*a.r;
+}
+
+int TestPointAABB(TMVec2 a, AABB b) {
+    if(a.x < b.min[0] || a.x > b.max[0]) return 0;
+    if(a.y < b.min[1] || a.y > b.max[1]) return 0;
+    return 1;
+}
+
+int TestPointCircle(TMVec2 a, Circle b) {
+    TMVec2 d = a - b.c;
+    float dist2 = TMVec2LenSq(d);
+    return dist2 <= b.r*b.r;
+}
+
 int IntersectMovingAABBAABB(AABB a, AABB b,
                             TMVec2 va, TMVec2 vb,
                             float &tfirst, float &tlast) {
@@ -113,13 +133,8 @@ int IntersectMovingCircleAABB(Circle circle, TMVec2 d, AABB b, float &t) {
         collisionCircle.r = circle.r;
         return RayCircle(circle.c, d, collisionCircle, t, q); 
     }
-
-    if((m & (m - 1)) == 0) { 
-        return 1;
-    }
-    
-    // Face region
-    return RayAABB(circle.c, d, b, t, q);
+    // Edge region
+    return RayAABB(circle.c, d, e, t, q);
 
 }
 

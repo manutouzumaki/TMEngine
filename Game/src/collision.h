@@ -36,8 +36,12 @@ struct Segment {
 };
 
 int TestAABBAABB(AABB a, AABB b);
-
 int TestCircleCircle(Circle a, Circle b);
+int TestCircleAABB(Circle a, AABB b);
+int TestPointAABB(TMVec2 a, AABB b);
+int TestPointCircle(TMVec2 a, Circle b);
+
+
 int IntersectMovingAABBAABB(AABB a, AABB b,
                             TMVec2 va, TMVec2 vb,
                             float &tfirst, float &tlast);

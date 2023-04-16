@@ -66,6 +66,12 @@ void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule cap
 
 void InputSystemUpdate(Entity **entities);
 
+struct CollisionInfo {
+    TMVec2 normal;
+    TMVec2 hitp;
+    float t;
+};
+
 
 
 

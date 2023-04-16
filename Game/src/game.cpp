@@ -114,6 +114,13 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntityAddCollisionComponent(ceal1, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, ceal1, Entity *);
 
+    Entity *player3 = EntityCreate();
+    EntityAddGraphicsComponent(player3, {-2.3, 0.6}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    aabb.min = {-2.3 - 0.4, 0.6 - 0.5};
+    aabb.max = {-2.3 + 0.4, 0.6 + 0.5};
+    EntityAddCollisionComponent(player3, COLLISION_TYPE_AABB, aabb);
+    TMDarrayPush(state->entities, player3, Entity *);
+
     // create the player
     Entity *player = EntityCreate();
     state->player = player;
