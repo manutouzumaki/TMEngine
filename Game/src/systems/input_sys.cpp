@@ -23,7 +23,7 @@ void InputSystemUpdate(Entity **entities) {
                 acceleration.y = -1.0f;
             }
             if(TMVec2LenSq(acceleration) > 0) {
-              physics->acceleration = TMVec2Normalized(acceleration) * 20.0f;
+              physics->acceleration = TMVec2Normalized(acceleration) * 5.0f;
             }
             else {
                 physics->acceleration = acceleration;

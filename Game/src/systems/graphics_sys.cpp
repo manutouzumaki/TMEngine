@@ -63,8 +63,19 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
                         float x = aabb.min.x + width*0.5f;
                         float y = aabb.min.y + height*0.5f;
                         TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
-                        //TMDebugRendererDrawCircle(aabb.min.x, aabb.min.y, 0.05, 0xFFFFFF00, 10);
-                        //TMDebugRendererDrawCircle(aabb.max.x, aabb.max.y, 0.05, 0xFF00FFFF, 10);
+                        TMDebugRendererDrawCircle(aabb.max.x, aabb.min.y, 0.4, 0xFFFFFF00, 20);
+                        TMDebugRendererDrawCircle(aabb.min.x, aabb.max.y, 0.4, 0xFFFFFF00, 20);
+                        TMDebugRendererDrawCircle(aabb.min.x, aabb.min.y, 0.4, 0xFFFFFF00, 20);
+                        TMDebugRendererDrawCircle(aabb.max.x, aabb.max.y, 0.4, 0xFFFFFF00, 20);
+
+                        aabb.min = {aabb.min.x - 0.4f, aabb.min.y - 0.4f};
+                        aabb.max = {aabb.max.x + 0.4f, aabb.max.y + 0.4f};
+                        width = aabb.max.x - aabb.min.x;
+                        height = aabb.max.y - aabb.min.y;
+                        x = aabb.min.x + width*0.5f;
+                        y = aabb.min.y + height*0.5f;
+                        TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
+
                     }break;
                     case COLLISION_TYPE_CIRCLE: {
                         Circle circle = collision->circle;
