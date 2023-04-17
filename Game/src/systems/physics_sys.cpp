@@ -28,39 +28,12 @@ static void CollisionResolution(Entity *entity, TMVec2 normal, TMVec2 hitP, floa
 void PhysicSystemOnMessage(MessageType type, void *sender, void *listener, Message message) {
     switch(type) {
         case MESSAGE_TYPE_COLLISION_RESOLUTION: {
-#if 0
             Entity *entity = (Entity *)sender;
             TMVec2 normal = message.v2[0];
             TMVec2 hitP = message.v2[1];
             float t = message.f32[4];
             float dt = message.f32[5];
             CollisionResolution(entity, normal, hitP, t, dt);
-#endif
-
-            Entity *entity = (Entity *)sender;
-            float dt = message.f32[10];
-            int count = message.i32[11];
-            printf("count: %d\n", count);
-
-            CollisionInfo collisionInfo[2];
-
-            int index = 0;
-            for(int  i = 0; i < count; ++i) {
-                collisionInfo[i].normal = message.v2[index/sizeof(TMVec2)];
-                index += sizeof(TMVec2);
-                collisionInfo[i].hitp = message.v2[index/sizeof(TMVec2)];
-                index += sizeof(TMVec2);
-                collisionInfo[i].t = message.f32[index/sizeof(float)];
-                index += sizeof(float);
-            }
-            if(count > 1) {
-                TMVec2 normal = TMVec2Normalized(collisionInfo[0].normal + collisionInfo[1].normal);
-                CollisionResolution(entity, normal, collisionInfo[0].hitp, collisionInfo[0].t, dt);
-            }
-            else {
-                CollisionResolution(entity, collisionInfo[0].normal, collisionInfo[0].hitp, collisionInfo[0].t, dt);
-            }
-
         } break;
     }
 

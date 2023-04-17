@@ -37,59 +37,6 @@ static void UpdateCollider(Entity *entity) {
     }
 }
 
-static void AABBAABBCollisionDetectionTMP(Entity *entity, Entity **entities, float dt) {
-    for(int j = 0; j < TMDarraySize(entities); ++j) {
-        Entity *other = entities[j];
-        if(other != entity && other->collision && entity->collision) {
-            PhysicsComponent *physics = entity->physics;
-            
-            AABB entityAABB = entity->collision->aabb;
-            AABB otherAABB  = other->collision->aabb;
-
-            TMVec2 d = physics->potetialPosition - physics->position;
-            Ray r{};
-            r.o = physics->position;
-            r.d = TMVec2Normalized(d);
-            float t = -1.0f;
-            TMVec2 p;
-
-            float width = entityAABB.max.x - entityAABB.min.x;
-            float height = entityAABB.max.y - entityAABB.min.y;
-
-            AABB expand;
-            expand.min = {otherAABB.min.x - width*0.5f, otherAABB.min.y - height*0.5f};
-            expand.max = {otherAABB.max.x + width*0.5f, otherAABB.max.y + height*0.5f};
-            if(RayAABB(r.o, r.d, expand, t, p) && t*t < TMVec2LenSq(d)) {
-                t /= TMVec2Len(d); 
-                TMVec2 hitP = r.o + d * t;
-                TMVec2 closestP;
-                ClosestPtPointAABB(hitP, otherAABB, closestP);
-                TMVec2 normal = TMVec2Normalized(hitP - closestP);
-                if(otherAABB.max.x <= entityAABB.min.x) {
-                    normal = {1.0f, 0.0f};
-                }
-                if(otherAABB.min.x >= entityAABB.max.x) {
-                    normal = {-1.0f, 0.0f};
-                }
-                if(otherAABB.max.y <= entityAABB.min.y) {
-                    normal = {0.0f, 1.0f};
-                }
-                if(otherAABB.min.y >= entityAABB.max.y) {
-                    normal = {0.0f, -1.0f};
-                }
-
-                Message message{};
-                message.v2[0] = normal;
-                message.v2[1] = hitP;
-                message.f32[4] = t;
-                message.f32[5] = dt;
-                MessageFireFirstHit(MESSAGE_TYPE_COLLISION_RESOLUTION, (void *)entity, message);
-            }  
-        }
-    }
-}
-
-#if 0
 static void AABBAABBCollisionDetection(Entity *entity, Entity *other, float dt) {
     PhysicsComponent *physics = entity->physics;
     
@@ -167,134 +114,28 @@ static void CircleAABBCollisionDetection(Entity *entity, Entity *other, float dt
         MessageFireFirstHit(MESSAGE_TYPE_COLLISION_RESOLUTION, (void *)entity, message);
     }
 }
-#endif
-
-static void AABBAABBCollisionDetection(Entity *entity, Entity *other, CollisionInfo *collisionInfo, int &count, float dt) {
-    PhysicsComponent *physics = entity->physics;
-    
-    AABB entityAABB = entity->collision->aabb;
-    AABB otherAABB  = other->collision->aabb;
-
-    TMVec2 d = physics->potetialPosition - physics->position;
-    Ray r{};
-    r.o = physics->position;
-    r.d = TMVec2Normalized(d);
-    float t = -1.0f;
-    TMVec2 p;
-
-    float width = entityAABB.max.x - entityAABB.min.x;
-    float height = entityAABB.max.y - entityAABB.min.y;
-
-    AABB expand;
-    expand.min = {otherAABB.min.x - width*0.5f, otherAABB.min.y - height*0.5f};
-    expand.max = {otherAABB.max.x + width*0.5f, otherAABB.max.y + height*0.5f};
-    if(RayAABB(r.o, r.d, expand, t, p) && t*t < TMVec2LenSq(d)) {
-        t /= TMVec2Len(d); 
-        TMVec2 hitP = r.o + d * t;
-        TMVec2 closestP;
-        ClosestPtPointAABB(hitP, otherAABB, closestP);
-        TMVec2 normal = TMVec2Normalized(hitP - closestP);
-        if(otherAABB.max.x <= entityAABB.min.x) {
-            normal = {1.0f, 0.0f};
-        }
-        if(otherAABB.min.x >= entityAABB.max.x) {
-            normal = {-1.0f, 0.0f};
-        }
-        if(otherAABB.max.y <= entityAABB.min.y) {
-            normal = {0.0f, 1.0f};
-        }
-        if(otherAABB.min.y >= entityAABB.max.y) {
-            normal = {0.0f, -1.0f};
-        }
-        
-        if(count < 2) {
-            CollisionInfo *info = collisionInfo + count++;
-            info->normal = normal;
-            info->hitp = hitP;
-            info->t = t;
-        }
-    }  
-}
-
-
-
-static void CircleAABBCollisionDetection(Entity *entity, Entity *other, CollisionInfo *collisionInfo, int &count, float dt) {
-    PhysicsComponent *physics = entity->physics;
-    
-    TMVec2 d = physics->potetialPosition - physics->position;
-    Circle circle;
-    circle.c = physics->position;
-    circle.r = entity->collision->circle.r;
-    AABB aabb  = other->collision->aabb;
-    
-    float t = 0.0f;
-    if(IntersectMovingCircleAABB(circle, d, aabb, t)) {
-        TMVec2 hitP = physics->position + d * t;
-        TMVec2 closestP;
-        ClosestPtPointAABB(hitP, aabb, closestP);
-        closentPoint = closestP;
-        TMVec2 normal = TMVec2Normalized(hitP - closestP);
-        TMDebugRendererDrawLine(closestP.x, closestP.y, 
-                                hitP.x, hitP.y,
-                                0xFF0000FF);
-
-        if(count < 2) {
-            CollisionInfo *info = collisionInfo + count++;
-            info->normal = normal;
-            info->hitp = hitP;
-            info->t = t;
-        }
-    }
-}
 
 void CollisionSystemOnMessage(MessageType type, void *sender, void *listener, Message message) {
     switch(type) {
         case MESSAGE_TYPE_COLLISION_DETECTION: {
-            Entity *entity   = (Entity *)sender;
+            Entity *entity    = (Entity *)sender;
             Entity **entities = (Entity **)message.ptr[0];
-            float dt         = message.f32[2];
+            float dt          = message.f32[2];
             if(!entity->collision) return;
-            CollisionInfo collisionInfo[2];
-            int count = 0;
             for(int j = 0; j < TMDarraySize(entities); ++j) {
                 Entity *other = entities[j];
                 if(other != entity && other->collision) {
                     CollisionType a = entity->collision->type;
                     CollisionType b = other->collision->type;
                     if(a == COLLISION_TYPE_AABB && b == COLLISION_TYPE_AABB) {
-                        AABBAABBCollisionDetection(entity, other, collisionInfo, count, dt);
+                        AABBAABBCollisionDetection(entity, other, dt);
                     }
                     if(a == COLLISION_TYPE_CIRCLE && b == COLLISION_TYPE_AABB) {
-                        CircleAABBCollisionDetection(entity, other, collisionInfo, count, dt);
-
+                        CircleAABBCollisionDetection(entity, other, dt);
                     }
+                    // TODO: others collision
                 }
             }
-
-            TMVec2 hitp = collisionInfo[0].hitp;
-            float t = collisionInfo[0].t;
-            if(collisionInfo[1].t < collisionInfo[0].t) {
-                TMVec2 hitp = collisionInfo[1].hitp;
-                t = collisionInfo[1].t;
-            }
-
-            if(count) {
-                Message message{};
-                int index = 0;
-                for(int  i = 0; i < count; ++i) {
-                    message.v2[index/sizeof(TMVec2)] = collisionInfo[i].normal;
-                    index += sizeof(TMVec2);
-                    message.v2[index/sizeof(TMVec2)] = hitp;
-                    index += sizeof(TMVec2);
-                    message.f32[index/sizeof(float)] = t;
-                    index += sizeof(float);
-                }
-                message.f32[10] = dt;
-                message.i32[11] = count;
-                
-                MessageFireFirstHit(MESSAGE_TYPE_COLLISION_RESOLUTION, (void *)entity, message);
-            }
-
         }break;
     }
 }
