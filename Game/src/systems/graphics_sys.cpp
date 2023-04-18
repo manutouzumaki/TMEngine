@@ -85,6 +85,11 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
 
                     }break;
                     case COLLISION_TYPE_CAPSULE: {
+                        Capsule capsule = collision->capsule;
+                        TMVec2 ab = capsule.b - capsule.a;
+                        TMVec2 p = capsule.a + ab * 0.5f;
+                        float halfHeight = TMVec2Len(ab)*0.5f;
+                        TMDebugRendererDrawCapsule(p.x, p.y, capsule.r, halfHeight, 0, 0xFF00FF00, 20);
 
                     }break;           
             }

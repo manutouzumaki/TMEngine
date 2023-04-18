@@ -12,6 +12,7 @@ enum MessageType {
 };
 
 // TODO: adjust the size of this struct to be better siuted for the game
+// NOTE: this must be zero initialized
 struct Message {
     union {
         TMVec2             v2[6]; 

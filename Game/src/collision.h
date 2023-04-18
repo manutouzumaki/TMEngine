@@ -57,6 +57,8 @@ float ClosestPtSegmentSegment(TMVec2 p1, TMVec2 q1,
                               float &s,  float &t,
                               TMVec2 &c1, TMVec2 &c2);
 
+void ClosestPtPointSegement(TMVec2 c, TMVec2 a, TMVec2 b, float &t, TMVec2 &q);
+
 
 int VorornoiRegionAABB(Circle circle, AABB b);
 

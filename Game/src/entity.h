@@ -15,6 +15,7 @@ struct PhysicsComponent {
     TMVec2 potetialPosition;
     TMVec2 position;
     TMVec2 lastPosition;
+    TMVec2 lastlastPosition;
     TMVec2 velocity;
     TMVec2 acceleration;
     float damping;
@@ -68,7 +69,7 @@ void InputSystemUpdate(Entity **entities);
 
 struct CollisionInfo {
     TMVec2 normal;
-    TMVec2 hitp;
+    TMVec2 hitP;
     float t;
 };
 

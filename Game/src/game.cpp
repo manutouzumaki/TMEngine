@@ -82,13 +82,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntitySystemInitialize(100);
     
     AABB aabb{};
-    // create the floor
-    Entity *floor = EntityCreate();
-    EntityAddGraphicsComponent(floor, {0, -1.9}, {8, 1}, {0, 0.2, 0.4, 1});
-    aabb.min = {0 - 4, -1.9 - 0.5};
-    aabb.max = {0 + 4, -1.9 + 0.5};
-    EntityAddCollisionComponent(floor, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, floor, Entity *);
+
 
     Entity *player2 = EntityCreate();
     EntityAddGraphicsComponent(player2, {1.3, 0.2}, {0.8, 1}, {1, 0.2, 0.5, 1});
@@ -121,19 +115,48 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntityAddCollisionComponent(player3, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player3, Entity *);
 
+    Entity *player4 = EntityCreate();
+    EntityAddGraphicsComponent(player4, {5.0, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    aabb.min = {5.0 - 0.4, 0.0 - 0.5};
+    aabb.max = {5.0 + 0.4, 0.0 + 0.5};
+    EntityAddCollisionComponent(player4, COLLISION_TYPE_AABB, aabb);
+    TMDarrayPush(state->entities, player4, Entity *);
+
+    Entity *player5 = EntityCreate();
+    EntityAddGraphicsComponent(player5, {5.0 + 0.8*1.8, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    aabb.min = {5.0 + 0.8*1.8 - 0.4, 0.0 - 0.5};
+    aabb.max = {5.0 + 0.8*1.8 + 0.4, 0.0 + 0.5};
+    EntityAddCollisionComponent(player5, COLLISION_TYPE_AABB, aabb);
+    TMDarrayPush(state->entities, player5, Entity *);
+
+    // create the floor
+    Entity *floor = EntityCreate();
+    EntityAddGraphicsComponent(floor, {0, -1.9}, {8, 1}, {0, 0.2, 0.4, 1});
+    aabb.min = {0 - 4, -1.9 - 0.5};
+    aabb.max = {0 + 4, -1.9 + 0.5};
+    EntityAddCollisionComponent(floor, COLLISION_TYPE_AABB, aabb);
+    TMDarrayPush(state->entities, floor, Entity *);
+
+
     // create the player
     Entity *player = EntityCreate();
     state->player = player;
     EntityAddInputComponent(player);
-    EntityAddGraphicsComponent(player, {0, 0}, {0.8, 0.8}, {1, 0, 0, 1});
-    EntityAddPhysicsComponent(player, {0, 0}, {0, 0}, {0, 0}, 0.01f);
+    EntityAddGraphicsComponent(player, {-5, 0}, {0.8, 0.8}, {1, 0, 0, 1});
+    EntityAddPhysicsComponent(player, {-5, 0}, {0, 0}, {0, 0}, 0.01f);
+
     Circle circle;
-    circle.c = {0, 0};
-    circle.r = {0.4};
+    circle.c = {-5, 0};
+    circle.r = 0.4;
     EntityAddCollisionComponent(player, COLLISION_TYPE_CIRCLE, circle);
-    //aabb.min = {0 - 0.4, 0 - 0.4};
-    //aabb.max = {0 + 0.4, 0 + 0.4};
+    //aabb.min = {-5 - 0.4, 0 - 0.4};
+    //aabb.max = {-5 + 0.4, 0 + 0.4};
     //EntityAddCollisionComponent(player, COLLISION_TYPE_AABB, aabb);
+    //Capsule capsule;
+    //capsule.r = 0.4;
+    //capsule.a = {-5.0, 0.4};
+    //capsule.b = {-5.0, -0.4};
+    //EntityAddCollisionComponent(player, COLLISION_TYPE_CAPSULE, capsule);
 
 
     TMDarrayPush(state->entities, player, Entity *);

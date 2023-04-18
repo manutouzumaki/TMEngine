@@ -190,7 +190,6 @@ int RayAABB(TMVec2 p, TMVec2 d, AABB a, float &tmin, TMVec2 &q) {
 }
 
 int RayCircle(TMVec2 p, TMVec2 d, Circle circle, float &t, TMVec2 &q) { 
-    
     TMVec2 m = p - circle.c;
     float b = TMVec2Dot(m, d);
     float c = TMVec2Dot(m, m) - circle.r * circle.r;
@@ -247,8 +246,27 @@ void ClosestPtPointCircle(TMVec2 p, Circle circle, TMVec2 &q) {
 
 }
 
+void ClosestPtPointSegement(TMVec2 c, TMVec2 a, TMVec2 b, float &t, TMVec2 &q) {
 
+    TMVec2 ab = b - a;
+    t = TMVec2Dot(c - a, ab);
+    if(t <= 0.0f) {
+        t = 0.0f;
+        q = a;
+    }
+    else {
+        float denom = TMVec2Dot(ab, ab);
+        if(t >= denom) {
+            t = 1.0f;
+            q = b;
+        }
+        else {
+            t = t / denom;
+            q = a + ab * t;
+        }
+    }
 
+}
 
 float ClosestPtSegmentSegment(TMVec2 p1, TMVec2 q1,
                               TMVec2 p2, TMVec2 q2,

@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 static void IntegrationStep(PhysicsComponent *physics, float dt) {
+    physics->lastlastPosition = physics->lastPosition;
     physics->lastPosition = physics->position;
     physics->velocity = physics->velocity + physics->acceleration * dt;
     physics->potetialPosition = physics->position + physics->velocity * dt;
@@ -15,13 +16,24 @@ static void IntegrationStep(PhysicsComponent *physics, float dt) {
 }
 
 
-static void CollisionResolution(Entity *entity, TMVec2 normal, TMVec2 hitP, float t, float dt) {
+static void CollisionResolution(Entity *entity, TMVec2 normal, TMVec2 hitP, TMVec2 offset, float t, float dt, int count) {
 
     PhysicsComponent *physics = entity->physics;
-    physics->potetialPosition = hitP + (normal * 0.002f);
+    if(TMVec2LenSq(offset)) {
+        physics->potetialPosition = hitP + (normal * 0.002f) + (physics->potetialPosition - offset);
+    }
+    else {
+        physics->potetialPosition = hitP + (normal * 0.002f);
+    }
     physics->velocity = physics->velocity - TMVec2Project(physics->velocity, normal)  ;
     TMVec2 scaleVelocity = physics->velocity * (1.0f - t );
     physics->potetialPosition = physics->potetialPosition + scaleVelocity * dt;
+
+    if(count) {
+        physics->potetialPosition = physics->lastlastPosition;
+        physics->velocity = {};
+        physics->acceleration = {};
+    }
 }
 
 
@@ -31,9 +43,11 @@ void PhysicSystemOnMessage(MessageType type, void *sender, void *listener, Messa
             Entity *entity = (Entity *)sender;
             TMVec2 normal = message.v2[0];
             TMVec2 hitP = message.v2[1];
-            float t = message.f32[4];
-            float dt = message.f32[5];
-            CollisionResolution(entity, normal, hitP, t, dt);
+            TMVec2 offset = message.v2[2];
+            float t = message.f32[6];
+            float dt = message.f32[7];
+            int count = message.i32[8];
+            CollisionResolution(entity, normal, hitP, offset, t, dt, count);
         } break;
     }
 
