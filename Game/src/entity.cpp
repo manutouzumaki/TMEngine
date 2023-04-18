@@ -7,7 +7,7 @@
 
 // TODO: create and entity manager for all this shit!!!
 // TODO: change this for slotmaps for linear processing
-static unsigned int entityCount;
+static unsigned int gEntityCount;
 static TMMemoryPool *entityMem;
 static TMMemoryPool *graphicsComponenMem;
 static TMMemoryPool *physicsComponentMem;
@@ -16,7 +16,7 @@ static TMMemoryPool *collisionComponentMem;
 
 
 void EntitySystemInitialize(int maxEntityCount) {
-    entityCount = 0;
+    gEntityCount = 0;
     entityMem = TMMemoryPoolCreate(sizeof(Entity), maxEntityCount);
     graphicsComponenMem = TMMemoryPoolCreate(sizeof(GraphicsComponent), maxEntityCount);
     physicsComponentMem = TMMemoryPoolCreate(sizeof(PhysicsComponent), maxEntityCount);
@@ -36,6 +36,7 @@ void EntitySystemShutdown() {
 Entity *EntityCreate() {
     Entity *entity = (Entity *)TMMemoryPoolAlloc(entityMem);
     memset(entity, 0, sizeof(Entity));
+    entity->id = gEntityCount++;
     return entity;
 }
 

@@ -7,7 +7,6 @@
 #include <stdio.h>
 
 static void IntegrationStep(PhysicsComponent *physics, float dt) {
-    physics->lastlastPosition = physics->lastPosition;
     physics->lastPosition = physics->position;
     physics->velocity = physics->velocity + physics->acceleration * dt;
     physics->potetialPosition = physics->position + physics->velocity * dt;
@@ -16,24 +15,30 @@ static void IntegrationStep(PhysicsComponent *physics, float dt) {
 }
 
 
-static void CollisionResolution(Entity *entity, TMVec2 normal, TMVec2 hitP, TMVec2 offset, float t, float dt, int count) {
+static void CollisionResolution(Entity *entity, TMVec2 normal, TMVec2 hitP, TMVec2 offset, float t, float dt, int *count, Entity **entities) {
 
     PhysicsComponent *physics = entity->physics;
-    if(TMVec2LenSq(offset)) {
-        physics->potetialPosition = hitP + (normal * 0.002f) + (physics->potetialPosition - offset);
-    }
-    else {
-        physics->potetialPosition = hitP + (normal * 0.002f);
-    }
-    physics->velocity = physics->velocity - TMVec2Project(physics->velocity, normal)  ;
-    TMVec2 scaleVelocity = physics->velocity * (1.0f - t );
-    physics->potetialPosition = physics->potetialPosition + scaleVelocity * dt;
+    while(*count && physics->iterations < 20) {
+        
+        if(TMVec2LenSq(offset)) {
+            physics->position = (hitP + (normal * 0.005f)) - offset;
+        }
+        else {
+            physics->position = hitP + (normal * 0.005f);
+        }
+        physics->velocity = physics->velocity - TMVec2Project(physics->velocity, normal)  ;
+        TMVec2 scaleVelocity = physics->velocity * (1.0f - t );
+        physics->potetialPosition = physics->position + scaleVelocity * dt;
 
-    if(count) {
-        physics->potetialPosition = physics->lastlastPosition;
-        physics->velocity = {};
-        physics->acceleration = {};
+        Message message{};
+        message.ptr[0] = (void *)entities;
+        message.f32[2] = dt;
+        physics->iterations++;
+        MessageFireFirstHit(MESSAGE_TYPE_COLLISION_DETECTION, (void *)entity, message);
+
     }
+
+
 }
 
 
@@ -44,10 +49,12 @@ void PhysicSystemOnMessage(MessageType type, void *sender, void *listener, Messa
             TMVec2 normal = message.v2[0];
             TMVec2 hitP = message.v2[1];
             TMVec2 offset = message.v2[2];
-            float t = message.f32[6];
-            float dt = message.f32[7];
-            int count = message.i32[8];
-            CollisionResolution(entity, normal, hitP, offset, t, dt, count);
+            int *count = (int *)message.ptr[3];
+            Entity **entities = (Entity **)message.ptr[4];
+            float t = message.f32[10];
+            float dt = message.f32[11];
+            CollisionResolution(entity, normal, hitP, offset, t, dt, count, entities);
+            entity->physics->position = entity->physics->potetialPosition;
         } break;
     }
 
@@ -72,10 +79,8 @@ void PhysicSystemUpdate(Entity **entities, float dt) {
             Message message{};
             message.ptr[0] = (void *)entities;
             message.f32[2] = dt;
-            // TODO: try other solution for this
-            // TODO: this is not a full solution
+            entity->physics->iterations = 0;
             MessageFireFirstHit(MESSAGE_TYPE_COLLISION_DETECTION, (void *)entity, message);
-            physics->position = physics->potetialPosition;
         }
     }
 

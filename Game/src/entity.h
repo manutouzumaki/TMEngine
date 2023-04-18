@@ -15,10 +15,10 @@ struct PhysicsComponent {
     TMVec2 potetialPosition;
     TMVec2 position;
     TMVec2 lastPosition;
-    TMVec2 lastlastPosition;
     TMVec2 velocity;
     TMVec2 acceleration;
     float damping;
+    int iterations;
 };
 
 struct InputComponent {
@@ -39,6 +39,7 @@ struct CollisionComponent {
         Circle circle;
         Capsule capsule;
     };
+    int count;
 };
 
 struct Entity {
@@ -70,6 +71,7 @@ void InputSystemUpdate(Entity **entities);
 struct CollisionInfo {
     TMVec2 normal;
     TMVec2 hitP;
+    TMVec2 offset;
     float t;
 };
 

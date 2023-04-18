@@ -2,6 +2,7 @@
 #include <utils/tm_darray.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <float.h>
 #include "../message.h"
 #include <tm_debug_renderer.h>
 
@@ -42,8 +43,9 @@ static void UpdateCollider(Entity *entity) {
     }
 }
 
-static void AABBAABBCollisionDetection(Entity *entity, Entity *other, float dt, int &count) {
+static void AABBAABBCollisionDetection(Entity *entity, Entity *other, float dt, int &count, CollisionInfo *collisionInfo) {
     PhysicsComponent *physics = entity->physics;
+    UpdateCollider(entity);
     
     AABB entityAABB = entity->collision->aabb;
     AABB otherAABB  = other->collision->aabb;
@@ -79,26 +81,23 @@ static void AABBAABBCollisionDetection(Entity *entity, Entity *other, float dt, 
         if(otherAABB.min.y >= entityAABB.max.y) {
             normal = {0.0f, -1.0f};
         }
-
-        Message message{};  // NOTE: this must be zero initialized
-        message.v2[0] = normal;
-        message.v2[1] = hitP;
-        message.f32[6] = t;
-        message.f32[7] = dt;
-        message.i32[8] = count;
-        MessageFireFirstHit(MESSAGE_TYPE_COLLISION_RESOLUTION, (void *)entity, message);
+        
+        collisionInfo[count].normal = normal;
+        collisionInfo[count].hitP = hitP;
+        collisionInfo[count].offset = {};
+        collisionInfo[count].t = t;
         count++;
+        
     }  
 }
 
 
 
-static void CircleAABBCollisionDetection(Entity *entity, Entity *other, float dt, int &count) {
+static void CircleAABBCollisionDetection(Entity *entity, Entity *other, float dt, int &count, CollisionInfo *collisionInfo) {
     PhysicsComponent *physics = entity->physics;
+    UpdateCollider(entity);
     
     TMVec2 d = physics->potetialPosition - physics->position;
-    float displacement = TMVec2LenSq(d);
-    if(displacement <= 0.0f) return;
 
     Circle circle;
     circle.c = physics->position;
@@ -115,32 +114,30 @@ static void CircleAABBCollisionDetection(Entity *entity, Entity *other, float dt
         TMDebugRendererDrawLine(closestP.x, closestP.y, 
                                 hitP.x, hitP.y,
                                 0xFF0000FF);
-
-        Message message{};  // NOTE: this must be zero initialized
-        message.v2[0] = normal;
-        message.v2[1] = hitP;
-        message.f32[6] = t;
-        message.f32[7] = dt;
-        message.i32[8] = count;
-        MessageFireFirstHit(MESSAGE_TYPE_COLLISION_RESOLUTION, (void *)entity, message);
+    
+        collisionInfo[count].normal = normal;
+        collisionInfo[count].hitP = hitP;
+        collisionInfo[count].offset = {};
+        collisionInfo[count].t = t;
         count++;
     }
 }
 
 
-static void CapsuleAABBCollisionDetection(Entity *entity, Entity *other, float dt, int &count) {
+static void CapsuleAABBCollisionDetection(Entity *entity, Entity *other, float dt, int &count, CollisionInfo *collisionInfo) {
     PhysicsComponent *physics = entity->physics;
+    UpdateCollider(entity);
     
-
     AABB aabb  = other->collision->aabb;
     Capsule capsule = entity->collision->capsule;
 
     TMVec2 closest;
     ClosestPtPointAABB(physics->position, aabb, closest);
     TMVec2 capsulePosition;
-    float hitT;
-    ClosestPtPointSegement(closest, capsule.a, capsule.b, hitT, capsulePosition);
+    float hitCapsule;
+    ClosestPtPointSegement(closest, capsule.a, capsule.b, hitCapsule, capsulePosition);
     TMVec2 offset = capsulePosition - physics->position;
+
     TMVec2 potetialCapsulePosition = physics->potetialPosition + offset;
 
     Circle circle;
@@ -160,17 +157,33 @@ static void CapsuleAABBCollisionDetection(Entity *entity, Entity *other, float d
                                 hitP.x, hitP.y,
                                 0xFF0000FF);
 
-        Message message{};  // NOTE: this must be zero initialized
-        message.v2[0] = normal;
-        message.v2[1] = hitP;
-        message.v2[2] = potetialCapsulePosition;
-        message.f32[6] = t;
-        message.f32[7] = dt;
-        message.i32[8] = count;
-        MessageFireFirstHit(MESSAGE_TYPE_COLLISION_RESOLUTION, (void *)entity, message);
+        collisionInfo[count].normal = normal;
+        collisionInfo[count].hitP = hitP;
+        collisionInfo[count].offset = offset;
+        collisionInfo[count].t = t;
         count++;
+
     }
 }
+
+#if 0
+static void SortHitEntities(Entity **entities, float *hitT, int count) {
+    for(int j = 1; j < count; ++j) {
+        Entity *entityKey = entities[j];
+        float key = hitT[j];
+        int i = j - 1;
+        
+        while(i >= 0 && hitT[i] > key) {
+            entities[i + 1] = entities[i];
+            hitT[i + 1] = hitT[i];
+            --i;
+        }
+
+        entities[i + 1] = entityKey;
+        hitT[i + 1] = key;
+    }
+}
+#endif
 
 
 void CollisionSystemOnMessage(MessageType type, void *sender, void *listener, Message message) {
@@ -180,24 +193,51 @@ void CollisionSystemOnMessage(MessageType type, void *sender, void *listener, Me
             Entity **entities = (Entity **)message.ptr[0];
             float dt          = message.f32[2];
             if(!entity->collision) return;
+
             int collisionCount = 0;
+            CollisionInfo collisionInfo[10] = {};
+ 
             for(int j = 0; j < TMDarraySize(entities); ++j) {
                 Entity *other = entities[j];
                 if(other != entity && other->collision) {
                     CollisionType a = entity->collision->type;
                     CollisionType b = other->collision->type;
                     if(a == COLLISION_TYPE_AABB && b == COLLISION_TYPE_AABB) {
-                        AABBAABBCollisionDetection(entity, other, dt, collisionCount);
-                        }
+                        AABBAABBCollisionDetection(entity, other, dt, collisionCount, collisionInfo);
+                    }
                     if(a == COLLISION_TYPE_CIRCLE && b == COLLISION_TYPE_AABB) {
-                        CircleAABBCollisionDetection(entity, other, dt, collisionCount);
+                        CircleAABBCollisionDetection(entity, other, dt, collisionCount, collisionInfo);
                     }
                     if(a == COLLISION_TYPE_CAPSULE && b == COLLISION_TYPE_AABB) {
-                        CapsuleAABBCollisionDetection(entity, other, dt, collisionCount);
+                        CapsuleAABBCollisionDetection(entity, other, dt, collisionCount, collisionInfo);
                     }
                     // TODO: others collision
                 }
             }
+            entity->collision->count = collisionCount;
+
+            // NOTE: this is important nor remove please!!!!
+            float minor = FLT_MAX;
+            int index = 0;
+            for(int j = 0; j < collisionCount; ++j) {
+                if(collisionInfo[j].t < minor) {
+                    minor = collisionInfo[j].t;
+                    index = j;
+                }
+            } 
+
+            // NOTE: send message to collision resolution
+            Message message{};  // NOTE: this must be zero initialized
+            message.v2[0] = collisionInfo[index].normal;
+            message.v2[1] = collisionInfo[index].hitP;
+            message.v2[2] = collisionInfo[index].offset;
+            message.ptr[3] = &entity->collision->count;
+            message.ptr[4] = (void *)entities;
+            message.f32[10] = collisionInfo[index].t;
+            message.f32[11] = dt;
+            MessageFireFirstHit(MESSAGE_TYPE_COLLISION_RESOLUTION, (void *)entity, message);
+
+
         }break;
     }
 }

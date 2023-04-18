@@ -84,13 +84,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     AABB aabb{};
 
 
-    Entity *player2 = EntityCreate();
-    EntityAddGraphicsComponent(player2, {1.3, 0.2}, {0.8, 1}, {1, 0.2, 0.5, 1});
-    //EntityAddPhysicsComponent(player2, {0.9, 1.0}, {0, 0}, {0, 0}, 0.0001f);
-    aabb.min = {1.3 - 0.4, 0.2 - 0.5};
-    aabb.max = {1.3 + 0.4, 0.2 + 0.5};
-    EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, player2, Entity *);
+
 
     // create the cealing
     Entity *ceal = EntityCreate();
@@ -107,6 +101,14 @@ void GameInitialize(GameState *state, TMWindow *window) {
     aabb.max = {-4 + 2, 1.9 + 0.5};
     EntityAddCollisionComponent(ceal1, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, ceal1, Entity *);
+
+    Entity *player2 = EntityCreate();
+    EntityAddGraphicsComponent(player2, {1.3, -0.2}, {0.8, 1}, {1, 0.8, 0.2, 1});
+    //EntityAddPhysicsComponent(player2, {0.9, 1.0}, {0, 0}, {0, 0}, 0.0001f);
+    aabb.min = {1.3 - 0.4, -0.2 - 0.5};
+    aabb.max = {1.3 + 0.4, -0.2 + 0.5};
+    EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
+    TMDarrayPush(state->entities, player2, Entity *);
 
     Entity *player3 = EntityCreate();
     EntityAddGraphicsComponent(player3, {-2.3, 0.6}, {0.8, 1}, {1, 0.2, 0.5, 1});
@@ -145,18 +147,18 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntityAddGraphicsComponent(player, {-5, 0}, {0.8, 0.8}, {1, 0, 0, 1});
     EntityAddPhysicsComponent(player, {-5, 0}, {0, 0}, {0, 0}, 0.01f);
 
-    Circle circle;
-    circle.c = {-5, 0};
-    circle.r = 0.4;
-    EntityAddCollisionComponent(player, COLLISION_TYPE_CIRCLE, circle);
+    //Circle circle;
+    //circle.c = {-5, 0};
+    //circle.r = 0.4;
+    //EntityAddCollisionComponent(player, COLLISION_TYPE_CIRCLE, circle);
     //aabb.min = {-5 - 0.4, 0 - 0.4};
     //aabb.max = {-5 + 0.4, 0 + 0.4};
     //EntityAddCollisionComponent(player, COLLISION_TYPE_AABB, aabb);
-    //Capsule capsule;
-    //capsule.r = 0.4;
-    //capsule.a = {-5.0, 0.4};
-    //capsule.b = {-5.0, -0.4};
-    //EntityAddCollisionComponent(player, COLLISION_TYPE_CAPSULE, capsule);
+    Capsule capsule;
+    capsule.r = 0.4;
+    capsule.a = {-5.0, 0.4};
+    capsule.b = {-5.0, -0.4};
+    EntityAddCollisionComponent(player, COLLISION_TYPE_CAPSULE, capsule);
 
 
     TMDarrayPush(state->entities, player, Entity *);
