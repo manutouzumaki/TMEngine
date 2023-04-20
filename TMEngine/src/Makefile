@@ -10,8 +10,8 @@ build_win32:
 	/Fo../build/ /Fe../build/tmlib.dll /Fm../build/ /Fd../build/ \
 	-link User32.lib Gdi32.lib Winmm.lib Ole32.lib Xinput.lib Xaudio2.lib d3d11.lib d3dcompiler.lib \
 	-DLL
-	copy ..\build\tmlib.dll ..\..\Game\build
-	copy ..\build\tmlib.pdb ..\..\Game\build
+	copy ..\build\tmlib.dll ..\..\Sample\build
+	copy ..\build\tmlib.pdb ..\..\Sample\build
 clean_win32:
 	del ..\build\tmlib.dll
 	del ..\build\tmlib.exp
