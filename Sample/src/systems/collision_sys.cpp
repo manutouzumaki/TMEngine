@@ -14,31 +14,31 @@ static void UpdateCollider(Entity *entity) {
         CollisionComponent *collision = entity->collision;
         PhysicsComponent *physics = entity->physics;
         switch(collision->type) {
-                case COLLISION_TYPE_AABB: {
-                    AABB *aabb = &collision->aabb;
-                    float width = aabb->max.x - aabb->min.x;
-                    float height = aabb->max.y - aabb->min.y;
-                    float x = aabb->min.x + width*0.5f;
-                    float y = aabb->min.y + height*0.5f;
-                    aabb->min = {physics->position.x - width*0.5f, physics->position.y - height*0.5f};
-                    aabb->max = {physics->position.x + width*0.5f, physics->position.y + height*0.5f}; 
-                }break;
-                case COLLISION_TYPE_CIRCLE: {
-                    Circle *circle = &collision->circle;
-                    circle->c = physics->position;
+            case COLLISION_TYPE_AABB: {
+                AABB *aabb = &collision->aabb;
+                float width = aabb->max.x - aabb->min.x;
+                float height = aabb->max.y - aabb->min.y;
+                float x = aabb->min.x + width*0.5f;
+                float y = aabb->min.y + height*0.5f;
+                aabb->min = {physics->position.x - width*0.5f, physics->position.y - height*0.5f};
+                aabb->max = {physics->position.x + width*0.5f, physics->position.y + height*0.5f}; 
+            }break;
+            case COLLISION_TYPE_CIRCLE: {
+                Circle *circle = &collision->circle;
+                circle->c = physics->position;
 
-                }break;
-                case COLLISION_TYPE_OBB: {
+            }break;
+            case COLLISION_TYPE_OBB: {
 
-                }break;
-                case COLLISION_TYPE_CAPSULE: {
-                    Capsule *capsule = &collision->capsule;
-                    TMVec2 ab = capsule->b - capsule->a;
-                    float halfHeight = TMVec2Len(ab)*0.5f; 
-                    TMVec2 up = {0, 1};
-                    capsule->a = physics->position + up * halfHeight;
-                    capsule->b = physics->position - up * halfHeight;
-                }break;           
+            }break;
+            case COLLISION_TYPE_CAPSULE: {
+                Capsule *capsule = &collision->capsule;
+                TMVec2 ab = capsule->b - capsule->a;
+                float halfHeight = TMVec2Len(ab)*0.5f; 
+                TMVec2 up = {0, 1};
+                capsule->a = physics->position + up * halfHeight;
+                capsule->b = physics->position - up * halfHeight;
+            }break;           
         }
     }
 }
@@ -64,7 +64,9 @@ static void AABBAABBCollisionDetection(Entity *entity, Entity *other, float dt, 
     expand.min = {otherAABB.min.x - width*0.5f, otherAABB.min.y - height*0.5f};
     expand.max = {otherAABB.max.x + width*0.5f, otherAABB.max.y + height*0.5f};
     if(RayAABB(r.o, r.d, expand, t, p) && t*t < TMVec2LenSq(d)) {
-        t /= TMVec2Len(d); 
+        if(TMVec2Len(d) > FLT_EPSILON) {
+            t /= TMVec2Len(d); 
+        }
         TMVec2 hitP = r.o + d * t;
         TMVec2 closestP;
         ClosestPtPointAABB(hitP, otherAABB, closestP);
@@ -185,9 +187,61 @@ static void SortHitEntities(Entity **entities, float *hitT, int count) {
 }
 #endif
 
+static void SetGrounded(Entity *entity, Entity **entities) {
+
+    bool flag = false;
+    for(int j = 0; j < TMDarraySize(entities); ++j) {
+        Entity *other = entities[j];
+        if(other != entity && other->collision) {
+            CollisionType type = other->collision->type;
+            if(type == COLLISION_TYPE_AABB) {
+                AABB aabb = other->collision->aabb;
+                Ray ray = entity->physics->down;
+                TMVec2 d = TMVec2Normalized(ray.d);
+                TMVec2 q;
+                float t;
+                if(RayAABB(ray.o, d, aabb, t, q) && t*t < TMVec2LenSq(ray.d)) {
+                    flag = true;
+                    // TODO: move this to physics_sys
+                    if(entity->physics->velocity.y < 0) {
+                        entity->physics->velocity.y = 0;
+                        entity->physics->acceleration.y = 0;
+                    }
+                }
+            }
+            if(type == COLLISION_TYPE_CIRCLE) {
+                Circle circle = other->collision->circle;
+                Ray ray = entity->physics->down;
+                TMVec2 q;
+                float t;
+                if(RayCircle(ray.o, ray.d, circle, t, q) && t <= 1.0f) {
+                    flag = true;
+                    // TODO: move this to physics_sys
+                    if(entity->physics->velocity.y < 0) {
+                        entity->physics->velocity.y = 0;
+                        entity->physics->acceleration.y = 0;
+                    }
+                }
+            }
+            if(type == COLLISION_TYPE_CAPSULE) {
+                // TODO: ...
+            }
+            // TODO: others collision
+        }
+    }
+    entity->physics->grounded = flag;
+}
+
 
 void CollisionSystemOnMessage(MessageType type, void *sender, void *listener, Message message) {
     switch(type) {
+        case MESSAGE_TYPE_COLLISION_GROUNDED: {
+            Entity *entity    = (Entity *)sender;
+            Entity **entities = (Entity **)message.ptr[0];
+            if(!entity->collision) return;
+            SetGrounded(entity, entities);
+
+        } break;
         case MESSAGE_TYPE_COLLISION_DETECTION: {
             Entity *entity    = (Entity *)sender;
             Entity **entities = (Entity **)message.ptr[0];
@@ -238,12 +292,13 @@ void CollisionSystemOnMessage(MessageType type, void *sender, void *listener, Me
             MessageFireFirstHit(MESSAGE_TYPE_COLLISION_RESOLUTION, (void *)entity, message);
 
 
-        }break;
+        } break;
     }
 }
 
 void CollisionSystemInitialize() {
     MessageRegister(MESSAGE_TYPE_COLLISION_DETECTION, NULL, CollisionSystemOnMessage);
+    MessageRegister(MESSAGE_TYPE_COLLISION_GROUNDED, NULL, CollisionSystemOnMessage);
 }
 
 void CollisionSystemShutdown() {

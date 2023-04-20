@@ -17,8 +17,10 @@ struct PhysicsComponent {
     TMVec2 lastPosition;
     TMVec2 velocity;
     TMVec2 acceleration;
+    Ray down;
     float damping;
     int iterations;
+    bool grounded;
 };
 
 struct InputComponent {

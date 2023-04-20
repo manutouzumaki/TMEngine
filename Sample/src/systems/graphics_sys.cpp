@@ -62,7 +62,9 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
                         float height = aabb.max.y - aabb.min.y;
                         float x = aabb.min.x + width*0.5f;
                         float y = aabb.min.y + height*0.5f;
-                        TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
+                        
+                        TMDebugRendererDrawQuad(graphics->position.x, graphics->position.y, width, height, 0, 0xFF00FF00);
+
                         TMDebugRendererDrawCircle(aabb.max.x, aabb.min.y, 0.4, 0xFFFFFF00, 20);
                         TMDebugRendererDrawCircle(aabb.min.x, aabb.max.y, 0.4, 0xFFFFFF00, 20);
                         TMDebugRendererDrawCircle(aabb.min.x, aabb.min.y, 0.4, 0xFFFFFF00, 20);
@@ -79,7 +81,7 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
                     }break;
                     case COLLISION_TYPE_CIRCLE: {
                         Circle circle = collision->circle;
-                        TMDebugRendererDrawCircle(circle.c.x, circle.c.y, circle.r, 0xFF00FF00, 20);
+                        TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, circle.r, 0xFF00FF00, 20);
                     }break;
                     case COLLISION_TYPE_OBB: {
 
@@ -87,9 +89,8 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
                     case COLLISION_TYPE_CAPSULE: {
                         Capsule capsule = collision->capsule;
                         TMVec2 ab = capsule.b - capsule.a;
-                        TMVec2 p = capsule.a + ab * 0.5f;
                         float halfHeight = TMVec2Len(ab)*0.5f;
-                        TMDebugRendererDrawCapsule(p.x, p.y, capsule.r, halfHeight, 0, 0xFF00FF00, 20);
+                        TMDebugRendererDrawCapsule(graphics->position.x, graphics->position.y, capsule.r, halfHeight, 0, 0xFF00FF00, 20);
 
                     }break;           
             }
@@ -97,6 +98,13 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
         if(entity->graphics) {
             GraphicsComponent *graphics = entity->graphics;
             TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, 0.05f, 0xFF22FF22, 10);
+        }
+        if(entity->physics) {
+            PhysicsComponent *physics = entity->physics;
+            TMDebugRendererDrawLine(physics->down.o.x, physics->down.o.y,
+                                    physics->down.o.x + physics->down.d.x,
+                                    physics->down.o.y + physics->down.d.y,
+                                    0xFF00FF00);
         }
     }
     TMDebugRenderDraw();

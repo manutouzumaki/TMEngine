@@ -118,16 +118,16 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMDarrayPush(state->entities, player3, Entity *);
 
     Entity *player4 = EntityCreate();
-    EntityAddGraphicsComponent(player4, {5.0, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
-    aabb.min = {5.0 - 0.4, 0.0 - 0.5};
-    aabb.max = {5.0 + 0.4, 0.0 + 0.5};
+    EntityAddGraphicsComponent(player4, {4.5, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    aabb.min = {4.5 - 0.4, 0.0 - 0.5};
+    aabb.max = {4.5 + 0.4, 0.0 + 0.5};
     EntityAddCollisionComponent(player4, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player4, Entity *);
 
     Entity *player5 = EntityCreate();
-    EntityAddGraphicsComponent(player5, {5.0 + 0.8*1.8, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
-    aabb.min = {5.0 + 0.8*1.8 - 0.4, 0.0 - 0.5};
-    aabb.max = {5.0 + 0.8*1.8 + 0.4, 0.0 + 0.5};
+    EntityAddGraphicsComponent(player5, {4.5 + 0.8, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    aabb.min = {4.5 + 0.8 - 0.4, 0.0 - 0.5};
+    aabb.max = {4.5 + 0.8 + 0.4, 0.0 + 0.5};
     EntityAddCollisionComponent(player5, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player5, Entity *);
 
@@ -138,6 +138,20 @@ void GameInitialize(GameState *state, TMWindow *window) {
     aabb.max = {0 + 4, -1.9 + 0.5};
     EntityAddCollisionComponent(floor, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor, Entity *);
+
+    Entity *floor2 = EntityCreate();
+    EntityAddGraphicsComponent(floor2, {-8, -1.9}, {8, 1}, {0, 0.2, 0.4, 1});
+    aabb.min = {-8 - 4, -1.9 - 0.5};
+    aabb.max = {-8 + 4, -1.9 + 0.5};
+    EntityAddCollisionComponent(floor2, COLLISION_TYPE_AABB, aabb);
+    TMDarrayPush(state->entities, floor2, Entity *);
+
+    Entity *floor3 = EntityCreate();
+    EntityAddGraphicsComponent(floor3, {-8, -0.5f}, {2, 2}, {1, 0.2, 0.4, 1});
+    aabb.min = {-8 - 1, -0.5f - 1};
+    aabb.max = {-8 + 1, -0.5f + 1};
+    EntityAddCollisionComponent(floor3, COLLISION_TYPE_AABB, aabb);
+    TMDarrayPush(state->entities, floor3, Entity *);
 
 
     // create the player
@@ -156,8 +170,8 @@ void GameInitialize(GameState *state, TMWindow *window) {
     //EntityAddCollisionComponent(player, COLLISION_TYPE_AABB, aabb);
     Capsule capsule;
     capsule.r = 0.4;
-    capsule.a = {-5.0, 0.4};
-    capsule.b = {-5.0, -0.4};
+    capsule.a = {-5.0, 0.2};
+    capsule.b = {-5.0, -0.2};
     EntityAddCollisionComponent(player, COLLISION_TYPE_CAPSULE, capsule);
 
 
@@ -166,11 +180,14 @@ void GameInitialize(GameState *state, TMWindow *window) {
 }
 
 void GameUpdate(GameState *state, float dt) {
+
+    MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_CLEAR_FORCES, (void *)state->entities, {});
     InputSystemUpdate(state->entities); 
+    PhysicSystemUpdate(state->entities, dt);
 }
 
 void GameFixUpdate(GameState *state, float dt) {
-    PhysicSystemUpdate(state->entities, dt);
+    PhysicSystemFixUpdate(state->entities, dt);
 }
 
 void GamePostUpdate(GameState *state, float t) {

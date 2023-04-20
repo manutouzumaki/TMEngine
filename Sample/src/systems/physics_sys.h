@@ -6,6 +6,7 @@
 void PhysicSystemInitialize();
 void PhysicSystemShutdown();
 void PhysicSystemUpdate(Entity **entities, float dt);
+void PhysicSystemFixUpdate(Entity **entities, float dt);
 void PhysicSystemPostUpdate(Entity **entities, float t);
 
 

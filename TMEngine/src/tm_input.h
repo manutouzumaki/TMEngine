@@ -16,11 +16,13 @@ struct TMInput {
 };
 
 #ifdef TM_WIN32
-#define TM_KEY_ESCAPE VK_ESCAPE
-#define TM_KEY_SPACE  VK_SPACE
+// TODO: ....
+#define TM_KEY_ESCAPE 0x1B
+#define TM_KEY_SPACE  0x20
 #endif
 
 #ifdef TM_MACOS
+// TODO: ....
 #define TM_KEY_ESCAPE GLFW_KEY_ESCAPE
 #define TM_KEY_SPACE  GLFW_KEY_SPACE
 #endif
