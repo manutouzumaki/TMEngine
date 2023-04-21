@@ -2,13 +2,15 @@
 #define _ENTITY_H_
 
 #include <utils/tm_math.h>
+#include <stdlib.h>
 #include "collision.h"
-
 
 struct GraphicsComponent {
     TMVec2 position;
     TMVec2 size;
     TMVec4 color;
+    float *uvs;
+    int index;
 };
 
 struct PhysicsComponent {
@@ -59,7 +61,7 @@ void EntitySystemShutdown();
 Entity *EntityCreate();
 void EntityDestroy(Entity *entity);
 
-void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color);
+void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color, int index = 0, float *uvs = NULL);
 void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity, TMVec2 acceleration, float damping);
 void EntityAddInputComponent(Entity *entity);
 
@@ -68,7 +70,7 @@ void EntityAddCollisionComponent(Entity *entity, CollisionType type, OBB obb);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circle);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule);
 
-void InputSystemUpdate(Entity **entities);
+void InputSystemUpdate(Entity **entities, float dt);
 
 struct CollisionInfo {
     TMVec2 normal;

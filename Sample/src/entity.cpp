@@ -40,12 +40,14 @@ Entity *EntityCreate() {
     return entity;
 }
 
-void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color) {
+void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color, int index, float *uvs) {
     assert(entity->graphics == NULL);
     entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
     entity->graphics->position = position;
     entity->graphics->size = size;
     entity->graphics->color = color;
+    entity->graphics->uvs = uvs;
+    entity->graphics->index = index;
 }
 
 void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity, TMVec2 acceleration, float damping) {

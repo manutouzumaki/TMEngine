@@ -48,7 +48,9 @@ void GameInitialize(GameState *state, TMWindow *window) {
                                            "../../assets/shaders/batchFrag.hlsl");
 
     state->texture = TMRendererTextureCreate(state->renderer,
-                                             "../../assets/images/characters_packed.png");
+                                             "../../assets/images/player.png");
+
+    state->uvs = TMGenerateUVs(state->texture, 16, 16);
 
 
     state->batchRenderer = TMRendererRenderBatchCreate(state->renderer, state->shader, state->texture, 100);
@@ -82,8 +84,6 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntitySystemInitialize(100);
     
     AABB aabb{};
-
-
 
 
     // create the cealing
@@ -158,7 +158,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     Entity *player = EntityCreate();
     state->player = player;
     EntityAddInputComponent(player);
-    EntityAddGraphicsComponent(player, {-5, 0}, {0.8, 0.8}, {1, 0, 0, 1});
+    EntityAddGraphicsComponent(player, {-5, 0}, {1.2, 1.2}, {1, 0, 0, 0}, 0, state->uvs);
     EntityAddPhysicsComponent(player, {-5, 0}, {0, 0}, {0, 0}, 0.01f);
 
     //Circle circle;
@@ -182,7 +182,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
 void GameUpdate(GameState *state, float dt) {
 
     MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_CLEAR_FORCES, (void *)state->entities, {});
-    InputSystemUpdate(state->entities); 
+    InputSystemUpdate(state->entities, dt); 
     PhysicSystemUpdate(state->entities, dt);
 }
 
@@ -197,21 +197,11 @@ void GamePostUpdate(GameState *state, float t) {
 }
 
 void GameRender(GameState *state) {
-    TMRendererClear(state->renderer, 0.2, 0.2, 0.4, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
+    TMRendererClear(state->renderer, 0.6, 0.6, 0.9, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
+
+
     TMRendererBindShader(state->renderer, state->shader);
     GraphicsSystemDraw(state->batchRenderer, state->entities);
-
-
-    // TODO: closest point in circle test ...
-    TMDebugRendererDrawCircle(5, 0, 1, 0xFFFF33FF, 20);
-    Circle circle;
-    circle.c = {5, 0};
-    circle.r = 1;
-    TMVec2 closest;
-    ClosestPtPointCircle(state->player->graphics->position, 
-                         circle, closest);
-    TMDebugRendererDrawCircle(closest.x, closest.y, 0.05f, 0xFF0aa234, 10);
-
     TMDebugRenderDraw();
 
     TMRendererPresent(state->renderer, 1);
@@ -224,6 +214,7 @@ void GameShutdown(GameState *state) {
         EntityDestroy(entity);
     }
     EntitySystemShutdown();
+    free(state->uvs);
     GraphicsSystemShutdown();
     CollisionSystemShutdown();
     PhysicSystemShutdown();

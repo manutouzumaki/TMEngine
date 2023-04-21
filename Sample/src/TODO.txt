@@ -14,7 +14,7 @@
 ###################################################################################################################################
 ### - NOTE: change component storage to slotmaps for linear processing
 ### - implemet a minimal level base platformer (design the game loop for levels and menus from the start)
-### -
+### - try to use the batch renderer to render a complex scene with diferent textures shaders and lights
 ### -
 ### -
 ### -

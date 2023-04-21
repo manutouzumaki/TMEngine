@@ -18,12 +18,18 @@ void GraphicsSystemOnMessage(MessageType type, void *sender, void * listener, Me
             TMVec2 position = message.v2[0];
             GraphicsUpdatePositions(entity, position);
         } break;
+        case MESSAGE_TYPE_GRAPHICS_UPDATE_ANIMATION_INDEX: {
+            Entity *entity = (Entity *)sender;
+            int index = message.i32[0];
+            entity->graphics->index = index;
+        }
     }
 
 }
 
 void GraphicsSystemInitialize() {
     MessageRegister(MESSAGE_TYPE_GRAPHICS_UPDATE_POSITIONS, NULL, GraphicsSystemOnMessage);
+    MessageRegister(MESSAGE_TYPE_GRAPHICS_UPDATE_ANIMATION_INDEX, NULL, GraphicsSystemOnMessage);
 }
 
 void GraphicsSystemShutdown() {
@@ -38,11 +44,17 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
         Entity *entity = entities[i];
         if(entity->graphics) {
             GraphicsComponent *graphics = entity->graphics;
-            TMRendererRenderBatchAdd(batchRenderer,
-                                     graphics->position.x, graphics->position.y, 1,
-                                     graphics->size.x, graphics->size.y, 0,
-                                     graphics->color.x, graphics->color.y,
-                                     graphics->color.z, graphics->color.w);
+            if(graphics->uvs == NULL) {
+                TMRendererRenderBatchAdd(batchRenderer,
+                                         graphics->position.x, graphics->position.y, 1,
+                                         graphics->size.x, graphics->size.y, 0,
+                                         graphics->color.x, graphics->color.y,
+                                         graphics->color.z, graphics->color.w);
+            }
+            else {
+                TMRendererRenderBatchAdd(batchRenderer, graphics->position.x, graphics->position.y, 1,
+                                         graphics->size.x, graphics->size.y, 0, graphics->index, graphics->uvs);
+            }
         }
     }
     TMRendererRenderBatchDraw(batchRenderer);

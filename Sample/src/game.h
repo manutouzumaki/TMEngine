@@ -20,6 +20,8 @@ struct GameState {
 
     Entity **entities;
     Entity *player;
+
+    float *uvs;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);
