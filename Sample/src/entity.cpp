@@ -13,6 +13,7 @@ static TMMemoryPool *graphicsComponenMem;
 static TMMemoryPool *physicsComponentMem;
 static TMMemoryPool *inputComponentMem;
 static TMMemoryPool *collisionComponentMem;
+static TMMemoryPool *animationComponentMem;
 
 
 void EntitySystemInitialize(int maxEntityCount) {
@@ -22,6 +23,7 @@ void EntitySystemInitialize(int maxEntityCount) {
     physicsComponentMem = TMMemoryPoolCreate(sizeof(PhysicsComponent), maxEntityCount);
     inputComponentMem = TMMemoryPoolCreate(sizeof(InputComponent), maxEntityCount);
     collisionComponentMem = TMMemoryPoolCreate(sizeof(CollisionComponent), maxEntityCount);
+    animationComponentMem = TMMemoryPoolCreate(sizeof(AnimationComponet), maxEntityCount);
 }
 
 void EntitySystemShutdown() {
@@ -30,6 +32,7 @@ void EntitySystemShutdown() {
     TMMemoryPoolDestroy(physicsComponentMem);
     TMMemoryPoolDestroy(inputComponentMem);
     TMMemoryPoolDestroy(collisionComponentMem);
+    TMMemoryPoolDestroy(animationComponentMem);
 
 }
 
@@ -92,6 +95,15 @@ void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule cap
     entity->collision->capsule = capsule;
 }
 
+void EntityAddAnimationComponet(Entity *entity) {
+    assert(entity->animation == NULL);
+    entity->animation = (AnimationComponet *)TMMemoryPoolAlloc(animationComponentMem);
+    entity->animation->states = NULL;
+    entity->animation->statesCount = 0;
+    entity->animation->current = NULL;
+    entity->animation->timer = 0.0f;
+    
+}
 
 void EntityDestroy(Entity *entity) {
     if(entity->graphics) TMMemoryPoolFree(graphicsComponenMem, (void *)entity->graphics);

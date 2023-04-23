@@ -7,8 +7,7 @@
 
 void InputSystemUpdate(Entity **entities, float dt) {
 
-    static bool facingLeft = true;
-    static float increment = 0;
+    static bool facingLeft = false;
 
     for(int i = 0; i < TMDarraySize(entities); ++i) {
 
@@ -32,9 +31,28 @@ void InputSystemUpdate(Entity **entities, float dt) {
                 }
             }
             
-            if(TMVec2LenSq(acceleration) > 0) {
 
-                Message message{};
+            Message message;
+            if(acceleration.x > 0.0f) {
+                message.i32[0] = 1;
+                MessageFireFirstHit(MESSAGE_TYPE_ANIMATION_SET_STATE, (void *)entity, message);
+            }
+            else if (acceleration.x < 0.0f){
+                message.i32[0] = 0;
+                MessageFireFirstHit(MESSAGE_TYPE_ANIMATION_SET_STATE, (void *)entity, message);
+            } else {
+                if(facingLeft) {
+                    message.i32[0] = 2;
+                    MessageFireFirstHit(MESSAGE_TYPE_ANIMATION_SET_STATE, (void *)entity, message);
+                }
+                else {
+                    message.i32[0] = 3;
+                    MessageFireFirstHit(MESSAGE_TYPE_ANIMATION_SET_STATE, (void *)entity, message);
+                }
+            }
+
+
+            if(TMVec2LenSq(acceleration) > 0) {
                 
                 if(entity->physics->grounded) {
                     message.v2[0] = TMVec2Normalized(acceleration) * 30.0f;
@@ -43,31 +61,9 @@ void InputSystemUpdate(Entity **entities, float dt) {
                     message.v2[0] = (TMVec2Normalized(acceleration) * 30.0f) * 0.1f;
                 }
                 MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_ADD_FORCE, (void *)entity, message);
-
-
-                increment += dt * 15;
-                if(facingLeft) {
-                    message.i32[0] = ((int)increment) % 4;
-                }
-                else {
-                    message.i32[0] = (((int)increment) % 4) + 4;
-                }
-                MessageFireFirstHit(MESSAGE_TYPE_GRAPHICS_UPDATE_ANIMATION_INDEX, (void *)entity, message);
             }
-            else {
 
-                increment += dt * 10;
-                Message message{};
-                if(facingLeft) {
-                    message.i32[0] = (((int)increment) % 2) * 3;
-                }
-                else {
-                    message.i32[0] = ((((int)increment) % 2) * 3) + 4;
-                }
-                MessageFireFirstHit(MESSAGE_TYPE_GRAPHICS_UPDATE_ANIMATION_INDEX, (void *)entity, message);
-            }
+
         }
-
-
     }
 }

@@ -5,12 +5,26 @@
 #include <stdlib.h>
 #include "collision.h"
 
+
 struct GraphicsComponent {
     TMVec2 position;
     TMVec2 size;
     TMVec4 color;
     float *uvs;
     int index;
+};
+
+struct AnimationState {
+    int frames[32];
+    int frameCount;
+    float speed;
+};
+
+struct AnimationComponet {
+    AnimationState *states;
+    AnimationState *current;
+    int statesCount;
+    float timer;
 };
 
 struct PhysicsComponent {
@@ -52,6 +66,7 @@ struct Entity {
     PhysicsComponent *physics;
     InputComponent *input;
     CollisionComponent *collision;
+    AnimationComponet *animation;
 };
 
 
@@ -69,6 +84,8 @@ void EntityAddCollisionComponent(Entity *entity, CollisionType type, AABB aabb);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, OBB obb);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circle);
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule);
+
+void EntityAddAnimationComponet(Entity *entity);
 
 void InputSystemUpdate(Entity **entities, float dt);
 

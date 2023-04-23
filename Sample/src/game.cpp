@@ -6,6 +6,7 @@
 #include "systems/physics_sys.h"
 #include "systems/collision_sys.h"
 #include "systems/graphics_sys.h"
+#include "systems/animation_sys.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -79,6 +80,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     PhysicSystemInitialize();
     CollisionSystemInitialize();
     GraphicsSystemInitialize();
+    AnimationSystemInitialize();
 
 
     EntitySystemInitialize(100);
@@ -160,22 +162,60 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntityAddInputComponent(player);
     EntityAddGraphicsComponent(player, {-5, 0}, {1.2, 1.2}, {1, 0, 0, 0}, 0, state->uvs);
     EntityAddPhysicsComponent(player, {-5, 0}, {0, 0}, {0, 0}, 0.01f);
-
-    //Circle circle;
-    //circle.c = {-5, 0};
-    //circle.r = 0.4;
-    //EntityAddCollisionComponent(player, COLLISION_TYPE_CIRCLE, circle);
-    //aabb.min = {-5 - 0.4, 0 - 0.4};
-    //aabb.max = {-5 + 0.4, 0 + 0.4};
-    //EntityAddCollisionComponent(player, COLLISION_TYPE_AABB, aabb);
     Capsule capsule;
     capsule.r = 0.4;
     capsule.a = {-5.0, 0.2};
     capsule.b = {-5.0, -0.2};
     EntityAddCollisionComponent(player, COLLISION_TYPE_CAPSULE, capsule);
 
+    AnimationState walkLeft;
+    walkLeft.frames[0] = 0;
+    walkLeft.frames[1] = 1;
+    walkLeft.frames[2] = 2;
+    walkLeft.frames[3] = 3;
+    walkLeft.frameCount = 4;
+    walkLeft.speed = 15.0f;
+
+    AnimationState walkRight;
+    walkRight.frames[0] = 4;
+    walkRight.frames[1] = 5;
+    walkRight.frames[2] = 6;
+    walkRight.frames[3] = 7;
+    walkRight.frameCount = 4;
+    walkRight.speed = 15.0f;
+
+    AnimationState idleLeft;
+    idleLeft.frames[0] = 0;
+    idleLeft.frames[1] = 3;
+    idleLeft.frameCount = 2;
+    idleLeft.speed = 7.0f;
+
+    AnimationState idleRight;
+    idleRight.frames[0] = 4;
+    idleRight.frames[1] = 7;
+    idleRight.frameCount = 2;
+    idleRight.speed = 7.0f;
+
+    EntityAddAnimationComponet(player);
+    AnimationSystemAddState(player, walkLeft);
+    AnimationSystemAddState(player, walkRight);
+    AnimationSystemAddState(player, idleLeft);
+    AnimationSystemAddState(player, idleRight);
 
     TMDarrayPush(state->entities, player, Entity *);
+
+
+    // create the Enemy
+    Entity *enemy = EntityCreate();
+    EntityAddGraphicsComponent(enemy, {-2, 10}, {1.2, 1.2}, {1, 0, 0, 0}, 0, state->uvs);
+    EntityAddPhysicsComponent(enemy, {-2, 10}, {0, 0}, {0, 0}, 0.01f);
+    capsule.r = 0.4;
+    capsule.a = {-2.0, 10.0f + 0.2};
+    capsule.b = {-2.0, 10.0f + -0.2};
+    EntityAddCollisionComponent(enemy, COLLISION_TYPE_CAPSULE, capsule);
+    EntityAddAnimationComponet(enemy);
+    AnimationSystemAddState(enemy, idleLeft);
+    TMDarrayPush(state->entities, enemy, Entity *);
 
 }
 
@@ -183,6 +223,7 @@ void GameUpdate(GameState *state, float dt) {
 
     MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_CLEAR_FORCES, (void *)state->entities, {});
     InputSystemUpdate(state->entities, dt); 
+    AnimationSystemUpdate(state->entities, dt);
     PhysicSystemUpdate(state->entities, dt);
 }
 
@@ -218,6 +259,7 @@ void GameShutdown(GameState *state) {
     GraphicsSystemShutdown();
     CollisionSystemShutdown();
     PhysicSystemShutdown();
+    AnimationSystemShutdown(state->entities);
     MessageSystemShoutdown();
     TMDebugRendererShutdown();
     TMRendererRenderBatchDestroy(state->renderer, state->batchRenderer);
