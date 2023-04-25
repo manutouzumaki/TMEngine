@@ -48,10 +48,31 @@ void GameInitialize(GameState *state, TMWindow *window) {
                                            "../../assets/shaders/batchVert.hlsl",
                                            "../../assets/shaders/batchFrag.hlsl");
 
+    
+#if 0
     state->texture = TMRendererTextureCreate(state->renderer,
                                              "../../assets/images/player.png");
+    //state->uvs = TMGenerateUVs(state->texture, 16, 16);
+#else
+    const char *images[] = {
+        "../../assets/images/paddle_1.png",
+        "../../assets/images/player.png",
+        "../../assets/images/characters_packed.png",
+        "../../assets/images/clone.png",
+        "../../assets/images/moon.png",
+        "../../assets/images/paddle_2.png"
+    };
 
-    state->uvs = TMGenerateUVs(state->texture, 16, 16);
+    // TODO Shitty code DELETE this before i cry please ....
+    state->texture = TMRendererTextureCreate(state->renderer,
+                                             "../../assets/images/player.png");
+    state->relUVs = TMGenerateUVs(state->texture, 16, 16);
+    TMRendererTextureDestroy(state->renderer, state->texture);
+    state->texture = NULL;
+
+    state->texture = TMRendererTextureCreateAtlas(state->renderer, images, ARRAY_LENGTH(images), 1024*2, 1024*2, &state->absUVs);
+#endif
+
 
 
     state->batchRenderer = TMRendererRenderBatchCreate(state->renderer, state->shader, state->texture, 100);
@@ -106,7 +127,6 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     Entity *player2 = EntityCreate();
     EntityAddGraphicsComponent(player2, {1.3, -0.2}, {0.8, 1}, {1, 0.8, 0.2, 1});
-    //EntityAddPhysicsComponent(player2, {0.9, 1.0}, {0, 0}, {0, 0}, 0.0001f);
     aabb.min = {1.3 - 0.4, -0.2 - 0.5};
     aabb.max = {1.3 + 0.4, -0.2 + 0.5};
     EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
@@ -135,32 +155,31 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the floor
     Entity *floor = EntityCreate();
-    EntityAddGraphicsComponent(floor, {0, -1.9}, {8, 1}, {0, 0.2, 0.4, 1});
+    EntityAddGraphicsComponent(floor, {0, -1.9}, {8, 1}, {0, 0.2, 0.4, 1}, state->absUVs[3], 0, NULL);
     aabb.min = {0 - 4, -1.9 - 0.5};
     aabb.max = {0 + 4, -1.9 + 0.5};
     EntityAddCollisionComponent(floor, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor, Entity *);
 
     Entity *floor2 = EntityCreate();
-    EntityAddGraphicsComponent(floor2, {-8, -1.9}, {8, 1}, {0, 0.2, 0.4, 1});
+    EntityAddGraphicsComponent(floor2, {-8, -1.9}, {8, 1}, {0, 0.2, 0.4, 1}, state->absUVs[4], 0, NULL);
     aabb.min = {-8 - 4, -1.9 - 0.5};
     aabb.max = {-8 + 4, -1.9 + 0.5};
     EntityAddCollisionComponent(floor2, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor2, Entity *);
 
     Entity *floor3 = EntityCreate();
-    EntityAddGraphicsComponent(floor3, {-8, -0.5f}, {2, 2}, {1, 0.2, 0.4, 1});
+    EntityAddGraphicsComponent(floor3, {-8, -0.5f}, {2, 2}, {1, 0.2, 0.4, 1}, state->absUVs[1], 0, NULL);
     aabb.min = {-8 - 1, -0.5f - 1};
     aabb.max = {-8 + 1, -0.5f + 1};
     EntityAddCollisionComponent(floor3, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor3, Entity *);
 
-
     // create the player
     Entity *player = EntityCreate();
     state->player = player;
     EntityAddInputComponent(player);
-    EntityAddGraphicsComponent(player, {-5, 0}, {1.2, 1.2}, {1, 0, 0, 0}, 0, state->uvs);
+    EntityAddGraphicsComponent(player, {-5, 0}, {1.2, 1.2}, {1, 0, 0, 1}, state->absUVs[5], 0, state->relUVs);
     EntityAddPhysicsComponent(player, {-5, 0}, {0, 0}, {0, 0}, 0.01f);
     Capsule capsule;
     capsule.r = 0.4;
@@ -207,11 +226,11 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the Enemy
     Entity *enemy = EntityCreate();
-    EntityAddGraphicsComponent(enemy, {-2, 10}, {1.2, 1.2}, {1, 0, 0, 0}, 0, state->uvs);
-    EntityAddPhysicsComponent(enemy, {-2, 10}, {0, 0}, {0, 0}, 0.01f);
+    EntityAddGraphicsComponent(enemy, {0, 10}, {1.2, 1.2}, {1, 0, 0, 0}, state->absUVs[5], 0, state->relUVs);
+    EntityAddPhysicsComponent(enemy, {0, 10}, {0, 0}, {0, 0}, 0.01f);
     capsule.r = 0.4;
-    capsule.a = {-2.0, 10.0f + 0.2};
-    capsule.b = {-2.0, 10.0f + -0.2};
+    capsule.a = {0.0, 10.0f + 0.2};
+    capsule.b = {0.0, 10.0f + -0.2};
     EntityAddCollisionComponent(enemy, COLLISION_TYPE_CAPSULE, capsule);
     EntityAddAnimationComponet(enemy);
     AnimationSystemAddState(enemy, idleLeft);
@@ -255,7 +274,8 @@ void GameShutdown(GameState *state) {
         EntityDestroy(entity);
     }
     EntitySystemShutdown();
-    free(state->uvs);
+    free(state->relUVs);
+    TMDarrayDestroy(state->absUVs);
     GraphicsSystemShutdown();
     CollisionSystemShutdown();
     PhysicSystemShutdown();

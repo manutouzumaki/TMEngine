@@ -168,25 +168,6 @@ static void CapsuleAABBCollisionDetection(Entity *entity, Entity *other, float d
     }
 }
 
-#if 0
-static void SortHitEntities(Entity **entities, float *hitT, int count) {
-    for(int j = 1; j < count; ++j) {
-        Entity *entityKey = entities[j];
-        float key = hitT[j];
-        int i = j - 1;
-        
-        while(i >= 0 && hitT[i] > key) {
-            entities[i + 1] = entities[i];
-            hitT[i + 1] = hitT[i];
-            --i;
-        }
-
-        entities[i + 1] = entityKey;
-        hitT[i + 1] = key;
-    }
-}
-#endif
-
 static void SetGrounded(Entity *entity, Entity **entities) {
 
     bool flag = false;

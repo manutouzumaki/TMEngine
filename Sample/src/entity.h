@@ -10,7 +10,8 @@ struct GraphicsComponent {
     TMVec2 position;
     TMVec2 size;
     TMVec4 color;
-    float *uvs;
+    TMVec4 absUVs;
+    float *relUVs;
     int index;
 };
 
@@ -58,6 +59,7 @@ struct CollisionComponent {
         Capsule capsule;
     };
     int count;
+    bool solid;
 };
 
 struct Entity {
@@ -76,14 +78,15 @@ void EntitySystemShutdown();
 Entity *EntityCreate();
 void EntityDestroy(Entity *entity);
 
-void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color, int index = 0, float *uvs = NULL);
+void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color,
+                                TMVec4 absUVs = {}, int index = 0, float *uvs = NULL);
 void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity, TMVec2 acceleration, float damping);
 void EntityAddInputComponent(Entity *entity);
 
-void EntityAddCollisionComponent(Entity *entity, CollisionType type, AABB aabb);
-void EntityAddCollisionComponent(Entity *entity, CollisionType type, OBB obb);
-void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circle);
-void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule);
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, AABB aabb, bool solid = true);
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, OBB obb, bool solid = true);
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circle, bool solid = true);
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule, bool solid = true);
 
 void EntityAddAnimationComponet(Entity *entity);
 

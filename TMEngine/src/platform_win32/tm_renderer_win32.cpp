@@ -1,5 +1,6 @@
 #include "../tm_renderer.h"
 #include "../utils/tm_memory_pool.h"
+#include "../utils/tm_darray.h"
 #include "../utils/tm_file.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -636,6 +637,150 @@ void TMRendererShaderBufferUpdate(TMRenderer* renderer, TMShaderBuffer* shaderBu
     renderer->deviceContext->VSSetConstantBuffers(0, 1, &shaderBuffer->buffer);
 }
 
+
+
+struct ImageData {
+    int width;
+    int height;
+    int nrChannels;
+    unsigned char *data;
+};
+
+
+static void SortImages(ImageData *images, int count) {
+    for(int j = 1; j < count; ++j) {
+        ImageData key = images[j];
+        int i = j - 1;
+        while(i >= 0 && images[i].height < key.height) {
+            images[i + 1] = images[i];
+            --i;
+        }
+        images[i + 1] = key;
+    }
+}
+
+TMTexture *TMRendererTextureCreateAtlas(TMRenderer *renderer, const char *filespath[], int count, int width, int height, TMVec4 **outUVs) {
+    // TODO: return the uvs for every texture on the atlas
+    // Alloc all the memory needed
+    unsigned int *textureAtlasData = (unsigned int *)malloc(width * height * sizeof(unsigned int));
+    ImageData *images = (ImageData *)malloc(count * sizeof(ImageData));
+    for(int i = 0; i < count; ++i) {
+        const char *filepath = filespath[i];
+        ImageData *image = images + i;
+        image->data = stbi_load(filepath, &image->width, &image->height, &image->nrChannels, 0);
+    }
+
+    // TODO: test if this is working the way it should
+    SortImages(images, count);
+
+    // TODO: fill the textureAtlasData and then create a D3D11 texture
+    TMVec4 *uvs = NULL;
+    int currentX = 0;
+    int currentY = 0;
+    int currentHeight = images[0].height;
+    for(int i = 0; i < count; ++i) {
+    
+        ImageData *image = images + i;
+
+        if(currentX >= width) {
+            currentY += currentHeight;
+            currentHeight = image->height;
+            currentX = 0;
+        }
+
+        unsigned int *src = (unsigned int *)image->data;
+        for(int y = 0; y < image->height; ++y) {
+            for(int x = 0; x < image->width; ++x) {
+                textureAtlasData[(currentY + y) * width + (currentX + x)] = src[y * image->width + x];
+            }
+        }
+
+        TMVec4 uv;
+        uv.x = (float)currentX / (float)width;
+        uv.y = (float)currentY / (float)height;
+        uv.z = ((float)currentX / (float)width) + ((float)image->width / (float)width);
+        uv.w = ((float)currentY / (float)height) + ((float)image->height / (float)height);
+        TMDarrayPush(uvs, uv, TMVec4);
+
+        currentX += image->width;
+
+    }
+
+
+
+    TMTexture* texture = (TMTexture*)TMMemoryPoolAlloc(renderer->texturesMemory);
+    
+    D3D11_SUBRESOURCE_DATA data = {};
+    data.pSysMem = textureAtlasData;
+    data.SysMemPitch = width * sizeof(unsigned int);
+    data.SysMemSlicePitch = 0;
+
+    D3D11_TEXTURE2D_DESC textureDesc = {};
+    textureDesc.Width = width;
+    textureDesc.Height = height;
+    textureDesc.MipLevels = 0; // use 0 to generate a full set of subtextures (mipmaps)
+    textureDesc.ArraySize = 1;
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; //DXGI_FORMAT_R8G8B8A8_UNORM;
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.SampleDesc.Quality = 0;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    textureDesc.CPUAccessFlags = 0;
+    textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+
+    ID3D11Texture2D* tempTexture;
+    HRESULT result = renderer->device->CreateTexture2D(&textureDesc, 0, &tempTexture);
+    if (FAILED(result))
+    {
+        printf("Error: falied Creating texture\n");
+        return NULL;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceDesc = {};
+    shaderResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;// DXGI_FORMAT_R8G8B8A8_UNORM;
+    shaderResourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    shaderResourceDesc.Texture2D.MipLevels = -1;
+    shaderResourceDesc.Texture2D.MostDetailedMip = 0;
+    result = renderer->device->CreateShaderResourceView(tempTexture, &shaderResourceDesc, &texture->colorMap);
+    if (FAILED(result))
+    {
+        printf("Error: falied Creating Shader resource view\n");
+    }
+    renderer->deviceContext->UpdateSubresource(tempTexture, 0, 0, data.pSysMem, data.SysMemPitch, 0);
+    renderer->deviceContext->GenerateMips(texture->colorMap);
+
+    tempTexture->Release();
+
+    D3D11_SAMPLER_DESC colorMapDesc = {};
+    colorMapDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;//D3D11_TEXTURE_ADDRESS_CLAMP;
+    colorMapDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;//D3D11_TEXTURE_ADDRESS_CLAMP;
+    colorMapDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;//D3D11_TEXTURE_ADDRESS_CLAMP;
+    colorMapDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    colorMapDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; //D3D11_FILTER_MIN_MAG_MIP_LINEAR | D3D11_FILTER_MIN_MAG_MIP_POINT
+    colorMapDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    result = renderer->device->CreateSamplerState(&colorMapDesc, &texture->colorMapSampler);
+    if (FAILED(result))
+    {
+        printf("Error: Failed Creating sampler state\n");
+    }
+
+    texture->width = width;
+    texture->height = height;
+    *outUVs = uvs;
+    
+
+    // Free all the allocated memory
+    for(int i = 0; i < count; ++i) {
+        const char *filepath = filespath[i];
+        ImageData *image = images + i;
+        stbi_image_free(image->data);
+    }
+    free(images);
+    free(textureAtlasData);
+
+    return texture;
+}
+
 TMTexture* TMRendererTextureCreate(TMRenderer* renderer, const char* filepath) {
     TMTexture* texture = (TMTexture*)TMMemoryPoolAlloc(renderer->texturesMemory);
 
@@ -856,6 +1001,57 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
     };
     BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
     BatchQuadHandleUVs(quad, sprite, uvs);
+
+    if(renderBatch->used + 1 >= renderBatch->size) {
+        TMRendererRenderBatchDraw(renderBatch);
+    }
+    AddQuadToBatchBuffer(renderBatch, quad);
+}
+
+void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                          float w, float h, float angle,
+                                                          TMVec4 absUVs, int sprite, float *uvs) {
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec4{}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{}}  // 3
+    };
+    BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
+
+    int uvsIndex = sprite * 4;
+    float relU0 = uvs[uvsIndex + 0]; 
+    float relV0 = uvs[uvsIndex + 1];
+    float relU1 = uvs[uvsIndex + 2];
+    float relV1 = uvs[uvsIndex + 3];
+
+    float absU0 = absUVs.x;
+    float absV0 = absUVs.y;
+    float absU1 = absUVs.z;
+    float absV1 = absUVs.w;
+
+    float uLen = absU1 - absU0;
+    float vLen = absV1 - absV0;
+
+    float uOffset0 = uLen * relU0; 
+    float vOffset0 = vLen * relV0; 
+    float uOffset1 = uLen * relU1; 
+    float vOffset1 = vLen * relV1; 
+
+    float u1 = absU0 + uOffset0;
+    float u0 = absU0 + uOffset1;
+    float v0 = vLen - (absV0 + vOffset1);
+    float v1 = vLen - (absV0 + vOffset0);
+
+    quad[0].uvs = {u0, v0};
+    quad[1].uvs = {u1, v0};
+    quad[2].uvs = {u0, v1};
+
+    quad[3].uvs = {u0, v1};
+    quad[4].uvs = {u1, v0};
+    quad[5].uvs = {u1, v1};
 
     if(renderBatch->used + 1 >= renderBatch->size) {
         TMRendererRenderBatchDraw(renderBatch);

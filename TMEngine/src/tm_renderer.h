@@ -77,6 +77,7 @@ TM_EXPORT void TMRendererShaderBufferDestroy(TMRenderer* renderer, TMShaderBuffe
 TM_EXPORT void TMRendererShaderBufferUpdate(TMRenderer* renderer, TMShaderBuffer* shaderBuffer, void* bufferData);
 
 TM_EXPORT TMTexture *TMRendererTextureCreate(TMRenderer *renderer, const char *filepath);
+TM_EXPORT TMTexture *TMRendererTextureCreateAtlas(TMRenderer *renderer, const char *filespath[], int count, int width, int height, TMVec4 **outUVs);
 TM_EXPORT void TMRendererTextureDestroy(TMRenderer *renderer, TMTexture *texture);
 TM_EXPORT void TMRendererTextureBind(TMRenderer* renderer, TMTexture *texture, TMShader *shader, const char *varName, int textureIndex);
 TM_EXPORT void TMRendererTextureUnbind(TMRenderer* renderer, TMTexture *texture, int textureIndex);
@@ -90,6 +91,9 @@ TM_EXPORT void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, flo
                                                                     float w, float h, float angle,
                                                                     float r, float g, float b, float a);
 TM_EXPORT void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z, float w, float h, float angle, int sprite, float *uvs);
+TM_EXPORT void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                                    float w, float h, float angle,
+                                                                    TMVec4 absUVs, int sprite, float *uvs);
 TM_EXPORT void TMRendererRenderBatchDraw(TMRenderBatch *renderBatch);
 TM_EXPORT void TMRendererRenderBatchDestroy(TMRenderer *renderer, TMRenderBatch *renderBatch);
 

@@ -43,13 +43,14 @@ Entity *EntityCreate() {
     return entity;
 }
 
-void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color, int index, float *uvs) {
+void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color, TMVec4 absUVs, int index, float *uvs) {
     assert(entity->graphics == NULL);
     entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
     entity->graphics->position = position;
     entity->graphics->size = size;
     entity->graphics->color = color;
-    entity->graphics->uvs = uvs;
+    entity->graphics->absUVs = absUVs;
+    entity->graphics->relUVs = uvs;
     entity->graphics->index = index;
 }
 
@@ -67,32 +68,36 @@ void EntityAddInputComponent(Entity *entity) {
     entity->input = (InputComponent *)TMMemoryPoolAlloc(inputComponentMem);
 }
 
-void EntityAddCollisionComponent(Entity *entity, CollisionType type, AABB aabb) {
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, AABB aabb, bool solid) {
     assert(entity->collision == NULL);
     entity->collision = (CollisionComponent *)TMMemoryPoolAlloc(collisionComponentMem);
     entity->collision->type = type;
     entity->collision->aabb = aabb;
+    entity->collision->solid = solid;
 }
 
-void EntityAddCollisionComponent(Entity *entity, CollisionType type, OBB obb) {
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, OBB obb, bool solid) {
     assert(entity->collision == NULL);
     entity->collision = (CollisionComponent *)TMMemoryPoolAlloc(collisionComponentMem);
     entity->collision->type = type;
     entity->collision->obb = obb;
+    entity->collision->solid = solid;
 }
 
-void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circle) {
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circle, bool solid) {
     assert(entity->collision == NULL);
     entity->collision = (CollisionComponent *)TMMemoryPoolAlloc(collisionComponentMem);
     entity->collision->type = type;
     entity->collision->circle = circle;
+    entity->collision->solid = solid;
 }
 
-void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule) {
+void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule, bool solid) {
     assert(entity->collision == NULL);
     entity->collision = (CollisionComponent *)TMMemoryPoolAlloc(collisionComponentMem);
     entity->collision->type = type;
     entity->collision->capsule = capsule;
+    entity->collision->solid = solid;
 }
 
 void EntityAddAnimationComponet(Entity *entity) {

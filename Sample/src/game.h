@@ -21,7 +21,8 @@ struct GameState {
     Entity **entities;
     Entity *player;
 
-    float *uvs;
+    TMVec4 *absUVs;
+    float  *relUVs;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);

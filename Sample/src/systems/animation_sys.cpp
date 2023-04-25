@@ -21,8 +21,10 @@ static void UpdateState(Entity *entity, float dt) {
 
 static void ChangeState(Entity *entity, int index) {
     AnimationComponet *animation = entity->animation;
-    assert(index < animation->statesCount);
-    animation->current = &animation->states[index];
+    if(animation) {
+        assert(index < animation->statesCount);
+        animation->current = &animation->states[index];
+    }
 }
 
 

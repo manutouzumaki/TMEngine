@@ -24,6 +24,7 @@
 ###################################################################################################################################
 ### tmLibs: 
 ###################################################################################################################################
+### - IMPORTANT: add Texture Atlas to Macos engine
 ### - IMPORTANT: update macos engine, to be featured complete
 ### - collision detection library
 ### - physic and collision resolution library
