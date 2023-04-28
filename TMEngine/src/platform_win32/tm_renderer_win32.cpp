@@ -706,8 +706,6 @@ TMTexture *TMRendererTextureCreateAtlas(TMRenderer *renderer, const char *filesp
 
     }
 
-
-
     TMTexture* texture = (TMTexture*)TMMemoryPoolAlloc(renderer->texturesMemory);
     
     D3D11_SUBRESOURCE_DATA data = {};
@@ -943,6 +941,42 @@ static void BatchQuadHandleUVs(TMBatchVertex *quad, int sprite, float *uvs) {
    quad[5].uvs = {u1, v1};
 }
 
+static void BatchQuadHandleSubUVs(TMBatchVertex *quad, int sprite, float *uvs, TMVec4 absUVs) {
+    
+    int uvsIndex = sprite * 4;
+    float relU0 = uvs[uvsIndex + 0]; 
+    float relV0 = uvs[uvsIndex + 1];
+    float relU1 = uvs[uvsIndex + 2];
+    float relV1 = uvs[uvsIndex + 3];
+
+    float absU0 = absUVs.x;
+    float absV0 = absUVs.y;
+    float absU1 = absUVs.z;
+    float absV1 = absUVs.w;
+
+    float uLen = absU1 - absU0;
+    float vLen = absV1 - absV0;
+
+    float uOffset0 = uLen * relU0; 
+    float vOffset0 = vLen * relV0; 
+    float uOffset1 = uLen * relU1; 
+    float vOffset1 = vLen * relV1; 
+
+    float u1 = absU0 + uOffset0;
+    float u0 = absU0 + uOffset1;
+    float v0 = vLen - (absV0 + vOffset1);
+    float v1 = vLen - (absV0 + vOffset0);
+
+    quad[0].uvs = {u0, v0};
+    quad[1].uvs = {u1, v0};
+    quad[2].uvs = {u0, v1};
+
+    quad[3].uvs = {u0, v1};
+    quad[4].uvs = {u1, v0};
+    quad[5].uvs = {u1, v1};
+
+}
+
 static void AddQuadToBatchBuffer(TMRenderBatch *renderBatch, TMBatchVertex *quad) {
     assert(renderBatch->used < renderBatch->size);
     TMBatchVertex *vertex = renderBatch->batchBuffer + (renderBatch->used*6);
@@ -1020,38 +1054,7 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
         TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{}}  // 3
     };
     BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
-
-    int uvsIndex = sprite * 4;
-    float relU0 = uvs[uvsIndex + 0]; 
-    float relV0 = uvs[uvsIndex + 1];
-    float relU1 = uvs[uvsIndex + 2];
-    float relV1 = uvs[uvsIndex + 3];
-
-    float absU0 = absUVs.x;
-    float absV0 = absUVs.y;
-    float absU1 = absUVs.z;
-    float absV1 = absUVs.w;
-
-    float uLen = absU1 - absU0;
-    float vLen = absV1 - absV0;
-
-    float uOffset0 = uLen * relU0; 
-    float vOffset0 = vLen * relV0; 
-    float uOffset1 = uLen * relU1; 
-    float vOffset1 = vLen * relV1; 
-
-    float u1 = absU0 + uOffset0;
-    float u0 = absU0 + uOffset1;
-    float v0 = vLen - (absV0 + vOffset1);
-    float v1 = vLen - (absV0 + vOffset0);
-
-    quad[0].uvs = {u0, v0};
-    quad[1].uvs = {u1, v0};
-    quad[2].uvs = {u0, v1};
-
-    quad[3].uvs = {u0, v1};
-    quad[4].uvs = {u1, v0};
-    quad[5].uvs = {u1, v1};
+    BatchQuadHandleSubUVs(quad, sprite, uvs, absUVs);
 
     if(renderBatch->used + 1 >= renderBatch->size) {
         TMRendererRenderBatchDraw(renderBatch);

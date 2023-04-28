@@ -44,24 +44,27 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
         Entity *entity = entities[i];
         if(entity->graphics) {
             GraphicsComponent *graphics = entity->graphics;
-            if(graphics->relUVs == NULL) {
-                if(graphics->absUVs.x == 0 && graphics->absUVs.y == 0 &&
-                   graphics->absUVs.z == 0 && graphics->absUVs.w == 0) {
+            
+            switch(graphics->type) {
+                case GRAPHICS_TYPE_SOLID_COLOR: {
                     TMRendererRenderBatchAdd(batchRenderer,
                                              graphics->position.x, graphics->position.y, 1,
                                              graphics->size.x, graphics->size.y, 0,
                                              graphics->color.x, graphics->color.y,
                                              graphics->color.z, graphics->color.w);
-                }
-                else {
+                } break;
+                case GRAPHICS_TYPE_SPRITE: {
                     TMRendererRenderBatchAdd(batchRenderer, graphics->position.x, graphics->position.y, 1,
-                                             graphics->size.x, graphics->size.y, 0, graphics->index, graphics->absUVs.v);
-                }
+                                             graphics->size.x, graphics->size.y, 0, graphics->index, graphics->relUVs);
+                } break;
+                case GRAPHICS_TYPE_SUBSPRITE: {
+                    TMRendererRenderBatchAdd(batchRenderer, graphics->position.x, graphics->position.y, 1,
+                                             graphics->size.x, graphics->size.y, 0, graphics->absUVs, graphics->index, graphics->relUVs);
+                } break;
+
             }
-            else {
-                TMRendererRenderBatchAdd(batchRenderer, graphics->position.x, graphics->position.y, 1,
-                                         graphics->size.x, graphics->size.y, 0, graphics->absUVs, graphics->index, graphics->relUVs);
-            }
+
+
         }
     }
     TMRendererRenderBatchDraw(batchRenderer);

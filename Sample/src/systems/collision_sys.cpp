@@ -168,6 +168,7 @@ static void CapsuleAABBCollisionDetection(Entity *entity, Entity *other, float d
     }
 }
 
+// TODO: huge todo....
 static void SetGrounded(Entity *entity, Entity **entities) {
 
     bool flag = false;

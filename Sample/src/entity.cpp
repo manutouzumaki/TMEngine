@@ -43,12 +43,35 @@ Entity *EntityCreate() {
     return entity;
 }
 
-void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color, TMVec4 absUVs, int index, float *uvs) {
+void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color) {
     assert(entity->graphics == NULL);
     entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
+    memset(entity->graphics, 0, sizeof(GraphicsComponent));
+    entity->graphics->type = GRAPHICS_TYPE_SOLID_COLOR;
     entity->graphics->position = position;
     entity->graphics->size = size;
     entity->graphics->color = color;
+}
+
+void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, int index, float *uvs) {
+    assert(entity->graphics == NULL);
+    entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
+    memset(entity->graphics, 0, sizeof(GraphicsComponent));
+    entity->graphics->type = GRAPHICS_TYPE_SPRITE;
+    entity->graphics->position = position;
+    entity->graphics->size = size;
+    entity->graphics->relUVs = uvs;
+    entity->graphics->index = index;
+}
+
+void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color,
+                                         TMVec4 absUVs, int index, float *uvs) {
+    assert(entity->graphics == NULL);
+    entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
+    memset(entity->graphics, 0, sizeof(GraphicsComponent));
+    entity->graphics->type = GRAPHICS_TYPE_SUBSPRITE;
+    entity->graphics->position = position;
+    entity->graphics->size = size;
     entity->graphics->absUVs = absUVs;
     entity->graphics->relUVs = uvs;
     entity->graphics->index = index;

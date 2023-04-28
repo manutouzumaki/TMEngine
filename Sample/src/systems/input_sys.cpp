@@ -3,10 +3,10 @@
 #include <tm_input.h>
 #include "../message.h"
 
-// TODO: remove the animation hardcoded piece of shit of this code
 
 void InputSystemUpdate(Entity **entities, float dt) {
 
+    // TODO: remove this static vairable
     static bool facingLeft = false;
 
     for(int i = 0; i < TMDarraySize(entities); ++i) {
@@ -15,22 +15,33 @@ void InputSystemUpdate(Entity **entities, float dt) {
         if(entity->input && entity->physics) {
             PhysicsComponent *physics = entity->physics;
             TMVec2 acceleration = {};
-            if(TMInputKeyboardKeyIsDown('D')) {
+            if(TMInputKeyboardKeyIsDown(TM_KEY_D) ||
+               TMInputJoystickButtomIsDown(TM_JOYSTICK_BUTTON_RIGHT)) {
                 acceleration.x = 1.0f;
                 facingLeft = false;
             }
-            if(TMInputKeyboardKeyIsDown('A')) {
+            if(TMInputKeyboardKeyIsDown(TM_KEY_A) ||
+               TMInputJoystickButtomIsDown(TM_JOYSTICK_BUTTON_LEFT)) {
                 acceleration.x = -1.0f;
                 facingLeft = true;
             }
-            if(TMInputKeyboardKeyJustDown(TM_KEY_SPACE)) {
+            if(TMInputKeyboardKeyJustDown(TM_KEY_SPACE) ||
+               TMInputJoystickButtomJustDown(TM_JOYSTICK_BUTTON_A)) {
                 if(entity->physics->grounded) {
                     Message message{};
                     message.v2[0] = {0, 15.0f};
                     MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_ADD_IMPULSE, (void *)entity, message);
                 }
             }
-            
+
+            if(TMInputJoystickLeftStickX() < 0) {
+                facingLeft = true;
+            }
+            if(TMInputJoystickLeftStickX() > 0) {
+                facingLeft = false;
+            }
+            acceleration.x += TMInputJoystickLeftStickX();
+
 
             Message message;
             if(acceleration.x > 0.0f) {

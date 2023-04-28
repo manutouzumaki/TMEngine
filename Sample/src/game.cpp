@@ -111,7 +111,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the cealing
     Entity *ceal = EntityCreate();
-    EntityAddGraphicsComponent(ceal, {0, 1.9}, {4, 1}, {0, 0.2, 0.4, 1});
+    EntityAddGraphicsComponentSolidColor(ceal, {0, 1.9}, {4, 1}, {0, 0.2, 0.4, 1});
     aabb.min = {0 - 2, 1.9 - 0.5};
     aabb.max = {0 + 2, 1.9 + 0.5};
     EntityAddCollisionComponent(ceal, COLLISION_TYPE_AABB, aabb);
@@ -119,35 +119,35 @@ void GameInitialize(GameState *state, TMWindow *window) {
     
     // create the cealing
     Entity *ceal1 = EntityCreate();
-    EntityAddGraphicsComponent(ceal1, {-4, 1.9}, {4, 1}, {0.5, 0.2, 0.4, 1});
+    EntityAddGraphicsComponentSolidColor(ceal1, {-4, 1.9}, {4, 1}, {0.5, 0.2, 0.4, 1});
     aabb.min = {-4 - 2, 1.9 - 0.5};
     aabb.max = {-4 + 2, 1.9 + 0.5};
     EntityAddCollisionComponent(ceal1, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, ceal1, Entity *);
 
     Entity *player2 = EntityCreate();
-    EntityAddGraphicsComponent(player2, {1.3, -0.2}, {0.8, 1}, {1, 0.8, 0.2, 1});
+    EntityAddGraphicsComponentSolidColor(player2, {1.3, -0.2}, {0.8, 1}, {1, 0.8, 0.2, 1});
     aabb.min = {1.3 - 0.4, -0.2 - 0.5};
     aabb.max = {1.3 + 0.4, -0.2 + 0.5};
     EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player2, Entity *);
 
     Entity *player3 = EntityCreate();
-    EntityAddGraphicsComponent(player3, {-2.3, 0.6}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    EntityAddGraphicsComponentSolidColor(player3, {-2.3, 0.6}, {0.8, 1}, {1, 0.2, 0.5, 1});
     aabb.min = {-2.3 - 0.4, 0.6 - 0.5};
     aabb.max = {-2.3 + 0.4, 0.6 + 0.5};
     EntityAddCollisionComponent(player3, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player3, Entity *);
 
     Entity *player4 = EntityCreate();
-    EntityAddGraphicsComponent(player4, {4.5, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    EntityAddGraphicsComponentSolidColor(player4, {4.5, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
     aabb.min = {4.5 - 0.4, 0.0 - 0.5};
     aabb.max = {4.5 + 0.4, 0.0 + 0.5};
     EntityAddCollisionComponent(player4, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, player4, Entity *);
 
     Entity *player5 = EntityCreate();
-    EntityAddGraphicsComponent(player5, {4.5 + 0.8, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
+    EntityAddGraphicsComponentSolidColor(player5, {4.5 + 0.8, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
     aabb.min = {4.5 + 0.8 - 0.4, 0.0 - 0.5};
     aabb.max = {4.5 + 0.8 + 0.4, 0.0 + 0.5};
     EntityAddCollisionComponent(player5, COLLISION_TYPE_AABB, aabb);
@@ -155,21 +155,21 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the floor
     Entity *floor = EntityCreate();
-    EntityAddGraphicsComponent(floor, {0, -1.9}, {8, 1}, {0, 0.2, 0.4, 1}, state->absUVs[3], 0, NULL);
+    EntityAddGraphicsComponentSprite(floor, {0, -1.9}, {8, 1}, 3, state->absUVs[0].v);
     aabb.min = {0 - 4, -1.9 - 0.5};
     aabb.max = {0 + 4, -1.9 + 0.5};
     EntityAddCollisionComponent(floor, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor, Entity *);
 
     Entity *floor2 = EntityCreate();
-    EntityAddGraphicsComponent(floor2, {-8, -1.9}, {8, 1}, {0, 0.2, 0.4, 1}, state->absUVs[4], 0, NULL);
+    EntityAddGraphicsComponentSprite(floor2, {-8, -1.9}, {8, 1}, 4, state->absUVs[0].v);
     aabb.min = {-8 - 4, -1.9 - 0.5};
     aabb.max = {-8 + 4, -1.9 + 0.5};
     EntityAddCollisionComponent(floor2, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor2, Entity *);
 
     Entity *floor3 = EntityCreate();
-    EntityAddGraphicsComponent(floor3, {-8, -0.5f}, {2, 2}, {1, 0.2, 0.4, 1}, state->absUVs[1], 0, NULL);
+    EntityAddGraphicsComponentSprite(floor3, {-8, -0.5f}, {2, 2}, 1, state->absUVs[0].v);
     aabb.min = {-8 - 1, -0.5f - 1};
     aabb.max = {-8 + 1, -0.5f + 1};
     EntityAddCollisionComponent(floor3, COLLISION_TYPE_AABB, aabb);
@@ -179,7 +179,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     Entity *player = EntityCreate();
     state->player = player;
     EntityAddInputComponent(player);
-    EntityAddGraphicsComponent(player, {-5, 0}, {1.2, 1.2}, {1, 0, 0, 1}, state->absUVs[5], 0, state->relUVs);
+    EntityAddGraphicsComponentSubSprite(player, {-5, 0}, {1.2, 1.2}, {1, 0, 0, 1}, state->absUVs[5], 0, state->relUVs);
     EntityAddPhysicsComponent(player, {-5, 0}, {0, 0}, {0, 0}, 0.01f);
     Capsule capsule;
     capsule.r = 0.4;
@@ -226,7 +226,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the Enemy
     Entity *enemy = EntityCreate();
-    EntityAddGraphicsComponent(enemy, {0, 10}, {1.2, 1.2}, {1, 0, 0, 0}, state->absUVs[5], 0, state->relUVs);
+    EntityAddGraphicsComponentSubSprite(enemy, {0, 10}, {1.2, 1.2}, {1, 0, 0, 0}, state->absUVs[5], 0, state->relUVs);
     EntityAddPhysicsComponent(enemy, {0, 10}, {0, 0}, {0, 0}, 0.01f);
     capsule.r = 0.4;
     capsule.a = {0.0, 10.0f + 0.2};

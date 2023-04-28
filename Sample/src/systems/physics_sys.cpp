@@ -40,7 +40,7 @@ static void CollisionResolution(Entity *entity, TMVec2 normal, TMVec2 hitP, TMVe
         message.ptr[0] = (void *)entities;
         message.f32[2] = dt;
         physics->iterations++;
-        printf("Iterations: %d\n", physics->iterations);
+        //printf("Iterations: %d\n", physics->iterations);
         MessageFireFirstHit(MESSAGE_TYPE_COLLISION_DETECTION, (void *)entity, message);
 
     }
@@ -146,7 +146,7 @@ void PhysicSystemUpdate(Entity **entities, float dt) {
                 TMVec2 gravity = {0, -30.0f};
                 PhysicsAddForce(entity, gravity);
             }
-            printf("grounded: %d\n", entity->physics->grounded);
+            //printf("grounded: %d\n", entity->physics->grounded);
         }
     }
 

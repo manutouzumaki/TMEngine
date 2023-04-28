@@ -3,10 +3,25 @@
 #include "tm_window_win32.h"
 #include "../tm_window.h"
 #include "../tm_input.h"
+#include <xinput.h>
 
 TMInput gCurrentInput;
 TMInput gLastInput;
 bool gRunning;
+
+static WORD XInputButtons[] = {
+    XINPUT_GAMEPAD_DPAD_UP,
+    XINPUT_GAMEPAD_DPAD_DOWN,
+    XINPUT_GAMEPAD_DPAD_LEFT,
+    XINPUT_GAMEPAD_DPAD_RIGHT,
+    XINPUT_GAMEPAD_START,
+    XINPUT_GAMEPAD_BACK,
+    XINPUT_GAMEPAD_A,
+    XINPUT_GAMEPAD_B,
+    XINPUT_GAMEPAD_X,
+    XINPUT_GAMEPAD_Y
+};
+
 
 LRESULT WindowProcA(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     LRESULT result = 0;
@@ -20,8 +35,22 @@ LRESULT WindowProcA(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     }
     return result;
 }
+ 
+static float Win32ProcessXInputStick(SHORT value, int deadZoneValue)
+{
+    float result = 0;
+    if(value < -deadZoneValue)
+    {
+        result = (float)(value + deadZoneValue) / (32768.0f - deadZoneValue);
+    }
+    else if(value > deadZoneValue)
+    {
+        result = (float)(value - deadZoneValue) / (32767.0f - deadZoneValue);
+    }
+    return result;
+}
 
-void win32PollEvents() {
+static void Win32PollEvents() {
     MSG msg = {};
     while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         switch (msg.message) {
@@ -59,6 +88,34 @@ void win32PollEvents() {
         }break;
         }
     }
+
+    XINPUT_STATE state = {};
+    if(XInputGetState(0, &state) == ERROR_SUCCESS)
+    {
+        XINPUT_GAMEPAD *pad = &state.Gamepad;
+        for(int i = 0; i < ARRAY_LENGTH(gCurrentInput.joyButtons) - 2; ++i)
+        {
+            gCurrentInput.joyButtons[i].isPress = pad->wButtons & XInputButtons[i];
+        }
+        gCurrentInput.joyButtons[10].isPress = (pad->bLeftTrigger > 0);
+        gCurrentInput.joyButtons[11].isPress = (pad->bRightTrigger > 0);
+        gCurrentInput.leftStickX =  Win32ProcessXInputStick(pad->sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+        gCurrentInput.leftStickY =  Win32ProcessXInputStick(pad->sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+        gCurrentInput.rightStickX = Win32ProcessXInputStick(pad->sThumbRX, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
+        gCurrentInput.rightStickY = Win32ProcessXInputStick(pad->sThumbRY, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
+    }
+    else
+    {
+        for(int i = 0; i < ARRAY_LENGTH(gCurrentInput.joyButtons); ++i)
+        {
+            gCurrentInput.joyButtons[i].isPress = false;
+        }
+        gCurrentInput.leftStickX = 0.0f; 
+        gCurrentInput.leftStickY = 0.0f;
+        gCurrentInput.rightStickX = 0.0f;
+        gCurrentInput.rightStickY = 0.0f;
+    }
+
 }
 
  TMWindow* TMWindowCreate(int width, int height, const char* title){
@@ -113,8 +170,8 @@ void win32PollEvents() {
     return !gRunning;
 }
 
- void TMWindowFlushEventQueue(TMWindow* window) {
-    win32PollEvents();
+void TMWindowFlushEventQueue(TMWindow* window) {
+    Win32PollEvents();
     if(TMInputKeyboardKeyJustDown(TM_KEY_ESCAPE)){
         gRunning = false;
     }
@@ -131,12 +188,19 @@ void win32PollEvents() {
             gCurrentInput.mouseButtons[i].wasPress = true;
         }
     }
+    for(int i = 0; i < ARRAY_LENGTH(gCurrentInput.joyButtons); ++i) {
+            gCurrentInput.joyButtons[i].wasPress = false; 
+        if(gLastInput.joyButtons[i].isPress) {
+            gCurrentInput.joyButtons[i].wasPress = true;
+        }
+    }
+
 }
 
- void TMWindowPresent(TMWindow* window) {
+void TMWindowPresent(TMWindow* window) {
     gLastInput = gCurrentInput;
 }
 
-TM_EXPORT void TMSleep(float milliseconds) {
+void TMSleep(float milliseconds) {
     Sleep(milliseconds);
 }

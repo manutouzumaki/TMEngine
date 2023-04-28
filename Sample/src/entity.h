@@ -6,6 +6,12 @@
 #include "collision.h"
 
 
+enum GraphicsComponentType {
+    GRAPHICS_TYPE_SOLID_COLOR,
+    GRAPHICS_TYPE_SPRITE,
+    GRAPHICS_TYPE_SUBSPRITE
+};
+
 struct GraphicsComponent {
     TMVec2 position;
     TMVec2 size;
@@ -13,6 +19,7 @@ struct GraphicsComponent {
     TMVec4 absUVs;
     float *relUVs;
     int index;
+    GraphicsComponentType type;
 };
 
 struct AnimationState {
@@ -78,8 +85,13 @@ void EntitySystemShutdown();
 Entity *EntityCreate();
 void EntityDestroy(Entity *entity);
 
-void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color,
-                                TMVec4 absUVs = {}, int index = 0, float *uvs = NULL);
+
+void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color);
+void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, int index, float *uvs);
+void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color,
+                                         TMVec4 absUVs, int index, float *uvs);
+
+
 void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity, TMVec2 acceleration, float damping);
 void EntityAddInputComponent(Entity *entity);
 

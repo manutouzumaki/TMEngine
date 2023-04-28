@@ -28,6 +28,52 @@ bool TMInputKeyboardKeyJustUp(unsigned int keyCode) {
     return false;
 }
 
+
+bool TMInputJoystickButtomIsDown(unsigned int button) {
+    return gCurrentInput.joyButtons[button].isPress;
+}
+
+bool TMInputJoystickButtomJustDown(unsigned int button) {
+    if(gCurrentInput.joyButtons[button].isPress != gCurrentInput.joyButtons[button].wasPress) {
+        return gCurrentInput.joyButtons[button].isPress;
+    }
+    return false;
+}
+
+bool TMInputJoystickButtomIsUp(unsigned int button) {
+    return !gCurrentInput.joyButtons[button].isPress;
+}
+
+bool TMInputJoystickButtomJustUp(unsigned int button) {
+    if(gCurrentInput.joyButtons[button].isPress != gCurrentInput.joyButtons[button].wasPress) {
+        return gCurrentInput.joyButtons[button].wasPress;
+    }
+    return false;
+}
+
+float TMInputJoystickLeftStickX() {
+    return gCurrentInput.leftStickX;
+}
+
+float TMInputJoystickLeftStickY() {
+    return gCurrentInput.leftStickY;
+}
+
+float TMInputJoystickRightStickX() {
+    return gCurrentInput.rightStickX;
+}
+
+float TMInputJoystickRightStickY() {
+    return gCurrentInput.rightStickY;
+}
+
+
+
+
+
+
+
+
 bool TMInputMousButtonIsDown(TMMouseButton button) {
     return gCurrentInput.mouseButtons[button].isPress;
 }
