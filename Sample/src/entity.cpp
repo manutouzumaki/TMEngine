@@ -53,7 +53,7 @@ void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec
     entity->graphics->color = color;
 }
 
-void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, int index, float *uvs) {
+void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, float *uvs) {
     assert(entity->graphics == NULL);
     entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
     memset(entity->graphics, 0, sizeof(GraphicsComponent));
@@ -61,7 +61,6 @@ void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 si
     entity->graphics->position = position;
     entity->graphics->size = size;
     entity->graphics->relUVs = uvs;
-    entity->graphics->index = index;
 }
 
 void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color,

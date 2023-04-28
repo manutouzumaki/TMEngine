@@ -55,7 +55,7 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
                 } break;
                 case GRAPHICS_TYPE_SPRITE: {
                     TMRendererRenderBatchAdd(batchRenderer, graphics->position.x, graphics->position.y, 1,
-                                             graphics->size.x, graphics->size.y, 0, graphics->index, graphics->relUVs);
+                                             graphics->size.x, graphics->size.y, 0, graphics->relUVs);
                 } break;
                 case GRAPHICS_TYPE_SUBSPRITE: {
                     TMRendererRenderBatchAdd(batchRenderer, graphics->position.x, graphics->position.y, 1,

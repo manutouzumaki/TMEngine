@@ -3,6 +3,7 @@
 
 #include <tm_renderer.h>
 #include <utils/tm_math.h>
+#include <utils/tm_hashmap.h>
 
 #include "entity.h"
 #include "collision.h"
@@ -21,7 +22,9 @@ struct GameState {
     Entity **entities;
     Entity *player;
 
-    TMVec4 *absUVs;
+    // TODO: this should be a hashmap or somthing like that
+    //TMVec4 *absUVs;
+    TMHashmap *absUVs;
     float  *relUVs;
 };
 

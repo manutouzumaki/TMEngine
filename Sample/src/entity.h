@@ -87,7 +87,7 @@ void EntityDestroy(Entity *entity);
 
 
 void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color);
-void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, int index, float *uvs);
+void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, float *uvs);
 void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color,
                                          TMVec4 absUVs, int index, float *uvs);
 

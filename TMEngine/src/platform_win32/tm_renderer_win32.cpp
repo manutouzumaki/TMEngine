@@ -647,19 +647,22 @@ struct ImageData {
 };
 
 
-static void SortImages(ImageData *images, int count) {
+static void SortImages(ImageData *images, const char *filespath[], int count) {
     for(int j = 1; j < count; ++j) {
         ImageData key = images[j];
+        const char *keyFilepath = filespath[j];
         int i = j - 1;
         while(i >= 0 && images[i].height < key.height) {
             images[i + 1] = images[i];
+            filespath[i + 1] = filespath[i];
             --i;
         }
         images[i + 1] = key;
+        filespath[i + 1] = keyFilepath;
     }
 }
 
-TMTexture *TMRendererTextureCreateAtlas(TMRenderer *renderer, const char *filespath[], int count, int width, int height, TMVec4 **outUVs) {
+TMTexture *TMRendererTextureCreateAtlas(TMRenderer *renderer, const char *filespath[], int count, int width, int height, TMHashmap *outUVs) {
     // TODO: return the uvs for every texture on the atlas
     // Alloc all the memory needed
     unsigned int *textureAtlasData = (unsigned int *)malloc(width * height * sizeof(unsigned int));
@@ -671,16 +674,19 @@ TMTexture *TMRendererTextureCreateAtlas(TMRenderer *renderer, const char *filesp
     }
 
     // TODO: test if this is working the way it should
-    SortImages(images, count);
+    SortImages(images, filespath, count);
 
     // TODO: fill the textureAtlasData and then create a D3D11 texture
-    TMVec4 *uvs = NULL;
     int currentX = 0;
     int currentY = 0;
     int currentHeight = images[0].height;
     for(int i = 0; i < count; ++i) {
     
+        const char *filepath = filespath[i];
         ImageData *image = images + i;
+
+        assert(currentX + image->width < width);
+        assert(currentY + image->height < height);
 
         if(currentX >= width) {
             currentY += currentHeight;
@@ -700,7 +706,8 @@ TMTexture *TMRendererTextureCreateAtlas(TMRenderer *renderer, const char *filesp
         uv.y = (float)currentY / (float)height;
         uv.z = ((float)currentX / (float)width) + ((float)image->width / (float)width);
         uv.w = ((float)currentY / (float)height) + ((float)image->height / (float)height);
-        TMDarrayPush(uvs, uv, TMVec4);
+
+        TMHashmapAdd(outUVs, filepath, (void *)&uv);
 
         currentX += image->width;
 
@@ -764,12 +771,10 @@ TMTexture *TMRendererTextureCreateAtlas(TMRenderer *renderer, const char *filesp
 
     texture->width = width;
     texture->height = height;
-    *outUVs = uvs;
     
 
     // Free all the allocated memory
     for(int i = 0; i < count; ++i) {
-        const char *filepath = filespath[i];
         ImageData *image = images + i;
         stbi_image_free(image->data);
     }
@@ -927,12 +932,11 @@ static void BatchQuadLocalToWorld(TMBatchVertex *quad, float x, float y, float z
     }
 }
 
-static void BatchQuadHandleUVs(TMBatchVertex *quad, int sprite, float *uvs) {
-   int uvsIndex = sprite * 4;
-   float u0 = uvs[uvsIndex + 0]; 
-   float v0 = uvs[uvsIndex + 1];
-   float u1 = uvs[uvsIndex + 2];
-   float v1 = uvs[uvsIndex + 3];
+static void BatchQuadHandleUVs(TMBatchVertex *quad, float *uvs) {
+   float u0 = uvs[0]; 
+   float v0 = uvs[1];
+   float u1 = uvs[2];
+   float v1 = uvs[3];
    quad[0].uvs = {u0, v0};
    quad[1].uvs = {u1, v0};
    quad[2].uvs = {u0, v1};
@@ -1024,7 +1028,7 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
 
 void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
                                                           float w, float h, float angle,
-                                                          int sprite, float *uvs) {
+                                                          float *uvs) {
     TMBatchVertex quad[] = {
         TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec4{}}, // 1
         TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
@@ -1034,7 +1038,7 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
         TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{}}  // 3
     };
     BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
-    BatchQuadHandleUVs(quad, sprite, uvs);
+    BatchQuadHandleUVs(quad, uvs);
 
     if(renderBatch->used + 1 >= renderBatch->size) {
         TMRendererRenderBatchDraw(renderBatch);

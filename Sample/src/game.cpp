@@ -49,17 +49,13 @@ void GameInitialize(GameState *state, TMWindow *window) {
                                            "../../assets/shaders/batchFrag.hlsl");
 
     
-#if 0
-    state->texture = TMRendererTextureCreate(state->renderer,
-                                             "../../assets/images/player.png");
-    //state->uvs = TMGenerateUVs(state->texture, 16, 16);
-#else
+
     const char *images[] = {
+        "../../assets/images/moon.png",
         "../../assets/images/paddle_1.png",
-        "../../assets/images/player.png",
         "../../assets/images/characters_packed.png",
         "../../assets/images/clone.png",
-        "../../assets/images/moon.png",
+        "../../assets/images/player.png",
         "../../assets/images/paddle_2.png"
     };
 
@@ -70,9 +66,8 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMRendererTextureDestroy(state->renderer, state->texture);
     state->texture = NULL;
 
-    state->texture = TMRendererTextureCreateAtlas(state->renderer, images, ARRAY_LENGTH(images), 1024*2, 1024*2, &state->absUVs);
-#endif
-
+    state->absUVs = TMHashmapCreate(sizeof(TMVec4));
+    state->texture = TMRendererTextureCreateAtlas(state->renderer, images, ARRAY_LENGTH(images), 1024*2, 1024*2, state->absUVs);
 
 
     state->batchRenderer = TMRendererRenderBatchCreate(state->renderer, state->shader, state->texture, 100);
@@ -107,7 +102,6 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntitySystemInitialize(100);
     
     AABB aabb{};
-
 
     // create the cealing
     Entity *ceal = EntityCreate();
@@ -155,21 +149,22 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the floor
     Entity *floor = EntityCreate();
-    EntityAddGraphicsComponentSprite(floor, {0, -1.9}, {8, 1}, 3, state->absUVs[0].v);
+    EntityAddGraphicsComponentSprite(floor, {0, -1.9}, {8, 1}, (float *)TMHashmapGet(state->absUVs, "../../assets/images/paddle_1.png"));
     aabb.min = {0 - 4, -1.9 - 0.5};
     aabb.max = {0 + 4, -1.9 + 0.5};
     EntityAddCollisionComponent(floor, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor, Entity *);
 
+
     Entity *floor2 = EntityCreate();
-    EntityAddGraphicsComponentSprite(floor2, {-8, -1.9}, {8, 1}, 4, state->absUVs[0].v);
+    EntityAddGraphicsComponentSprite(floor2, {-8, -1.9}, {8, 1}, (float *)TMHashmapGet(state->absUVs, "../../assets/images/paddle_2.png"));
     aabb.min = {-8 - 4, -1.9 - 0.5};
     aabb.max = {-8 + 4, -1.9 + 0.5};
     EntityAddCollisionComponent(floor2, COLLISION_TYPE_AABB, aabb);
     TMDarrayPush(state->entities, floor2, Entity *);
 
     Entity *floor3 = EntityCreate();
-    EntityAddGraphicsComponentSprite(floor3, {-8, -0.5f}, {2, 2}, 1, state->absUVs[0].v);
+    EntityAddGraphicsComponentSprite(floor3, {-8, -0.5f}, {2, 2}, (float *)TMHashmapGet(state->absUVs, "../../assets/images/moon.png"));
     aabb.min = {-8 - 1, -0.5f - 1};
     aabb.max = {-8 + 1, -0.5f + 1};
     EntityAddCollisionComponent(floor3, COLLISION_TYPE_AABB, aabb);
@@ -179,7 +174,8 @@ void GameInitialize(GameState *state, TMWindow *window) {
     Entity *player = EntityCreate();
     state->player = player;
     EntityAddInputComponent(player);
-    EntityAddGraphicsComponentSubSprite(player, {-5, 0}, {1.2, 1.2}, {1, 0, 0, 1}, state->absUVs[5], 0, state->relUVs);
+    TMVec4 *uvs = (TMVec4 *)TMHashmapGet(state->absUVs, "../../assets/images/player.png");
+    EntityAddGraphicsComponentSubSprite(player, {-5, 0}, {1.2, 1.2}, {1, 0, 0, 1}, *uvs, 0, state->relUVs);
     EntityAddPhysicsComponent(player, {-5, 0}, {0, 0}, {0, 0}, 0.01f);
     Capsule capsule;
     capsule.r = 0.4;
@@ -226,7 +222,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     // create the Enemy
     Entity *enemy = EntityCreate();
-    EntityAddGraphicsComponentSubSprite(enemy, {0, 10}, {1.2, 1.2}, {1, 0, 0, 0}, state->absUVs[5], 0, state->relUVs);
+    EntityAddGraphicsComponentSubSprite(enemy, {0, 10}, {1.2, 1.2}, {1, 0, 0, 0}, *uvs, 0, state->relUVs);
     EntityAddPhysicsComponent(enemy, {0, 10}, {0, 0}, {0, 0}, 0.01f);
     capsule.r = 0.4;
     capsule.a = {0.0, 10.0f + 0.2};
@@ -269,13 +265,13 @@ void GameRender(GameState *state) {
 
 void GameShutdown(GameState *state) {
     // TODO: this should be handle by the entity system not the game directly
+    TMHashmapDestroy(state->absUVs);
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
         Entity *entity = state->entities[i];
         EntityDestroy(entity);
     }
     EntitySystemShutdown();
     free(state->relUVs);
-    TMDarrayDestroy(state->absUVs);
     GraphicsSystemShutdown();
     CollisionSystemShutdown();
     PhysicSystemShutdown();
