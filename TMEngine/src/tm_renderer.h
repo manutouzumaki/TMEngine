@@ -104,7 +104,7 @@ TM_EXPORT void TMRendererInstanceRendererDraw(TMRenderer *renderer, TMInstanceRe
 TM_EXPORT void TMRendererInstanceRendererDestroy(TMRenderer *renderer, TMInstanceRenderer *instanceRenderer);
 
 // this uvs should be free calling free(uvs)
-TM_EXPORT float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight);
+TM_EXPORT float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight, int *count);
 
 
 

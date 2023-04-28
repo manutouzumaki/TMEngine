@@ -26,6 +26,7 @@ struct GameState {
     //TMVec4 *absUVs;
     TMHashmap *absUVs;
     float  *relUVs;
+    int relUVsCount;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);

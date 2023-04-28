@@ -1095,12 +1095,13 @@ void TMRendererRenderBatchDestroy(TMRenderer *renderer, TMRenderBatch *renderBat
 }
 
 // TODO: find a better place to put this kind of functions ....
-float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight) {
+float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight, int *count) {
     float width = (float)tileWidth / (float)texture->width;
     float height = (float)tileHeight / (float)texture->height;
     int cols = texture->width / tileWidth;
     int rows = texture->height / tileHeight;
     float *uvs = (float *)malloc(cols * rows * 4 * sizeof(float));
+    *count = cols * rows;
     
     float ux = 0.0f;
     float uy = 0.0f;

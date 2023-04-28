@@ -102,6 +102,7 @@ void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule cap
 
 void EntityAddAnimationComponet(Entity *entity);
 
+
 void InputSystemUpdate(Entity **entities, float dt);
 
 struct CollisionInfo {
