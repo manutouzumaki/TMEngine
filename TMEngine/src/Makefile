@@ -12,6 +12,8 @@ build_win32:
 	-DLL
 	copy ..\build\tmlib.dll ..\..\Sample\build
 	copy ..\build\tmlib.pdb ..\..\Sample\build
+	copy ..\build\tmlib.dll ..\..\TMEditor\build
+	copy ..\build\tmlib.pdb ..\..\TMEditor\build
 clean_win32:
 	del ..\build\tmlib.dll
 	del ..\build\tmlib.exp

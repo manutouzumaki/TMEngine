@@ -26,6 +26,10 @@ struct TMUIElement {
     TMVec2 size;
     TMVec4 color;
     TMVec4 oldColor;
+    TMVec4 uvs;
+
+    //float *relUVs;
+    //int uvsIndex;
 
     TMUIOrientation orientation;
     TMUIType type;
@@ -38,11 +42,15 @@ TM_EXPORT TMUIElement *TMUIElementCreate(TMVec2 position, TMVec2 size, TMVec4 co
                               TMUIOrientation orientation,
                               TMUIType type, TMRenderBatch *renderBatch);
 TM_EXPORT void TMUIElementDestroy(TMUIElement *element);
-TM_EXPORT void TMUIElementAddChild(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color, TMRenderBatch *renderBatch);
+
+TM_EXPORT void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color, TMRenderBatch *renderBatch);
+TM_EXPORT void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 uvs, TMRenderBatch *renderBatch);
+
 TM_EXPORT TMUIElement *TMUIElementGetChild(TMUIElement *element, int index);
 TM_EXPORT void TMUIElementDraw(TMUIElement *element);
 TM_EXPORT void TMUIElementProcessInput(TMUIElement *element,
-                                       int width, int height,
+                                       float offsetX, float offsetY,
+                                       float width, float height,
                                        TMMat4 proj, TMMat4 view);
 
 #endif

@@ -640,7 +640,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     TMVec3 tar = {0, 0, 1};
     TMVec3 up  = {0, 1, 0};
     state->view = TMMat4LookAt(pos, pos + tar, up);
-    state->proj = TMMat4Ortho(0, width/MetersToPixel, 0, height/MetersToPixel, 0.0f, 100.0f);
+    state->proj = TMMat4Ortho(0, width/MetersToPixel, 0, height/MetersToPixel, 0.1f, 100.0f);
 
     ShaderMatrix mats{};
     mats.proj = state->proj;

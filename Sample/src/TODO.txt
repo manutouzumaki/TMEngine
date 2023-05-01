@@ -12,11 +12,9 @@
 ###################################################################################################################################
 ### GAME: 
 ###################################################################################################################################
+### - try to use the batch renderer to render a complex scene with diferent textures shaders and lights
 ### - NOTE: change component storage to slotmaps for linear processing
 ### - implemet a minimal level base platformer (design the game loop for levels and menus from the start)
-### -
-### - find a good way of unpdating the uvs index inside of a texture atlas (mabye a HASHMAP)
-### - try to use the batch renderer to render a complex scene with diferent textures shaders and lights
 ### -
 ### -
 ### -
@@ -28,10 +26,7 @@
 ### - IMPORTANT: add Texture Atlas to Macos engine
 ### - IMPORTANT: update macos engine, to be featured complete
 ### - Add Joystick handle to macos engine implementation
-### - collision detection library
-### - physic and collision resolution library
 ### - add sound system
-### - add animations 2d and 3d
 ### -
 ### -
 ### -

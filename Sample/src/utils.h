@@ -471,7 +471,7 @@ void GameShutdown(GameState *state) {
 
 
 
-#if 0
+#if 1
 
     // TODO Shitty code DELETE this before i cry please ....
     // ###############################################################################################
