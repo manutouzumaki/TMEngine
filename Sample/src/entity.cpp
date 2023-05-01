@@ -63,7 +63,7 @@ void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 si
     entity->graphics->relUVs = uvs;
 }
 
-void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color,
+void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size,
                                          TMVec4 absUVs, int index, float *uvs) {
     assert(entity->graphics == NULL);
     entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);

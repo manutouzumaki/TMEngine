@@ -7,9 +7,9 @@
 
 
 enum GraphicsComponentType {
-    GRAPHICS_TYPE_SOLID_COLOR,
-    GRAPHICS_TYPE_SPRITE,
-    GRAPHICS_TYPE_SUBSPRITE
+    GRAPHICS_TYPE_SOLID_COLOR = 0,
+    GRAPHICS_TYPE_SPRITE = 1,
+    GRAPHICS_TYPE_SUBSPRITE = 2
 };
 
 struct GraphicsComponent {
@@ -71,6 +71,7 @@ struct CollisionComponent {
 
 struct Entity {
     unsigned int id;
+    TMVec4 uvs;
     GraphicsComponent *graphics;
     PhysicsComponent *physics;
     InputComponent *input;
@@ -88,7 +89,7 @@ void EntityDestroy(Entity *entity);
 
 void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color);
 void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, float *uvs);
-void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color,
+void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size,
                                          TMVec4 absUVs, int index, float *uvs);
 
 

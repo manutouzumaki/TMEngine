@@ -12,6 +12,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <float.h>
+#include <assert.h>
+#include <memory.h>
 
 struct ShaderMatrix {
     TMMat4 proj;
@@ -23,6 +25,16 @@ static float MetersToPixel = 100;
 
 
 bool EntitiesSerialize(Entity **entities, float *uvs, int uvsCount) {
+
+    TMJsonObject jsonRoot = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonRoot, "Root");
+
+    TMJsonObject jsonPlayerUvs = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonPlayerUvs, "PlayerUvs");
+    for(int i = 0; i < uvsCount*4; i++) {
+        TMJsonObjectSetValue(&jsonPlayerUvs, uvs[i]);
+    }
+
     TMJsonObject jsonScene = TMJsonObjectCreate();
     TMJsonObjectSetName(&jsonScene, "Scene");
 
@@ -100,10 +112,10 @@ bool EntitiesSerialize(Entity **entities, float *uvs, int uvsCount) {
                     // absUVs
                     TMJsonObject jsonUVs = TMJsonObjectCreate();
                     TMJsonObjectSetName(&jsonUVs, "Uvs");
-                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->absUVs.v[0]);
-                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->absUVs.v[1]);
-                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->absUVs.v[2]);
-                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->absUVs.v[3]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->relUVs[0]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->relUVs[1]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->relUVs[2]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->relUVs[3]);
 
                     // Index
                     TMJsonObject jsonIndex = TMJsonObjectCreate();
@@ -139,22 +151,52 @@ bool EntitiesSerialize(Entity **entities, float *uvs, int uvsCount) {
         }
 
         if(entity->physics) {
-#if 0
-struct PhysicsComponent {
-    TMVec2 potetialPosition;
-    TMVec2 position;
-    TMVec2 lastPosition;
-    TMVec2 velocity;
-    TMVec2 acceleration;
-    Ray down;
-    float damping;
-    int iterations;
-    bool grounded;
-};
-#endif
             TMJsonObject jsonPhysics = TMJsonObjectCreate();
             TMJsonObjectSetName(&jsonPhysics, "Physics");
-            TMJsonObjectSetValue(&jsonPhysics, 1.0f);
+
+            // position
+            TMJsonObject jsonPosition = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonPosition, "Position");
+            TMJsonObject xPos = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xPos, "X");
+            TMJsonObjectSetValue(&xPos, entity->physics->position.x);
+            TMJsonObject yPos = TMJsonObjectCreate();
+            TMJsonObjectSetName(&yPos, "Y");
+            TMJsonObjectSetValue(&yPos, entity->physics->position.y);
+            TMJsonObjectAddChild(&jsonPosition, &xPos);
+            TMJsonObjectAddChild(&jsonPosition, &yPos);
+
+            TMJsonObject jsonVelocity = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonVelocity, "Velocity");
+            TMJsonObject xVel = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xVel, "X");
+            TMJsonObjectSetValue(&xVel, entity->physics->velocity.x);
+            TMJsonObject yVel = TMJsonObjectCreate();
+            TMJsonObjectSetName(&yVel, "Y");
+            TMJsonObjectSetValue(&yVel, entity->physics->position.y);
+            TMJsonObjectAddChild(&jsonVelocity, &xVel);
+            TMJsonObjectAddChild(&jsonVelocity, &yVel);
+
+            TMJsonObject jsonAccel = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonAccel, "Acceleration");
+            TMJsonObject xAcc = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xAcc, "X");
+            TMJsonObjectSetValue(&xAcc, entity->physics->acceleration.x);
+            TMJsonObject yAcc = TMJsonObjectCreate();
+            TMJsonObjectSetName(&yAcc, "Y");
+            TMJsonObjectSetValue(&yAcc, entity->physics->acceleration.y);
+            TMJsonObjectAddChild(&jsonAccel, &xAcc);
+            TMJsonObjectAddChild(&jsonAccel, &yAcc);
+
+            TMJsonObject jsonDamping = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonDamping, "Damping");
+            TMJsonObjectSetValue(&jsonDamping, entity->physics->damping);
+
+            TMJsonObjectAddChild(&jsonPhysics, &jsonPosition);
+            TMJsonObjectAddChild(&jsonPhysics, &jsonVelocity);
+            TMJsonObjectAddChild(&jsonPhysics, &jsonAccel);
+            TMJsonObjectAddChild(&jsonPhysics, &jsonDamping);
+
             TMJsonObjectAddChild(&jsonEntity, &jsonPhysics);
 
         }
@@ -234,24 +276,315 @@ struct PhysicsComponent {
             TMJsonObjectAddChild(&jsonEntity, &jsonCollision);
         }
 
+        if(entity->animation) {
+
+            TMJsonObject jsonAnimation = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonAnimation, "Animation");
+
+            TMJsonObject statesCount = TMJsonObjectCreate();
+            TMJsonObjectSetName(&statesCount, "AnimationStatesCount");
+            TMJsonObjectSetValue(&statesCount, (float)entity->animation->statesCount);
+
+            TMJsonObjectAddChild(&jsonAnimation, &statesCount);
+
+            for(int i = 0; i < entity->animation->statesCount; ++i) {
+                TMJsonObject jsonAnimState = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonAnimState, "AnimationState");
+
+                TMJsonObject frameCount = TMJsonObjectCreate();
+                TMJsonObjectSetName(&frameCount, "FrameCount");
+                TMJsonObjectSetValue(&frameCount, (float)entity->animation->states[i].frameCount);
+
+                TMJsonObject frames = TMJsonObjectCreate();
+                TMJsonObjectSetName(&frames, "Frames");
+                for(int j = 0; j < entity->animation->states[i].frameCount; ++j) {
+                    TMJsonObjectSetValue(&frames, (float)entity->animation->states[i].frames[j]);
+                }
+
+                TMJsonObject speed = TMJsonObjectCreate();
+                TMJsonObjectSetName(&speed, "Speed");
+                TMJsonObjectSetValue(&speed, (float)entity->animation->states[i].speed);
+
+                TMJsonObjectAddChild(&jsonAnimState, &frameCount);
+                TMJsonObjectAddChild(&jsonAnimState, &frames);
+                TMJsonObjectAddChild(&jsonAnimState, &speed);
+
+                TMJsonObjectAddChild(&jsonAnimation, &jsonAnimState);
+            } 
+
+            TMJsonObjectAddChild(&jsonEntity, &jsonAnimation);
+        }
+
         TMJsonObjectAddChild(&jsonScene, &jsonEntity);
 
     }
+    
+    TMJsonObjectAddChild(&jsonRoot, &jsonScene);
+    TMJsonObjectAddChild(&jsonRoot, &jsonPlayerUvs);
 
     int bytesCount = 0;
-    TMJsonObjectStringify(&jsonScene, NULL, &bytesCount);
+    TMJsonObjectStringify(&jsonRoot, NULL, &bytesCount);
     
     char *buffer = (char *)malloc(bytesCount + 1);
     int bytesWriten = 0;
-    TMJsonObjectStringify(&jsonScene, buffer, &bytesWriten);
+    TMJsonObjectStringify(&jsonRoot, buffer, &bytesWriten);
     printf("%s", buffer);
     
     TMFileWriteText("../../assets/json/scene.json", buffer, bytesWriten);
     free(buffer);
     
-    TMJsonObjectFree(&jsonScene);
+    TMJsonObjectFree(&jsonRoot);
 
     return false;
+}
+
+static float StringToFloat(const char *c, size_t size) {
+    assert(size < 32);
+    static char buffer[32];
+    memcpy((void *)buffer, (void *)c, size);
+    buffer[size] = '\0';
+    return (float)atof(buffer);
+}
+
+static unsigned int StringToInt(const char *c, size_t size) {
+    assert(size < 32);
+    static char buffer[32];
+    memcpy((void *)buffer, (void *)c, size);
+    buffer[size] = '\0';
+    return (int)atoi(buffer);
+}
+
+static unsigned int StringToUnsignedInt(const char *c, size_t size) {
+    assert(size < 32);
+    static char buffer[32];
+    memcpy((void *)buffer, (void *)c, size);
+    buffer[size] = '\0';
+    return (unsigned int)atoi(buffer);
+}
+
+static const char *StringToNullTerString(const char *c, size_t size) {
+    char *nullTerString = (char *)malloc(size + 1);
+    memcpy((void *)nullTerString, (void *)c, size);
+    nullTerString[size] = '\0';
+    return (const char *)nullTerString;
+}
+
+void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, float *uvs) {
+    TMJsonObject *jsonType     = TMJsonFindChildByName(jsonObject, "Type");
+    TMJsonObject *jsonPosition = TMJsonFindChildByName(jsonObject, "Position"); 
+    TMJsonObject *jsonSize     = TMJsonFindChildByName(jsonObject, "Size");
+    TMJsonObject *jsonColor     = TMJsonFindChildByName(jsonObject, "Color");
+    TMJsonObject *jsonUVs      = TMJsonFindChildByName(jsonObject, "Uvs");
+    TMJsonObject *jsonIndex    = TMJsonFindChildByName(jsonObject, "Index");
+
+    TMJsonValue jsonValue = jsonPosition->childs[0].values[0];
+    float xPos = StringToFloat(jsonValue.value, jsonValue.size);
+    jsonValue = jsonPosition->childs[1].values[0];
+    float yPos = StringToFloat(jsonValue.value, jsonValue.size);
+    TMVec2 position = {xPos, yPos};
+
+    jsonValue = jsonSize->childs[0].values[0];
+    float xSiz = StringToFloat(jsonValue.value, jsonValue.size);
+    jsonValue = jsonSize->childs[1].values[0];
+    float ySiz = StringToFloat(jsonValue.value, jsonValue.size);
+    TMVec2 size = {xSiz, ySiz};
+
+    GraphicsComponentType type = (GraphicsComponentType)StringToInt(jsonType->values[0].value,
+                                                                    jsonType->values[0].size);
+    switch(type) {
+
+        case GRAPHICS_TYPE_SOLID_COLOR: {
+            float r = StringToFloat(jsonColor->childs[0].values[0].value, jsonColor->childs[0].values[0].size);
+            float g = StringToFloat(jsonColor->childs[1].values[0].value, jsonColor->childs[1].values[0].size);
+            float b = StringToFloat(jsonColor->childs[2].values[0].value, jsonColor->childs[2].values[0].size);
+            float a = StringToFloat(jsonColor->childs[3].values[0].value, jsonColor->childs[3].values[0].size);
+            TMVec4 color = {r, g, b, a};
+            EntityAddGraphicsComponentSolidColor(entity, position, size, color);
+        } break;
+        case GRAPHICS_TYPE_SPRITE: {
+            float x = StringToFloat(jsonUVs->values[0].value, jsonUVs->values[0].size);
+            float y = StringToFloat(jsonUVs->values[1].value, jsonUVs->values[1].size);
+            float z = StringToFloat(jsonUVs->values[2].value, jsonUVs->values[2].size);
+            float w = StringToFloat(jsonUVs->values[3].value, jsonUVs->values[3].size);
+            // TODO: fix this hack ...
+            entity->uvs = {x, y, z, w};
+            EntityAddGraphicsComponentSprite(entity, position, size, entity->uvs.v);
+        } break;
+        case GRAPHICS_TYPE_SUBSPRITE: {
+            int index = StringToInt(jsonIndex->values[0].value, jsonIndex->values[0].size);
+            float x = StringToFloat(jsonUVs->values[0].value, jsonUVs->values[0].size);
+            float y = StringToFloat(jsonUVs->values[1].value, jsonUVs->values[1].size);
+            float z = StringToFloat(jsonUVs->values[2].value, jsonUVs->values[2].size);
+            float w = StringToFloat(jsonUVs->values[3].value, jsonUVs->values[3].size);
+            TMVec4 absUvs = {x, y, z, w};
+            EntityAddGraphicsComponentSubSprite(entity, position, size, absUvs, index, uvs);
+        } break;
+    }
+
+}
+
+void EntityAddPhysicsCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
+
+    TMJsonObject *jsonPosition     = TMJsonFindChildByName(jsonObject, "Position"); 
+    TMJsonObject *jsonVelocity     = TMJsonFindChildByName(jsonObject, "Velocity");
+    TMJsonObject *jsonAcceleration = TMJsonFindChildByName(jsonObject, "Acceleration");
+    TMJsonObject *jsonDamping      = TMJsonFindChildByName(jsonObject, "Damping");
+
+    TMJsonValue jsonValue = jsonPosition->childs[0].values[0];
+    float xPos = StringToFloat(jsonValue.value, jsonValue.size);
+    jsonValue = jsonPosition->childs[1].values[0];
+    float yPos = StringToFloat(jsonValue.value, jsonValue.size);
+    TMVec2 position = {xPos, yPos};
+
+    jsonValue = jsonVelocity->childs[0].values[0];
+    float xVel = StringToFloat(jsonValue.value, jsonValue.size);
+    jsonValue = jsonVelocity->childs[1].values[0];
+    float yVel = StringToFloat(jsonValue.value, jsonValue.size);
+    TMVec2 velocity = {xVel, yVel};
+
+    jsonValue = jsonAcceleration->childs[0].values[0];
+    float xAcc = StringToFloat(jsonValue.value, jsonValue.size);
+    jsonValue = jsonAcceleration->childs[1].values[0];
+    float yAcc = StringToFloat(jsonValue.value, jsonValue.size);
+    TMVec2 acceleration = {xAcc, yAcc};
+
+    float damping = StringToFloat(jsonDamping->values[0].value, jsonDamping->values[0].size);
+
+    EntityAddPhysicsComponent(entity, position, velocity, acceleration, damping);
+}
+
+void EntityAddCollisionCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
+    TMJsonObject *jsonSolid   = TMJsonFindChildByName(jsonObject, "Solid"); 
+    TMJsonObject *jsonCapsule = TMJsonFindChildByName(jsonObject, "Capsule");
+    TMJsonObject *jsonAABB    = TMJsonFindChildByName(jsonObject, "AABB");
+    TMJsonObject *jsonCircle  = TMJsonFindChildByName(jsonObject, "Circle");
+    TMJsonObject *jsonOBB     = TMJsonFindChildByName(jsonObject, "OBB");
+
+    bool solid = (bool)StringToInt(jsonSolid->values[0].value, jsonSolid->values[0].size);
+    
+    if(jsonCapsule) {
+        TMJsonObject *jsonA = TMJsonFindChildByName(jsonCapsule, "A");
+        TMJsonObject *jsonB = TMJsonFindChildByName(jsonCapsule, "B");
+        TMJsonObject *jsonR = TMJsonFindChildByName(jsonCapsule, "Radio");
+    
+
+        float x = StringToFloat(jsonA->values[0].value, jsonA->values[0].size);
+        float y = StringToFloat(jsonA->values[1].value, jsonA->values[1].size);
+        TMVec2 a  = {x, y};
+
+        x = StringToFloat(jsonB->values[0].value, jsonB->values[0].size);
+        y = StringToFloat(jsonB->values[1].value, jsonB->values[1].size);
+        TMVec2 b  = {x, y};
+            
+        float radio = StringToFloat(jsonR->values[0].value, jsonR->values[0].size);
+
+        Capsule capsule;
+        capsule.r = radio;
+        capsule.a = a;
+        capsule.b = b;
+
+        EntityAddCollisionComponent(entity, COLLISION_TYPE_CAPSULE, capsule);
+    }
+    else if(jsonAABB) {
+        TMJsonObject *jsonMin = TMJsonFindChildByName(jsonAABB, "Min");
+        TMJsonObject *jsonMax = TMJsonFindChildByName(jsonAABB, "Max");
+
+        float x = StringToFloat(jsonMin->values[0].value, jsonMin->values[0].size);
+        float y = StringToFloat(jsonMin->values[1].value, jsonMin->values[1].size);
+        TMVec2 min  = {x, y};
+
+        x = StringToFloat(jsonMax->values[0].value, jsonMax->values[0].size);
+        y = StringToFloat(jsonMax->values[1].value, jsonMax->values[1].size);
+        TMVec2 max  = {x, y};
+
+        AABB aabb;
+        aabb.min = min;
+        aabb.max = max;
+
+        EntityAddCollisionComponent(entity, COLLISION_TYPE_AABB, aabb);
+    }
+    else if(jsonCircle) {
+        // TODO: ...
+    }
+    else if(jsonOBB) {
+        // TODO: ...
+    }
+
+}
+
+void EntityAddAnimationCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
+    EntityAddAnimationComponet(entity);
+    
+    TMJsonObject *jsonCount = TMJsonFindChildByName(jsonObject, "AnimationStatesCount");
+    int count = StringToInt(jsonCount->values[0].value, jsonCount->values[0].size);
+
+    for(int i = 1; i <= count; ++i) {
+        TMJsonObject *jsonAnimationState = jsonObject->childs + i;
+
+        TMJsonObject *jsonFrameCount = TMJsonFindChildByName(jsonAnimationState, "FrameCount");
+        TMJsonObject *jsonFrames     = TMJsonFindChildByName(jsonAnimationState, "Frames");
+        TMJsonObject *jsonSpeed      = TMJsonFindChildByName(jsonAnimationState, "Speed");
+
+
+        int frameCount = StringToInt(jsonFrameCount->values[0].value, jsonFrameCount->values[0].size);
+        float speed = StringToFloat(jsonSpeed->values[0].value, jsonSpeed->values[0].size);
+
+        AnimationState animationState;
+        animationState.frameCount = frameCount;
+        animationState.speed = speed;
+
+        for(int j = 0; j < frameCount; ++j) {
+            int frame = StringToInt(jsonFrames->values[j].value, jsonFrames->values[j].size);
+            animationState.frames[j] = frame;
+        }
+
+        AnimationSystemAddState(entity, animationState);
+
+    }
+
+}
+
+void EntityAddInputCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state) {
+    state->player = entity;
+    EntityAddInputComponent(entity);
+}
+
+void LoadSceneFromFile(GameState *state, const char *filepath) {
+
+    TMJson *jsonFile = TMJsonOpen(filepath);
+
+    TMJsonObject *jsonRoot = &jsonFile->root.childs[0];
+    
+    TMJsonObject *jsonScene = TMJsonFindChildByName(jsonRoot, "Scene");
+    TMJsonObject *jsonUVs = TMJsonFindChildByName(jsonRoot, "PlayerUvs");
+    
+    state->relUVs = (float *)malloc(jsonUVs->valuesCount * sizeof(float));
+    for(int i = 0; i < jsonUVs->valuesCount; ++i) {
+        state->relUVs[i] = StringToFloat(jsonUVs->values[i].value, jsonUVs->values[i].size);
+    } 
+
+    for(int i = 0; i < jsonScene->childsCount; ++i) {
+        TMJsonObject *jsonEntity = jsonScene->childs + i;
+
+        TMJsonObject *jsonGraphic   = TMJsonFindChildByName(jsonEntity, "Graphics");
+        TMJsonObject *jsonPhysics   = TMJsonFindChildByName(jsonEntity, "Physics");
+        TMJsonObject *jsonCollision = TMJsonFindChildByName(jsonEntity, "Collision");
+        TMJsonObject *jsonAnimation = TMJsonFindChildByName(jsonEntity, "Animation");
+        TMJsonObject *jsonInput     = TMJsonFindChildByName(jsonEntity, "Input");
+
+        Entity *entity = EntityCreate();
+
+        if(jsonGraphic) EntityAddGraphicCmpFromJson(entity, jsonGraphic, state->relUVs);
+        if(jsonPhysics) EntityAddPhysicsCmpFromJson(entity, jsonPhysics);
+        if(jsonCollision) EntityAddCollisionCmpFromJson(entity, jsonCollision);
+        if(jsonAnimation) EntityAddAnimationCmpFromJson(entity, jsonAnimation);
+        if(jsonInput) EntityAddInputCmpFromJson(entity, jsonInput, state);
+
+        TMDarrayPush(state->entities, entity, Entity *);
+    }
+
+    TMJsonClose(jsonFile);
+
 }
 
 
@@ -293,14 +626,6 @@ void GameInitialize(GameState *state, TMWindow *window) {
         "../../assets/images/paddle_2.png"
     };
 
-    // TODO Shitty code DELETE this before i cry please ....
-    // ###############################################################################################
-    state->texture = TMRendererTextureCreate(state->renderer,
-                                             "../../assets/images/player.png");
-    state->relUVs = TMGenerateUVs(state->texture, 16, 16, &state->relUVsCount);
-    TMRendererTextureDestroy(state->renderer, state->texture);
-    state->texture = NULL;
-    // ###############################################################################################
 
     state->absUVs = TMHashmapCreate(sizeof(TMVec4));
     state->texture = TMRendererTextureCreateAtlas(state->renderer, images, ARRAY_LENGTH(images), 1024*2, 1024*2, state->absUVs);
@@ -336,141 +661,10 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
 
     EntitySystemInitialize(100);
+
+
+    LoadSceneFromFile(state, "../../assets/json/scene.json");
     
-    AABB aabb{};
-
-    // create the cealing
-    Entity *ceal = EntityCreate();
-    EntityAddGraphicsComponentSolidColor(ceal, {0, 1.9}, {4, 1}, {0, 0.2, 0.4, 1});
-    aabb.min = {0 - 2, 1.9 - 0.5};
-    aabb.max = {0 + 2, 1.9 + 0.5};
-    EntityAddCollisionComponent(ceal, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, ceal, Entity *);
-
-    // create the cealing
-    Entity *ceal1 = EntityCreate();
-    EntityAddGraphicsComponentSolidColor(ceal1, {-4, 1.9}, {4, 1}, {0.5, 0.2, 0.4, 1});
-    aabb.min = {-4 - 2, 1.9 - 0.5};
-    aabb.max = {-4 + 2, 1.9 + 0.5};
-    EntityAddCollisionComponent(ceal1, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, ceal1, Entity *);
-
-    Entity *player2 = EntityCreate();
-    EntityAddGraphicsComponentSolidColor(player2, {1.3, -0.2}, {0.8, 1}, {1, 0.8, 0.2, 1});
-    aabb.min = {1.3 - 0.4, -0.2 - 0.5};
-    aabb.max = {1.3 + 0.4, -0.2 + 0.5};
-    EntityAddCollisionComponent(player2, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, player2, Entity *);
-
-    Entity *player3 = EntityCreate();
-    EntityAddGraphicsComponentSolidColor(player3, {-2.3, 0.6}, {0.8, 1}, {1, 0.2, 0.5, 1});
-    aabb.min = {-2.3 - 0.4, 0.6 - 0.5};
-    aabb.max = {-2.3 + 0.4, 0.6 + 0.5};
-    EntityAddCollisionComponent(player3, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, player3, Entity *);
-
-    Entity *player4 = EntityCreate();
-    EntityAddGraphicsComponentSolidColor(player4, {4.5, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
-    aabb.min = {4.5 - 0.4, 0.0 - 0.5};
-    aabb.max = {4.5 + 0.4, 0.0 + 0.5};
-    EntityAddCollisionComponent(player4, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, player4, Entity *);
-
-    Entity *player5 = EntityCreate();
-    EntityAddGraphicsComponentSolidColor(player5, {4.5 + 0.8, 0.0}, {0.8, 1}, {1, 0.2, 0.5, 1});
-    aabb.min = {4.5 + 0.8 - 0.4, 0.0 - 0.5};
-    aabb.max = {4.5 + 0.8 + 0.4, 0.0 + 0.5};
-    EntityAddCollisionComponent(player5, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, player5, Entity *);
-
-    // create the floor
-    Entity *floor = EntityCreate();
-    EntityAddGraphicsComponentSprite(floor, {0, -1.9}, {8, 1}, (float *)TMHashmapGet(state->absUVs, "../../assets/images/paddle_1.png"));
-    aabb.min = {0 - 4, -1.9 - 0.5};
-    aabb.max = {0 + 4, -1.9 + 0.5};
-    EntityAddCollisionComponent(floor, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, floor, Entity *);
-
-
-    Entity *floor2 = EntityCreate();
-    EntityAddGraphicsComponentSprite(floor2, {-8, -1.9}, {8, 1}, (float *)TMHashmapGet(state->absUVs, "../../assets/images/paddle_2.png"));
-    aabb.min = {-8 - 4, -1.9 - 0.5};
-    aabb.max = {-8 + 4, -1.9 + 0.5};
-    EntityAddCollisionComponent(floor2, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, floor2, Entity *);
-
-    Entity *floor3 = EntityCreate();
-    EntityAddGraphicsComponentSprite(floor3, {-8, -0.5f}, {2, 2}, (float *)TMHashmapGet(state->absUVs, "../../assets/images/moon.png"));
-    aabb.min = {-8 - 1, -0.5f - 1};
-    aabb.max = {-8 + 1, -0.5f + 1};
-    EntityAddCollisionComponent(floor3, COLLISION_TYPE_AABB, aabb);
-    TMDarrayPush(state->entities, floor3, Entity *);
-
-    // create the player
-    Entity *player = EntityCreate();
-    state->player = player;
-    EntityAddInputComponent(player);
-    TMVec4 *uvs = (TMVec4 *)TMHashmapGet(state->absUVs, "../../assets/images/player.png");
-    EntityAddGraphicsComponentSubSprite(player, {-5, 0}, {1.2, 1.2}, {1, 0, 0, 1}, *uvs, 0, state->relUVs);
-    EntityAddPhysicsComponent(player, {-5, 0}, {0, 0}, {0, 0}, 0.01f);
-    Capsule capsule;
-    capsule.r = 0.4;
-    capsule.a = {-5.0, 0.2};
-    capsule.b = {-5.0, -0.2};
-    EntityAddCollisionComponent(player, COLLISION_TYPE_CAPSULE, capsule);
-
-    AnimationState walkLeft;
-    walkLeft.frames[0] = 0;
-    walkLeft.frames[1] = 1;
-    walkLeft.frames[2] = 2;
-    walkLeft.frames[3] = 3;
-    walkLeft.frameCount = 4;
-    walkLeft.speed = 15.0f;
-
-    AnimationState walkRight;
-    walkRight.frames[0] = 4;
-    walkRight.frames[1] = 5;
-    walkRight.frames[2] = 6;
-    walkRight.frames[3] = 7;
-    walkRight.frameCount = 4;
-    walkRight.speed = 15.0f;
-
-    AnimationState idleLeft;
-    idleLeft.frames[0] = 0;
-    idleLeft.frames[1] = 3;
-    idleLeft.frameCount = 2;
-    idleLeft.speed = 7.0f;
-
-    AnimationState idleRight;
-    idleRight.frames[0] = 4;
-    idleRight.frames[1] = 7;
-    idleRight.frameCount = 2;
-    idleRight.speed = 7.0f;
-
-    EntityAddAnimationComponet(player);
-    AnimationSystemAddState(player, walkLeft);
-    AnimationSystemAddState(player, walkRight);
-    AnimationSystemAddState(player, idleLeft);
-    AnimationSystemAddState(player, idleRight);
-
-    TMDarrayPush(state->entities, player, Entity *);
-
-
-    // create the Enemy
-    Entity *enemy = EntityCreate();
-    EntityAddGraphicsComponentSubSprite(enemy, {0, 10}, {1.2, 1.2}, {1, 0, 0, 0}, *uvs, 0, state->relUVs);
-    EntityAddPhysicsComponent(enemy, {0, 10}, {0, 0}, {0, 0}, 0.01f);
-    capsule.r = 0.4;
-    capsule.a = {0.0, 10.0f + 0.2};
-    capsule.b = {0.0, 10.0f + -0.2};
-    EntityAddCollisionComponent(enemy, COLLISION_TYPE_CAPSULE, capsule);
-    EntityAddAnimationComponet(enemy);
-    AnimationSystemAddState(enemy, idleLeft);
-    TMDarrayPush(state->entities, enemy, Entity *);
-
-
-    EntitiesSerialize(state->entities, state->relUVs, state->relUVsCount);
-
 
 }
 
