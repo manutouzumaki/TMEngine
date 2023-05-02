@@ -11,7 +11,7 @@
 #include <memory.h>
 #include <stdio.h>
 
-void OnClickStub(int index, TMVec4 vec4) {}
+void OnClickStub(TMUIElement *element) {}
 
 TMUIElement *TMUIElementCreate(TMVec2 position, TMVec2 size, TMVec4 color,
                               TMUIOrientation orientation,
@@ -205,8 +205,7 @@ void TMUIElementProcessInput(TMUIElement *element,
             element->isHot = true;
             element->color = {1, 1, 1, 1};
             if(TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT)) {
-                printf("index: %d\n", element->index);
-                element->onCLick(element->index, element->uvs);
+                element->onCLick(element);
             }
             if(TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
                 element->color = {0.7, 0.7, 0.7, 1};

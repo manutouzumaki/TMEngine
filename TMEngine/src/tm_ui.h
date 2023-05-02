@@ -20,7 +20,10 @@ enum TMUIOrientation {
 };
 
 
-typedef void (*PFN_OnClick) (int index, TMVec4 vec4);
+struct TMUIElement;
+
+typedef void (*PFN_OnClick) (TMUIElement *element);
+
 
 struct TMUIElement {
     TMUIElement *childs;
