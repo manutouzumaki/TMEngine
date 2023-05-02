@@ -11,6 +11,7 @@
 #include <memory.h>
 #include <stdio.h>
 
+void OnClickStub(int index, TMVec4 vec4) {}
 
 TMUIElement *TMUIElementCreate(TMVec2 position, TMVec2 size, TMVec4 color,
                               TMUIOrientation orientation,
@@ -25,6 +26,7 @@ TMUIElement *TMUIElementCreate(TMVec2 position, TMVec2 size, TMVec4 color,
     element->orientation = orientation;
     element->type = type;
     element->renderBatch = renderBatch;
+    element->onCLick = OnClickStub;
     return element;
 }
 
@@ -44,13 +46,14 @@ void TMUIElementDestroy(TMUIElement *element) {
     free(element);
 }
 
-void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color, TMRenderBatch *renderBatch) {
+void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color, TMRenderBatch *renderBatch, PFN_OnClick onCLick) {
     TMUIElement element{};
     element.type = TM_UI_TYPE_BUTTON;
     element.orientation = orientation;
     element.color = color;
     element.oldColor = color;
     element.renderBatch = renderBatch;
+    element.onCLick = onCLick;
     TMDarrayPush(parent->childs, element, TMUIElement);
     int childCount = TMDarraySize(parent->childs);
     
@@ -78,7 +81,7 @@ void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation,
     }
 }
 
-void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 uvs, TMRenderBatch *renderBatch) {
+void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 uvs, TMRenderBatch *renderBatch, PFN_OnClick onCLick) {
     TMUIElement element{};
     element.type = TM_UI_TYPE_IMAGE_BUTTON;
     element.orientation = orientation;
@@ -86,6 +89,47 @@ void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orienta
     element.oldColor = element.color;
     element.uvs = uvs;
     element.renderBatch = renderBatch;
+    element.onCLick = onCLick;
+    TMDarrayPush(parent->childs, element, TMUIElement);
+    int childCount = TMDarraySize(parent->childs);
+    
+    if(parent->orientation == TM_UI_ORIENTATION_HORIZONTAL) {
+        for(int i = 0; i < childCount; ++i) {
+            TMUIElement *child = parent->childs + i;
+            child->position.x = parent->position.x + (parent->size.x/childCount)*i;
+            child->position.y = parent->position.y;
+            child->size.x = (parent->size.x/childCount);
+            child->size.y = parent->size.y;
+            child->index = i;
+
+        }
+    }
+    else if(parent->orientation == TM_UI_ORIENTATION_VERTICAL) {
+        for(int i = 0; i < childCount; ++i) {
+            TMUIElement *child = parent->childs + i;
+            child->position.x = parent->position.x;
+            child->position.y = parent->position.y + (parent->size.y/childCount)*i;
+            child->size.x = parent->size.x;
+            child->size.y = (parent->size.y/childCount);
+            child->index = i;
+
+        }
+    }
+}
+
+void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation orientation,
+                              TMVec4 font, float *fontUvs, const char *text,
+                              TMRenderBatch *renderBatch, PFN_OnClick onCLick) {
+    TMUIElement element{};
+    element.type = TM_UI_TYPE_LABEL;
+    element.orientation = orientation;
+    element.color = {0, 0, 0, 0};
+    element.oldColor = element.color;
+    element.uvs = font;
+    element.relUVs = fontUvs;
+    element.text = text;
+    element.renderBatch = renderBatch;
+    element.onCLick = onCLick;
     TMDarrayPush(parent->childs, element, TMUIElement);
     int childCount = TMDarraySize(parent->childs);
     
@@ -162,6 +206,7 @@ void TMUIElementProcessInput(TMUIElement *element,
             element->color = {1, 1, 1, 1};
             if(TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT)) {
                 printf("index: %d\n", element->index);
+                element->onCLick(element->index, element->uvs);
             }
             if(TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
                 element->color = {0.7, 0.7, 0.7, 1};
@@ -185,24 +230,53 @@ void TMUIElementProcessInput(TMUIElement *element,
 }
 
 
-void TMUIElementDraw(TMUIElement *element) {
+
+
+void TMUIElementDraw(TMUIElement *element, float increment) {
 
     if(element->type == TM_UI_TYPE_BUTTON || element->isHot) {
         TMRendererRenderBatchAdd(element->renderBatch,
                                  element->position.x + element->size.x*0.5f,
                                  element->position.y + element->size.y*0.5f,
-                                 1.0f,
+                                 1.0f + increment,
                                  element->size.x, element->size.y, 0.0f,
                                  element->color.x, element->color.y,
                                  element->color.z, element->color.w);
     }
     else {
-        TMRendererRenderBatchAdd(element->renderBatch,
-                                 element->position.x + element->size.x*0.5f,
-                                 element->position.y + element->size.y*0.5f,
-                                 1.0f,
-                                 element->size.x, element->size.y, 0,
-                                 element->uvs.v);
+        if(element->type == TM_UI_TYPE_IMAGE_BUTTON) {
+            TMRendererRenderBatchAdd(element->renderBatch,
+                                     element->position.x + element->size.x*0.5f,
+                                     element->position.y + element->size.y*0.5f,
+                                     1.0f + increment,
+                                     element->size.x, element->size.y, 0,
+                                     element->uvs.v);
+        } else if (element->type == TM_UI_TYPE_LABEL) {
+            int letterCount = 0;
+            char *string = (char *)element->text;
+            while(*string != '\0') { ++letterCount; string++; }
+            float letterWidth = element->size.x / letterCount;
+            int offset = 0;
+            string = (char *)element->text;
+            while(*string != '\0') {
+                int letter = (int)*string;
+                string++;
+                if(letter >= 32 && letter <= 126) {
+                    letter -=32;
+                    int x = letter % 18;
+                    int y = letter / 18;
+                    int letterIndex = (y * 18 + x);
+                    float elementPosX = element->position.x + letterWidth * offset;
+                    TMRendererRenderBatchAdd(element->renderBatch,
+                                             elementPosX + letterWidth*0.5f,
+                                             element->position.y + element->size.y*0.5f,
+                                             1.0f + increment,
+                                             letterWidth, element->size.y, 0,
+                                             element->uvs, letterIndex, element->relUVs);
+                    offset++;
+                }
+            }
+        }
     }
 
 
@@ -211,7 +285,7 @@ void TMUIElementDraw(TMUIElement *element) {
 
         for(int i = 0; i < childCount; ++i) {
             TMUIElement *child = element->childs + i;
-            TMUIElementDraw(child);
+            TMUIElementDraw(child, increment - 0.01f);
         }
     }
 }

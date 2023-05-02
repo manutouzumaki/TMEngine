@@ -10,6 +10,7 @@ enum TMUIType {
     TM_UI_TYPE_UNDEFINE,
     TM_UI_TYPE_BUTTON,
     TM_UI_TYPE_IMAGE_BUTTON,
+    TM_UI_TYPE_SUB_IMAGE_BUTTON,
     TM_UI_TYPE_LABEL
 };
 
@@ -17,6 +18,9 @@ enum TMUIOrientation {
     TM_UI_ORIENTATION_HORIZONTAL,
     TM_UI_ORIENTATION_VERTICAL
 };
+
+
+typedef void (*PFN_OnClick) (int index, TMVec4 vec4);
 
 struct TMUIElement {
     TMUIElement *childs;
@@ -28,13 +32,16 @@ struct TMUIElement {
     TMVec4 oldColor;
     TMVec4 uvs;
 
-    //float *relUVs;
-    //int uvsIndex;
+    float *relUVs;
+    int uvsIndex;
+    const char *text;
 
     TMUIOrientation orientation;
     TMUIType type;
     int index;
     bool isHot;
+
+    PFN_OnClick onCLick;
 };
 
 
@@ -43,11 +50,12 @@ TM_EXPORT TMUIElement *TMUIElementCreate(TMVec2 position, TMVec2 size, TMVec4 co
                               TMUIType type, TMRenderBatch *renderBatch);
 TM_EXPORT void TMUIElementDestroy(TMUIElement *element);
 
-TM_EXPORT void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color, TMRenderBatch *renderBatch);
-TM_EXPORT void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 uvs, TMRenderBatch *renderBatch);
+TM_EXPORT void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color, TMRenderBatch *renderBatch, PFN_OnClick onCLick);
+TM_EXPORT void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 uvs, TMRenderBatch *renderBatch, PFN_OnClick onCLick);
+TM_EXPORT void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation orientation, TMVec4 font, float *fontUvs, const char *text, TMRenderBatch *renderBatch, PFN_OnClick onCLick);
 
 TM_EXPORT TMUIElement *TMUIElementGetChild(TMUIElement *element, int index);
-TM_EXPORT void TMUIElementDraw(TMUIElement *element);
+TM_EXPORT void TMUIElementDraw(TMUIElement *element, float increment);
 TM_EXPORT void TMUIElementProcessInput(TMUIElement *element,
                                        float offsetX, float offsetY,
                                        float width, float height,

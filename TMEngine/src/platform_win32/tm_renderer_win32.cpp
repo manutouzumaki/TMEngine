@@ -966,15 +966,14 @@ static void BatchQuadHandleSubUVs(TMBatchVertex *quad, int sprite, float *uvs, T
     float uOffset1 = uLen * relU1; 
     float vOffset1 = vLen * relV1; 
 
-    float u1 = absU0 + uOffset0;
-    float u0 = absU0 + uOffset1;
+    float u0 = absU0 + uOffset0;
+    float u1 = absU0 + uOffset1;
     float v0 = vLen - (absV0 + vOffset1);
     float v1 = vLen - (absV0 + vOffset0);
 
     quad[0].uvs = {u0, v0};
     quad[1].uvs = {u1, v0};
     quad[2].uvs = {u0, v1};
-
     quad[3].uvs = {u0, v1};
     quad[4].uvs = {u1, v0};
     quad[5].uvs = {u1, v1};
@@ -1127,6 +1126,38 @@ float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight, int *cou
     return uvs;
 }
 
+
+float *TMGenerateUVs(int texWidth, int texHeight, int tileWidth, int tileHeight, int *count) {
+    float width = (float)tileWidth / (float)texWidth;
+    float height = (float)tileHeight / (float)texHeight;
+    int cols = texWidth / tileWidth;
+    int rows = texHeight / tileHeight;
+    float *uvs = (float *)malloc(cols * rows * 4 * sizeof(float));
+    *count = cols * rows;
+    
+    float ux = 0.0f;
+    float uy = 0.0f;
+    float vx = width;
+    float vy = height;
+    
+    float *uvsPtr = uvs;
+    for(int j = 0; j < rows; ++j) {
+        for(int i = 0; i < cols; ++i) {
+            *uvsPtr++ = ux;
+            *uvsPtr++ = uy;
+            *uvsPtr++ = vx;
+            *uvsPtr++ = vy;
+
+            ux += width;
+            vx += width;
+        }
+        ux = 0;
+        vx = width;
+        uy += height;
+        vy += height;
+    }
+    return uvs;
+}
 
 // TODO: for this is only to render quad (expand this in de future) ...
 
