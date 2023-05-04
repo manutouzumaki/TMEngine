@@ -321,8 +321,7 @@ TMBuffer* TMRendererBufferCreate(TMRenderer* renderer,
         &buffer->layout);
 
     return buffer;
-  
-    return buffer;
+
 }
 
 TMBuffer* TMRendererBufferCreate(TMRenderer* renderer,
@@ -516,9 +515,9 @@ TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, con
         &shader->vertexShaderCompiled, &errorVertexShader);
     if (errorVertexShader != 0) {
         const char* errorString = (const char*)errorVertexShader->GetBufferPointer();
-        printf("ERROR VERTEX SHADER: %s\n", errorString);
+        printf("ERROR VERTEX SHADER: %s\n in: %s\n", errorString, vertPath);
         errorVertexShader->Release();
-
+        assert(!"ERROR VERTEX SHADER");
         return NULL;
     }
 
@@ -529,8 +528,10 @@ TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, con
         &shader->fragmentShaderCompile, &errorFragmentShader);
     if (errorFragmentShader != 0) {
         const char* errorString = (const char*)errorFragmentShader->GetBufferPointer();
-        printf("ERROR PIXEL SHADER: %s\n", errorString);
+        printf("ERROR PIXEL SHADER: %s\n in: %s\n", errorString, fragPath);
         errorFragmentShader->Release();
+        assert(!"ERROR VERTEX SHADER");
+        return NULL;
     }
 
     // create vertex and fragment shaders
@@ -622,7 +623,8 @@ TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferD
         printf("Error: failed creating shader buffer\n");
     }
     renderer->deviceContext->UpdateSubresource(shaderBuffer->buffer, 0, 0, bufferData, 0, 0);
-    renderer->deviceContext->VSSetConstantBuffers(0, 1, &shaderBuffer->buffer);
+    renderer->deviceContext->VSSetConstantBuffers(index, 1, &shaderBuffer->buffer);
+    shaderBuffer->index = index;
     return shaderBuffer;
 
 }
@@ -634,7 +636,7 @@ void TMRendererShaderBufferDestroy(TMRenderer* renderer, TMShaderBuffer* shaderB
 
 void TMRendererShaderBufferUpdate(TMRenderer* renderer, TMShaderBuffer* shaderBuffer, void* bufferData) {
     renderer->deviceContext->UpdateSubresource(shaderBuffer->buffer, 0, 0, bufferData, 0, 0);
-    renderer->deviceContext->VSSetConstantBuffers(0, 1, &shaderBuffer->buffer);
+    renderer->deviceContext->VSSetConstantBuffers(shaderBuffer->index, 1, &shaderBuffer->buffer);
 }
 
 

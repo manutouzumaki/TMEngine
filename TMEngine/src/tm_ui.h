@@ -10,7 +10,6 @@ enum TMUIType {
     TM_UI_TYPE_UNDEFINE,
     TM_UI_TYPE_BUTTON,
     TM_UI_TYPE_IMAGE_BUTTON,
-    TM_UI_TYPE_SUB_IMAGE_BUTTON,
     TM_UI_TYPE_LABEL
 };
 
@@ -21,47 +20,59 @@ enum TMUIOrientation {
 
 
 struct TMUIElement;
+struct TMShader;
+struct TMTexture;
+struct TMRenderer;
 
 typedef void (*PFN_OnClick) (TMUIElement *element);
 
-
 struct TMUIElement {
-    TMUIElement *childs;
-    TMRenderBatch *renderBatch;
-    
+    TMUIType type;
+    TMUIOrientation orientation;
+    TMShader *shader;
+    TMTexture *texture;
+ 
     TMVec2 position;
     TMVec2 size;
     TMVec4 color;
     TMVec4 oldColor;
-    TMVec4 uvs;
+    TMVec4 absUVs;
+    TMVec4 relUVs;
 
-    float *relUVs;
-    int uvsIndex;
     const char *text;
-
-    TMUIOrientation orientation;
-    TMUIType type;
     int index;
     bool isHot;
 
     PFN_OnClick onCLick;
+    TMUIElement *childs;
 };
 
 
-TM_EXPORT TMUIElement *TMUIElementCreate(TMVec2 position, TMVec2 size, TMVec4 color,
-                              TMUIOrientation orientation,
-                              TMUIType type, TMRenderBatch *renderBatch);
-TM_EXPORT void TMUIElementDestroy(TMUIElement *element);
+TM_EXPORT void TMUIInitialize(TMRenderer *renderer, TMShader *shader, float MetersToPixel);
+TM_EXPORT void TMUIShutdown(TMRenderer *renderer);
 
-TM_EXPORT void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color, TMRenderBatch *renderBatch, PFN_OnClick onCLick);
-TM_EXPORT void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 uvs, TMRenderBatch *renderBatch, PFN_OnClick onCLick);
-TM_EXPORT void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation orientation, TMVec4 font, float *fontUvs, const char *text, TMRenderBatch *renderBatch, PFN_OnClick onCLick);
+TM_EXPORT TMUIElement *TMUIElementCreateButton(TMUIOrientation orientation, TMVec2 position, TMVec2 size, TMVec4 color,
+                                               TMShader *shader, PFN_OnClick onCLick);
+TM_EXPORT TMUIElement *TMUIElementCreateImageButton(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
+                                                    TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
+                                                    TMShader *shader, PFN_OnClick onCLick);
+TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
+                                              const char *text, TMVec4 color,
+                                              TMShader *shader, PFN_OnClick onCLick);
+
+TM_EXPORT void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color,
+                                         TMShader *shader, PFN_OnClick onCLick);
+TM_EXPORT void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation,
+                                              TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
+                                              TMShader *shader, PFN_OnClick onCLick);
+TM_EXPORT void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation orientation,
+                                        const char *text, TMVec4 color,
+                                        TMShader *shader, PFN_OnClick onCLick);
 
 TM_EXPORT TMUIElement *TMUIElementGetChild(TMUIElement *element, int index);
-TM_EXPORT void TMUIElementDraw(TMUIElement *element, float increment);
-TM_EXPORT void TMUIElementProcessInput(TMUIElement *element,
-                                       float offsetX, float offsetY,
-                                       float width, float height,
-                                       TMMat4 proj, TMMat4 view);
+
+TM_EXPORT void TMUIElementDestroy(TMUIElement *element);
+TM_EXPORT void TMUIElementProcessInput(TMUIElement *element, float offsetX, float offsetY, float width, float height);
+TM_EXPORT void TMUIElementDraw(TMRenderer *renderer, TMUIElement *element, float increment);
 
 #endif

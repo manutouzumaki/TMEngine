@@ -45,9 +45,16 @@ int main() {
 
     TMRenderer *renderer = TMRendererCreate(window);
 
-    TMShader *shader = TMRendererShaderCreate(renderer,
-                                              "../../assets/shaders/batchVert.hlsl",
-                                              "../../assets/shaders/batchFrag.hlsl");
+    TMShader *spriteShader = TMRendererShaderCreate(renderer,
+                                                    "../../assets/shaders/defaultVert.hlsl",
+                                                    "../../assets/shaders/spriteFrag.hlsl");
+
+    TMShader *colorShader = TMRendererShaderCreate(renderer,
+                                                   "../../assets/shaders/defaultVert.hlsl",
+                                                   "../../assets/shaders/colorFrag.hlsl");
+
+    TMUIInitialize(renderer, colorShader, MetersToPixel);
+
 
     int width = TMRendererGetWidth(renderer);
     int height = TMRendererGetHeight(renderer);
@@ -79,48 +86,40 @@ int main() {
     TMHashmap *absUVs = TMHashmapCreate(sizeof(TMVec4));
     TMTexture *texture = TMRendererTextureCreateAtlas(renderer, images, ARRAY_LENGTH(images), 1024*2, 1024*2, absUVs);
 
-    TMRenderBatch *renderBatch = TMRendererRenderBatchCreate(renderer, shader, texture, 100);
+    TMUIElement *options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {3, 0.4}, {0.1, 0.1, 0.1, 1}, colorShader, NULL);
+    TMUIElementAddChildLabel(options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, spriteShader, OptionSelected);
+    TMUIElementAddChildLabel(options, TM_UI_ORIENTATION_VERTICAL, " Colors ",   {1, 1, 1, 1},  spriteShader, OptionSelected);
 
-    TMUIElement *options = TMUIElementCreate({0, 2}, {3, 0.4}, {0.1f, 0.1f, 0.1f, 1}, TM_UI_ORIENTATION_HORIZONTAL,   TM_UI_TYPE_BUTTON, renderBatch);
-    TMUIElementAddChildLabel(options, TM_UI_ORIENTATION_VERTICAL,
-                             Texture(absUVs, "../../assets/images/font.png"), fontUVs,
-                             " Textures ",
-                             renderBatch, OptionSelected);
-    TMUIElementAddChildLabel(options, TM_UI_ORIENTATION_VERTICAL,
-                             Texture(absUVs, "../../assets/images/font.png"), fontUVs,
-                             " Colors ",
-                             renderBatch, OptionSelected);
-
-
-    TMUIElement *Blocks = TMUIElementCreate({0, 0}, {6, 2}, {0.1f, 0.4f, 0.1f, 1}, TM_UI_ORIENTATION_VERTICAL, TM_UI_TYPE_BUTTON, renderBatch);
-    TMUIElementAddChildButton(Blocks, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, renderBatch, Stub);
-    TMUIElementAddChildButton(Blocks, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, renderBatch, Stub);
+    TMUIElement *Blocks = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.4f, 0.1f, 1}, colorShader, NULL);
+    TMUIElementAddChildButton(Blocks, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, colorShader, NULL);
+    TMUIElementAddChildButton(Blocks, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, colorShader, NULL);
     TMUIElement *child = TMUIElementGetChild(Blocks, 0);
     for(int i = 0; i < ARRAY_LENGTH(images); ++i) {
-        TMUIElementAddChildImageButton(child, TM_UI_ORIENTATION_VERTICAL, Texture(absUVs, images[i]), renderBatch, ElementSelected);
+        TMUIElementAddChildImageButton(child, TM_UI_ORIENTATION_VERTICAL, texture, {0, 0, 1, 1}, Texture(absUVs, images[i]), spriteShader, ElementSelected);
     }
     child = TMUIElementGetChild(Blocks, 1);
     for(int i = ARRAY_LENGTH(images) - 1; i >= 0;  --i) {
-        TMUIElementAddChildImageButton(child, TM_UI_ORIENTATION_VERTICAL, Texture(absUVs, images[i]), renderBatch, ElementSelected);
+        TMUIElementAddChildImageButton(child, TM_UI_ORIENTATION_VERTICAL, texture, {0, 0, 1, 1}, Texture(absUVs, images[i]), spriteShader, ElementSelected);
     }
 
 
-    TMUIElement *Prefabs = TMUIElementCreate({0, 0}, {6, 2}, {0.4f, 0.1f, 0.1f, 1}, TM_UI_ORIENTATION_VERTICAL, TM_UI_TYPE_BUTTON, renderBatch);
-    TMUIElementAddChildButton(Prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, renderBatch, Stub);
-    TMUIElementAddChildButton(Prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, renderBatch, Stub);
-    TMUIElementAddChildButton(Prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, renderBatch, Stub);
+    TMUIElement *Prefabs = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.4f, 0.1f, 0.1f, 1}, colorShader, NULL);
+    TMUIElementAddChildButton(Prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, colorShader, NULL);
+    TMUIElementAddChildButton(Prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, colorShader, NULL);
+    TMUIElementAddChildButton(Prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1}, colorShader, NULL);
     child = TMUIElementGetChild(Prefabs, 0);
     for(int i = 0; i < 8; ++i) {
-        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0.1f + 0.1f*(float)i, 0, 0, 1}, renderBatch, ElementSelected);
+        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0.1f + 0.1f*(float)i, 0, 0, 1}, colorShader, ElementSelected);
     }
     child = TMUIElementGetChild(Prefabs, 1);
     for(int i = 0; i < 8; ++i) {
-        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0.1f + 0.1f*(float)i, 0, 1}, renderBatch, ElementSelected);
+        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0.1f + 0.1f*(float)i, 0, 1}, colorShader, ElementSelected);
     }
     child = TMUIElementGetChild(Prefabs, 2);
     for(int i = 0; i < 8; ++i) {
-        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0, 0.1f + 0.1f*(float)i, 1}, renderBatch, ElementSelected);
+        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0, 0.1f + 0.1f*(float)i, 1}, colorShader, ElementSelected);
     }
+
 
     TMRendererDepthTestEnable(renderer);
 
@@ -141,55 +140,53 @@ int main() {
         }
 #endif
         
-        TMUIElementProcessInput(options, pos.x, pos.y, (float)width, (float)height, proj, view);
+        TMUIElementProcessInput(options, pos.x, pos.y, (float)width, (float)height);
         if(editorState.option == 0) {
-            TMUIElementProcessInput(Blocks, pos.x, pos.y, (float)width, (float)height, proj, view);
+            TMUIElementProcessInput(Blocks, pos.x, pos.y, (float)width, (float)height);
         }
         else {
-            TMUIElementProcessInput(Prefabs, pos.x, pos.y, (float)width, (float)height, proj, view);
+            TMUIElementProcessInput(Prefabs, pos.x, pos.y, (float)width, (float)height);
         }
-
 
         TMRendererClear(renderer, 0.2, 0.2, 0.4, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
 
-        TMUIElementDraw(options, 0.0f);
+        TMUIElementDraw(renderer, options, 0.0f);
+
         if(editorState.option == 0) {
-            TMUIElementDraw(Blocks, 0.0f);
+            TMUIElementDraw(renderer, Blocks, 0.0f);
         }
         else {
-            TMUIElementDraw(Prefabs, 0.0f);
+            TMUIElementDraw(renderer, Prefabs, 0.0f);
         }
 
         if(editorState.element) {
 
-            TMUIElement *viewport = TMUIElementCreate({10.8, 0}, {2, 2}, {0.1f, 0.1f, 0.1f, 1}, TM_UI_ORIENTATION_HORIZONTAL,   TM_UI_TYPE_BUTTON, renderBatch);
+            TMUIElement *viewport = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {10.8, 0}, {2, 2}, {0.1f, 0.1f, 0.1f, 1}, colorShader, NULL);
             if(editorState.element->type == TM_UI_TYPE_IMAGE_BUTTON) {
                 TMUIElement *element = editorState.element;
-                TMUIElementAddChildImageButton(viewport, TM_UI_ORIENTATION_VERTICAL, element->uvs, renderBatch, Stub);
+                TMUIElementAddChildImageButton(viewport, TM_UI_ORIENTATION_VERTICAL, texture, element->absUVs, element->relUVs, spriteShader, NULL);
             }
             else if (editorState.element->type == TM_UI_TYPE_BUTTON) {
                 TMUIElement *element = editorState.element;
-                TMUIElementAddChildButton(viewport, TM_UI_ORIENTATION_HORIZONTAL, element->oldColor, renderBatch, Stub);
+                TMUIElementAddChildButton(viewport, TM_UI_ORIENTATION_HORIZONTAL, element->oldColor, colorShader, NULL);
             }
-            TMUIElementDraw(viewport, 0.0f);
-            TMRendererRenderBatchDraw(renderBatch);
+            TMUIElementDraw(renderer, viewport, 0.0f);
             TMUIElementDestroy(viewport);
 
         }
-
-        TMRendererRenderBatchDraw(renderBatch);
 
 
         TMRendererPresent(renderer, 1);
         TMWindowPresent(window);
     }
 
+    TMUIShutdown(renderer);
     free(fontUVs);
     TMUIElementDestroy(options);
     TMHashmapDestroy(absUVs);
-    TMRendererRenderBatchDestroy(renderer, renderBatch);
     TMRendererTextureDestroy(renderer, texture);
-    TMRendererShaderDestroy(renderer, shader);
+    TMRendererShaderDestroy(renderer, spriteShader);
+    TMRendererShaderDestroy(renderer, colorShader);
     TMRendererDestroy(renderer);
     TMWindowDestroy(window);
 

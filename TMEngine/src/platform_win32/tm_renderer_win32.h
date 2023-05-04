@@ -30,6 +30,7 @@ struct TMShader {
 
 struct TMShaderBuffer {
     ID3D11Buffer *buffer;
+    unsigned int index;
 };
 
 struct TMTexture {
