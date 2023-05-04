@@ -3,9 +3,6 @@
 #include "utils/tm_darray.h"
 #include "tm_input.h"
 
-
-// TODO: REDO ....
-
 #include <assert.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -32,6 +29,8 @@ static unsigned int indices[] = {
 };
 
 // TODO: pack this into a struct
+static TMShader *gColorShader;
+static TMShader *gSpriteShader;
 static TMBuffer *gVertexBuffer;
 static TMShaderBuffer *gShaderBuffer;
 static ConstBuffer gConstBuffer;
@@ -39,11 +38,21 @@ static TMTexture *gFontTexture;
 static float *gFontUVs;
 static int gFontCount;
 
-void TMUIInitialize(TMRenderer *renderer, TMShader *shader, float MetersToPixel) {
+void TMUIInitialize(TMRenderer *renderer, float MetersToPixel) {
+
+
+    gSpriteShader = TMRendererShaderCreate(renderer,
+                                           "../../assets/shaders/uiVert.hlsl",
+                                           "../../assets/shaders/spriteFrag.hlsl");
+
+    gColorShader = TMRendererShaderCreate(renderer,
+                                          "../../assets/shaders/uiVert.hlsl",
+                                          "../../assets/shaders/colorFrag.hlsl");
+
     gVertexBuffer = TMRendererBufferCreate(renderer,
                                           vertices, ARRAY_LENGTH(vertices),
                                           indices, ARRAY_LENGTH(indices),
-                                          shader);
+                                          gColorShader);
 
 
     int width = TMRendererGetWidth(renderer);
@@ -70,19 +79,21 @@ void TMUIShutdown(TMRenderer *renderer) {
     TMRendererTextureDestroy(renderer, gFontTexture);
     TMRendererShaderBufferDestroy(renderer, gShaderBuffer);
     TMRendererBufferDestroy(renderer, gVertexBuffer);
+    TMRendererShaderDestroy(renderer, gColorShader);
+    TMRendererShaderDestroy(renderer, gSpriteShader);
 }
 
 
 TMUIElement *TMUIElementCreateButton(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
                                      TMVec4 color,
-                                     TMShader *shader, PFN_OnClick onCLick) {
+                                     PFN_OnClick onCLick) {
 
     TMUIElement *element = (TMUIElement *)malloc(sizeof(TMUIElement));
     memset(element, 0, sizeof(TMUIElement));
     element->type = TM_UI_TYPE_BUTTON;
     element->orientation = orientation;
     
-    element->shader = shader;
+    element->shader = gColorShader;
 
     element->position = position;
     element->size = size;
@@ -96,14 +107,14 @@ TMUIElement *TMUIElementCreateButton(TMUIOrientation orientation, TMVec2 positio
 
 TMUIElement *TMUIElementCreateImageButton(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
                                           TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
-                                          TMShader *shader, PFN_OnClick onCLick) {
+                                          PFN_OnClick onCLick) {
 
     TMUIElement *element = (TMUIElement *)malloc(sizeof(TMUIElement));
     memset(element, 0, sizeof(TMUIElement));
     element->type = TM_UI_TYPE_IMAGE_BUTTON;
     element->orientation = orientation;
     
-    element->shader = shader;
+    element->shader = gSpriteShader;
     element->texture = texture;
     element->absUVs = absUVs;
     element->relUVs = relUVs;
@@ -120,14 +131,14 @@ TMUIElement *TMUIElementCreateImageButton(TMUIOrientation orientation, TMVec2 po
 
 TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
                                     const char *text, TMVec4 color,
-                                    TMShader *shader, PFN_OnClick onCLick) {
+                                    PFN_OnClick onCLick) {
 
     TMUIElement *element = (TMUIElement *)malloc(sizeof(TMUIElement));
     memset(element, 0, sizeof(TMUIElement));
     element->type = TM_UI_TYPE_LABEL;
     element->orientation = orientation;
     
-    element->shader = shader;
+    element->shader = gSpriteShader;
     element->texture = gFontTexture;
     element->absUVs = {0, 0, 1, 1};
     element->relUVs = {0, 0, 1, 1};
@@ -162,11 +173,11 @@ void TMUIElementDestroy(TMUIElement *element) {
 
 void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation,
                                TMVec4 color,
-                               TMShader *shader, PFN_OnClick onCLick) {
+                               PFN_OnClick onCLick) {
     TMUIElement element{};
     element.type = TM_UI_TYPE_BUTTON;
     element.orientation = orientation;
-    element.shader = shader;
+    element.shader = gColorShader;
     element.color = color;
     element.oldColor = color;
     element.onCLick = onCLick;
@@ -200,11 +211,11 @@ void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation,
 
 void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation,
                                     TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
-                                    TMShader *shader, PFN_OnClick onCLick) {
+                                    PFN_OnClick onCLick) {
     TMUIElement element{};
     element.type = TM_UI_TYPE_IMAGE_BUTTON;
     element.orientation = orientation;
-    element.shader = shader;
+    element.shader = gSpriteShader;
     element.texture = texture;
     element.absUVs = absUVs;
     element.relUVs = relUVs;
@@ -242,11 +253,11 @@ void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orienta
 
 void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation orientation,
                               const char *text, TMVec4 color,
-                              TMShader *shader, PFN_OnClick onCLick) {
+                              PFN_OnClick onCLick) {
     TMUIElement element{};
     element.type = TM_UI_TYPE_LABEL;
     element.orientation = orientation;
-    element.shader = shader;
+    element.shader = gSpriteShader;
     element.texture = gFontTexture;
     element.absUVs = {0, 0, 1, 1};
     element.relUVs = {0, 0, 1, 1};
@@ -289,6 +300,32 @@ TMUIElement *TMUIElementGetChild(TMUIElement *element, int index) {
     return element->childs + index;
 }
 
+bool CheckChilds(TMUIElement *element) {
+    if(element->childs) {
+        for(int i = 0; i < TMDarraySize(element->childs); ++i) {
+            TMUIElement *child = element->childs + i;
+            if(child->isHot) {
+                return true;
+            }
+            CheckChilds(child);
+        }
+        return false;
+    }
+    return false;
+}
+
+void TMUIMouseIsHot(TMUIElement *element, bool *result) {
+    if(element->childs) {
+        int childCount = TMDarraySize(element->childs);
+        for(int i = 0; i < childCount; ++i) {
+            TMUIElement *child = element->childs + i;
+            TMUIMouseIsHot(child, result);
+        }
+    }
+    else {
+        if(*result == false) *result = element->isHot;
+    }
+}
 
 void TMUIElementProcessInput(TMUIElement *element,
                              float offsetX, float offsetY,
@@ -327,7 +364,7 @@ void TMUIElementProcessInput(TMUIElement *element,
         }
         else {
             element->isHot = true;
-            element->color = {1, 1, 1, 1};
+            element->color = {0.3, 0.3, 0.3, 1};
             if(TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT)) {
                 if(element->onCLick) element->onCLick(element);
             }
@@ -411,54 +448,4 @@ void TMUIElementDraw(TMRenderer *renderer, TMUIElement *element, float increment
             TMUIElementDraw(renderer, child, increment - 0.01f);
         }
     }
-
-
-
-#if 0
-    if(element->type == TM_UI_TYPE_BUTTON || element->isHot) {
-        TMRendererRenderBatchAdd(element->renderBatch,
-                                 element->position.x + element->size.x*0.5f,
-                                 element->position.y + element->size.y*0.5f,
-                                 1.0f + increment,
-                                 element->size.x, element->size.y, 0.0f,
-                                 element->color.x, element->color.y,
-                                 element->color.z, element->color.w);
-    }
-    else {
-        if(element->type == TM_UI_TYPE_IMAGE_BUTTON) {
-            TMRendererRenderBatchAdd(element->renderBatch,
-                                     element->position.x + element->size.x*0.5f,
-                                     element->position.y + element->size.y*0.5f,
-                                     1.0f + increment,
-                                     element->size.x, element->size.y, 0,
-                                     element->uvs.v);
-        } else if (element->type == TM_UI_TYPE_LABEL) {
-            int letterCount = 0;
-            char *string = (char *)element->text;
-            while(*string != '\0') { ++letterCount; string++; }
-            float letterWidth = element->size.x / letterCount;
-            int offset = 0;
-            string = (char *)element->text;
-            while(*string != '\0') {
-                int letter = (int)*string;
-                string++;
-                if(letter >= 32 && letter <= 126) {
-                    letter -=32;
-                    int x = letter % 18;
-                    int y = letter / 18;
-                    int letterIndex = (y * 18 + x);
-                    float elementPosX = element->position.x + letterWidth * offset;
-                    TMRendererRenderBatchAdd(element->renderBatch,
-                                             elementPosX + letterWidth*0.5f,
-                                             element->position.y + element->size.y*0.5f,
-                                             1.0f + increment,
-                                             letterWidth, element->size.y, 0,
-                                             element->uvs, letterIndex, element->relUVs);
-                    offset++;
-                }
-            }
-        }
-    }
-#endif
-
 }

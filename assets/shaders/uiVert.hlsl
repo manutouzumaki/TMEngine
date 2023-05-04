@@ -1,4 +1,4 @@
-cbuffer CDefaultBuffer : register(b0)
+cbuffer CDefaultBuffer : register(b13)
 {
     matrix proj;
     matrix view;
