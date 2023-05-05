@@ -73,6 +73,15 @@ TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
     return result; 
 }
 
+float Max(float a, float b) {
+    if(a > b) return a;
+    return b;
+}
+
+float Min(float a, float b) {
+    if(a < b) return a;
+    return b;
+}
 
 void OptionSelected(TMUIElement *element) {
     printf("Option selected\n");
@@ -301,9 +310,9 @@ int main() {
                 for(int i = 0; i < TMDarraySize(gEditorState.entities); ++i) {
 
                     Entity *entity = gEditorState.entities + i;
-                    float minX = entity->position.x - entity->size.x * 0.5f;
+                    float minX = entity->position.x - entity->size.x*0.5f;
                     float maxX = minX + entity->size.x;
-                    float minY = entity->position.y - entity->size.y *0.5f;
+                    float minY = entity->position.y - entity->size.y*0.5f;
                     float maxY = minY + entity->size.y;
 
                     float mouseX;
@@ -336,7 +345,10 @@ int main() {
                 Entity *entity = gEditorState.selectedEntity;
                 entity->size.x += offsetX;
                 entity->size.y += offsetY;
+                entity->size.x = Max(entity->size.x, 0.1f);
+                entity->size.y = Max(entity->size.y, 0.1f);
             }
+
         }
 
 
@@ -365,23 +377,16 @@ int main() {
                     constBuffer.relUVs = entity->relUVs;
                     TMRendererShaderBufferUpdate(renderer, gEditorState.shaderBuffer, &constBuffer);
                     TMRendererDrawBufferElements(renderer, gEditorState.vertexBuffer);
-
-
             }
         }
 
 
-        {
-            if(gEditorState.selectedEntity) {
-                Entity *entity = gEditorState.selectedEntity;
-                TMDebugRendererDrawQuad(entity->position.x, entity->position.y, entity->size.x, entity->size.y, 0, 0xFF00FF00);
-            }
+        if(gEditorState.selectedEntity) {
+            Entity *entity = gEditorState.selectedEntity;
+            TMDebugRendererDrawQuad(entity->position.x, entity->position.y, entity->size.x, entity->size.y, 0, 0xFF00FF00);
         }
 
         TMDebugRenderDraw();
-
-
-
 
         TMUIElementDraw(renderer, options, 0.0f);
 
