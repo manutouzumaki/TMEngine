@@ -2,6 +2,7 @@
 #include <tm_window.h>
 #include <tm_renderer.h>
 #include <tm_ui.h>
+#include <tm_debug_renderer.h>
 #include <utils/tm_hashmap.h>
 #include <utils/tm_math.h>
 #include <utils/tm_darray.h>
@@ -92,8 +93,6 @@ void AddEntity(float posX, float posY) {
 
 }
 
-void Stub(TMUIElement *element) {}
-
 int main() {
 
     TMWindow *window = TMWindowCreate(1280, 720, "TMEditor");
@@ -107,6 +106,9 @@ int main() {
     gEditorState.colorShader = TMRendererShaderCreate(renderer,
                                                       "../../assets/shaders/defaultVert.hlsl",
                                                       "../../assets/shaders/colorFrag.hlsl");
+
+    TMDebugRendererInitialize(renderer, 100);
+
     TMUIInitialize(renderer, MetersToPixel);
     int width = TMRendererGetWidth(renderer);
     int height = TMRendererGetHeight(renderer);
@@ -232,6 +234,15 @@ int main() {
 
         TMRendererClear(renderer, 0.2, 0.2, 0.4, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
 
+        for(int y = 0; y < (height/MetersToPixel) + 2; ++y) {
+            int offsetY = (int)pos.y;
+            TMDebugRendererDrawLine(0 + pos.x, y  + offsetY, width/MetersToPixel + pos.x, y + offsetY, 0xFF666666);
+        }
+        for(int x = 0; x < (width/MetersToPixel) + 2; ++x) {
+            int offsetX = (int)pos.x;
+            TMDebugRendererDrawLine(x + offsetX, 0 + pos.y, x + offsetX, height/MetersToPixel + pos.y, 0xFF666666);
+        }
+ 
         if(gEditorState.entities) {
             for(int i = 0; i < TMDarraySize(gEditorState.entities); ++i) {
                 Entity *entity = gEditorState.entities + i;
@@ -278,11 +289,13 @@ int main() {
         }
 
 
+        TMDebugRenderDraw();
         TMRendererPresent(renderer, 1);
         TMWindowPresent(window);
     }
 
     TMUIShutdown(renderer);
+    TMDebugRendererShutdown();
     free(fontUVs);
     TMUIElementDestroy(options);
     TMHashmapDestroy(absUVs);
