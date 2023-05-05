@@ -8,6 +8,7 @@
 #include <utils/tm_darray.h>
 #include <tm_input.h>
 #include <stdio.h>
+#include <math.h>
 
 struct ConstBuffer {
     TMMat4 proj;
@@ -28,16 +29,26 @@ struct Entity {
     TMTexture *texture;
 };
 
+enum ModifyOption {
+    MODIFY_NONE,
+    MODIFY_TRANSLATE,
+    MODIFY_SCALE
+};
 
 struct EditorState {
     int option;
     TMUIElement *element;
     Entity *entities;
+    Entity *selectedEntity;
 
     TMBuffer *vertexBuffer;
     TMShaderBuffer *shaderBuffer;
     TMShader *colorShader;
     TMShader *spriteShader;
+
+    ModifyOption modifyOption;
+
+
 };
 
 static float MetersToPixel = 100;
@@ -66,11 +77,20 @@ TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
 void OptionSelected(TMUIElement *element) {
     printf("Option selected\n");
     gEditorState.option = element->index;
+    gEditorState.modifyOption = MODIFY_NONE;
+    gEditorState.selectedEntity = NULL;
+}
+
+void ClearSelected(TMUIElement *element) {
+    printf("Clear selected\n");
+    gEditorState.element = NULL;
 }
 
 void ElementSelected(TMUIElement *element) {
     printf("Element selected\n");
     gEditorState.element = element;
+    gEditorState.modifyOption = MODIFY_NONE;
+    gEditorState.selectedEntity = NULL;
 }
 
 void AddEntity(float posX, float posY) {
@@ -80,7 +100,7 @@ void AddEntity(float posX, float posY) {
     entity.color = element->oldColor;
     entity.absUVs = element->absUVs;
     entity.relUVs = element->relUVs;
-    entity.position = {posX, posY};
+    entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
     entity.size = {1, 1};
     entity.texture = element->texture;
     if(element->type == TM_UI_TYPE_BUTTON) {
@@ -91,6 +111,54 @@ void AddEntity(float posX, float posY) {
     }
     TMDarrayPush(gEditorState.entities, entity, Entity);
 
+}
+
+void TranslateEntity(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_TRANSLATE;
+}
+
+void ScaleEntity(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_SCALE;
+}
+
+void MouseToWorld(float *mouseX, float *mouseY, TMMat4 proj, TMMat4 view, float width, float height) {
+    *mouseX = (float)TMInputMousePositionX();
+    *mouseY = height - (float)TMInputMousePositionY();
+
+    TMMat4 invView = TMMat4Inverse(view);
+    TMMat4 invProj = TMMat4Inverse(proj);
+
+    TMVec2 screenCoord = {*mouseX, *mouseY};
+    TMVec2 viewportPos = {pos.x, pos.y};
+    TMVec2 viewportSize = {width, height};
+    TMVec2 normalizeP = (screenCoord - viewportPos) / viewportSize;
+    TMVec2 one = {1, 1};
+    normalizeP = (normalizeP * 2.0f) - one;
+    TMVec4 position = {normalizeP.x, normalizeP.y, 0 , 1};
+    position = invView * invProj * position;
+
+    *mouseX = position.x;
+    *mouseY = position.y;
+}
+
+void LastMouseToWorld(float *mouseX, float *mouseY, TMMat4 proj, TMMat4 view, float width, float height) {
+    *mouseX = (float)TMInputMouseLastPositionX();
+    *mouseY = height - (float)TMInputMouseLastPositionY();
+
+    TMMat4 invView = TMMat4Inverse(view);
+    TMMat4 invProj = TMMat4Inverse(proj);
+
+    TMVec2 screenCoord = {*mouseX, *mouseY};
+    TMVec2 viewportPos = {pos.x, pos.y};
+    TMVec2 viewportSize = {width, height};
+    TMVec2 normalizeP = (screenCoord - viewportPos) / viewportSize;
+    TMVec2 one = {1, 1};
+    normalizeP = (normalizeP * 2.0f) - one;
+    TMVec4 position = {normalizeP.x, normalizeP.y, 0 , 1};
+    position = invView * invProj * position;
+
+    *mouseX = position.x;
+    *mouseY = position.y;
 }
 
 int main() {
@@ -144,9 +212,10 @@ int main() {
     TMHashmap *absUVs = TMHashmapCreate(sizeof(TMVec4));
     TMTexture *texture = TMRendererTextureCreateAtlas(renderer, images, ARRAY_LENGTH(images), 1024*2, 1024*2, absUVs);
 
-    TMUIElement *options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {3, 0.4}, {0.1, 0.1, 0.1, 1});
+    TMUIElement *options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {4, 0.4}, {0.1, 0.1, 0.1, 1});
     TMUIElementAddChildLabel(options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, OptionSelected);
     TMUIElementAddChildLabel(options, TM_UI_ORIENTATION_VERTICAL, " Colors ",   {1, 1, 1, 1}, OptionSelected);
+    TMUIElementAddChildLabel(options, TM_UI_ORIENTATION_VERTICAL, " Clear Brush ",   {1, 1, 1, 1}, ClearSelected);
 
     TMUIElement *Blocks = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.4f, 0.1f, 1});
     TMUIElementAddChildButton(Blocks, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
@@ -177,7 +246,12 @@ int main() {
         TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0, 0.1f + 0.1f*(float)i, 1}, ElementSelected);
     }
 
-    TMRendererDepthTestEnable(renderer);
+    TMUIElement *Modify = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {8.8, 0}, {4, 1}, {0.1f, 0.1f, 0.1f, 1});
+    TMUIElementAddChildLabel(Modify, TM_UI_ORIENTATION_VERTICAL, " Scale ", {1, 1, 1, 1}, ScaleEntity);
+    TMUIElementAddChildLabel(Modify, TM_UI_ORIENTATION_VERTICAL, " Translate ", {1, 1, 1, 1}, TranslateEntity);
+
+    // TODO: add a way to enable depth test for z-index
+    TMRendererDepthTestDisable(renderer);
 
     while(!TMWindowShouldClose(window)) {
         TMWindowFlushEventQueue(window);
@@ -189,32 +263,22 @@ int main() {
         else {
             TMUIElementProcessInput(Prefabs, pos.x, pos.y, (float)width, (float)height);
         }
+        if(!gEditorState.element && gEditorState.selectedEntity) {
+            TMUIElementProcessInput(Modify, pos.x, pos.y, (float)width, (float)height);
+        }
 
         gMouseIsHot = false;
         TMUIMouseIsHot(options, &gMouseIsHot);
         TMUIMouseIsHot(Blocks,  &gMouseIsHot);
         TMUIMouseIsHot(Prefabs, &gMouseIsHot);
+        if(!gEditorState.element && gEditorState.selectedEntity) {
+            TMUIMouseIsHot(Modify, &gMouseIsHot);
+        }
 
         if(!gMouseIsHot && TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT) && gEditorState.element) {
-
-            float mouseX = (float)TMInputMousePositionX();
-            float mouseY = height - (float)TMInputMousePositionY();
-
-            TMMat4 invView = TMMat4Inverse(constBuffer.view);
-            TMMat4 invProj = TMMat4Inverse(constBuffer.proj);
-
-            TMVec2 screenCoord = {mouseX, mouseY};
-            TMVec2 viewportPos = {pos.x, pos.y};
-            TMVec2 viewportSize = {(float)width, (float)height};
-            TMVec2 normalizeP = (screenCoord - viewportPos) / viewportSize;
-            TMVec2 one = {1, 1};
-            normalizeP = (normalizeP * 2.0f) - one;
-            TMVec4 position = {normalizeP.x, normalizeP.y, 0 , 1};
-            position = invView * invProj * position;
-
-            mouseX = position.x;
-            mouseY = position.y;
-
+            float mouseX;
+            float mouseY;
+            MouseToWorld(&mouseX, &mouseY, constBuffer.proj, constBuffer.view, width, height);
             AddEntity(mouseX, mouseY);
         }
 
@@ -229,11 +293,55 @@ int main() {
                 constBuffer.view = view;
                 TMRendererShaderBufferUpdate(renderer, gEditorState.shaderBuffer, &constBuffer);
             }
+
+        }
+
+        if(!gMouseIsHot && !gEditorState.element && gEditorState.entities) {
+            if(TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT)) {
+                for(int i = 0; i < TMDarraySize(gEditorState.entities); ++i) {
+
+                    Entity *entity = gEditorState.entities + i;
+                    float minX = entity->position.x - entity->size.x * 0.5f;
+                    float maxX = minX + entity->size.x;
+                    float minY = entity->position.y - entity->size.y *0.5f;
+                    float maxY = minY + entity->size.y;
+
+                    float mouseX;
+                    float mouseY;
+                    MouseToWorld(&mouseX, &mouseY, constBuffer.proj, constBuffer.view, width, height);
+
+                    if(mouseX > minX && mouseX <= maxX &&
+                       mouseY > minY && mouseY <= maxY) {
+                        gEditorState.selectedEntity = entity;
+                    }
+
+                }
+            }
+        }
+
+        if(!gMouseIsHot && gEditorState.selectedEntity && TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
+            float mouseX, mouseY;
+            float lastMouseX, lastMouseY;
+            MouseToWorld(&mouseX, &mouseY, constBuffer.proj, constBuffer.view, width, height);
+            LastMouseToWorld(&lastMouseX, &lastMouseY, constBuffer.proj, constBuffer.view, width, height);
+            float offsetX = mouseX - lastMouseX;
+            float offsetY = mouseY - lastMouseY;
+
+            if(gEditorState.modifyOption == MODIFY_TRANSLATE) {
+                Entity *entity = gEditorState.selectedEntity;
+                entity->position.x += offsetX;
+                entity->position.y += offsetY;
+            }
+            else if (gEditorState.modifyOption == MODIFY_SCALE){
+                Entity *entity = gEditorState.selectedEntity;
+                entity->size.x += offsetX;
+                entity->size.y += offsetY;
+            }
         }
 
 
         TMRendererClear(renderer, 0.2, 0.2, 0.4, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
-
+ 
         for(int y = 0; y < (height/MetersToPixel) + 2; ++y) {
             int offsetY = (int)pos.y;
             TMDebugRendererDrawLine(0 + pos.x, y  + offsetY, width/MetersToPixel + pos.x, y + offsetY, 0xFF666666);
@@ -263,6 +371,18 @@ int main() {
         }
 
 
+        {
+            if(gEditorState.selectedEntity) {
+                Entity *entity = gEditorState.selectedEntity;
+                TMDebugRendererDrawQuad(entity->position.x, entity->position.y, entity->size.x, entity->size.y, 0, 0xFF00FF00);
+            }
+        }
+
+        TMDebugRenderDraw();
+
+
+
+
         TMUIElementDraw(renderer, options, 0.0f);
 
         if(gEditorState.option == 0) {
@@ -270,6 +390,10 @@ int main() {
         }
         else {
             TMUIElementDraw(renderer, Prefabs, 0.0f);
+        }
+
+        if(!gEditorState.element && gEditorState.selectedEntity) {
+            TMUIElementDraw(renderer, Modify, 0.0f);
         }
 
         if(gEditorState.element) {
@@ -288,8 +412,6 @@ int main() {
 
         }
 
-
-        TMDebugRenderDraw();
         TMRendererPresent(renderer, 1);
         TMWindowPresent(window);
     }
