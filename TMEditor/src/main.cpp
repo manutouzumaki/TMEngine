@@ -196,54 +196,102 @@ TM_EXPORT void TMJsonObjectFree(TMJsonObject *object);
     TMJsonObjectSetName(&jsonScene, "Scene");
 
     for(int i = 0; i < TMDarraySize(gEditorState.entities); ++i) {
-            Entity *entity = gEditorState.entities + i;
+        Entity *entity = gEditorState.entities + i;
 
-            TMJsonObject jsonEntity = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonEntity, "Entity");
-            
-            // Save Graphic Component
-            {
-                TMJsonObject jsonGraphic = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonGraphic, "Graphics");
+        TMJsonObject jsonEntity = TMJsonObjectCreate();
+        TMJsonObjectSetName(&jsonEntity, "Entity");
+        
+        // Save Graphic Component
+        {
+            TMJsonObject jsonGraphic = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonGraphic, "Graphics");
 
-                // graphics type
-                TMJsonObject jsonType = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonType, "Type");
-                TMJsonObjectSetValue(&jsonType, 0.0f); 
+            // graphics type
+            TMJsonObject jsonType = TMJsonObjectCreate();
 
-                // position
-                TMJsonObject jsonPosition = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonPosition, "Position");
-                TMJsonObject xPos = TMJsonObjectCreate();
-                TMJsonObjectSetName(&xPos, "X");
-                TMJsonObjectSetValue(&xPos, entity->position.x);
-                TMJsonObject yPos = TMJsonObjectCreate();
-                TMJsonObjectSetName(&yPos, "Y");
-                TMJsonObjectSetValue(&yPos, entity->position.y);
-                TMJsonObjectAddChild(&jsonPosition, &xPos);
-                TMJsonObjectAddChild(&jsonPosition, &yPos);
-
-                // size
-                TMJsonObject jsonSize = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonSize, "Size");
-                TMJsonObject xSiz = TMJsonObjectCreate();
-                TMJsonObjectSetName(&xSiz, "X");
-                TMJsonObjectSetValue(&xSiz, entity->size.x);
-                TMJsonObject ySiz = TMJsonObjectCreate();
-                TMJsonObjectSetName(&ySiz, "Y");
-                TMJsonObjectSetValue(&ySiz, entity->size.y);
-                TMJsonObjectAddChild(&jsonSize, &xSiz);
-                TMJsonObjectAddChild(&jsonSize, &ySiz);
-
-                TMJsonObjectAddChild(&jsonGraphic, &jsonType);
-                TMJsonObjectAddChild(&jsonGraphic, &jsonPosition);
-                TMJsonObjectAddChild(&jsonGraphic, &jsonSize);
-            
-                TMJsonObjectAddChild(&jsonEntity, &jsonGraphic);
-
+            TMJsonObjectSetName(&jsonType, "Type");
+            if(entity->shader == gEditorState.colorShader) {
+                TMJsonObjectSetValue(&jsonType, 0.0f);
+            }
+            else if(entity->shader == gEditorState.spriteShader) {
+                TMJsonObjectSetValue(&jsonType, 1.0f);
             }
 
-            TMJsonObjectAddChild(&jsonScene, &jsonEntity);
+
+            // position
+            TMJsonObject jsonPosition = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonPosition, "Position");
+            TMJsonObject xPos = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xPos, "X");
+            TMJsonObjectSetValue(&xPos, entity->position.x);
+            TMJsonObject yPos = TMJsonObjectCreate();
+            TMJsonObjectSetName(&yPos, "Y");
+            TMJsonObjectSetValue(&yPos, entity->position.y);
+            TMJsonObjectAddChild(&jsonPosition, &xPos);
+            TMJsonObjectAddChild(&jsonPosition, &yPos);
+
+            // size
+            TMJsonObject jsonSize = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonSize, "Size");
+            TMJsonObject xSiz = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xSiz, "X");
+            TMJsonObjectSetValue(&xSiz, entity->size.x);
+            TMJsonObject ySiz = TMJsonObjectCreate();
+            TMJsonObjectSetName(&ySiz, "Y");
+            TMJsonObjectSetValue(&ySiz, entity->size.y);
+            TMJsonObjectAddChild(&jsonSize, &xSiz);
+            TMJsonObjectAddChild(&jsonSize, &ySiz);
+
+
+
+            // color
+            TMJsonObject jsonColor = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonColor, "Color");
+            TMJsonObject r = TMJsonObjectCreate();
+            TMJsonObjectSetName(&r, "R");
+            TMJsonObjectSetValue(&r, entity->color.x);
+            TMJsonObject g = TMJsonObjectCreate();
+            TMJsonObjectSetName(&g, "G");
+            TMJsonObjectSetValue(&g, entity->color.y);
+            TMJsonObject b = TMJsonObjectCreate();
+            TMJsonObjectSetName(&b, "B");
+            TMJsonObjectSetValue(&b, entity->color.z);
+            TMJsonObject a = TMJsonObjectCreate();
+            TMJsonObjectSetName(&a, "A");
+            TMJsonObjectSetValue(&a, entity->color.w);
+            TMJsonObjectAddChild(&jsonColor, &r);
+            TMJsonObjectAddChild(&jsonColor, &g);
+            TMJsonObjectAddChild(&jsonColor, &b);
+            TMJsonObjectAddChild(&jsonColor, &a);
+            
+            // Texture
+            //
+            TMJsonObject jsonAbsUVs = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonAbsUVs, "AbsUvs");
+            TMJsonObjectSetValue(&jsonAbsUVs, entity->absUVs[0]);
+            TMJsonObjectSetValue(&jsonAbsUVs, entity->absUVs[1]);
+            TMJsonObjectSetValue(&jsonAbsUVs, entity->absUVs[2]);
+            TMJsonObjectSetValue(&jsonAbsUVs, entity->absUVs[3]);
+            TMJsonObject jsonRelUVs = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonRelUVs, "RelUvs");
+            TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[0]);
+            TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[1]);
+            TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[2]);
+            TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[3]);
+
+
+            TMJsonObjectAddChild(&jsonGraphic, &jsonType);
+            TMJsonObjectAddChild(&jsonGraphic, &jsonPosition);
+            TMJsonObjectAddChild(&jsonGraphic, &jsonSize);
+            TMJsonObjectAddChild(&jsonGraphic, &jsonColor);
+            TMJsonObjectAddChild(&jsonGraphic, &jsonAbsUVs);
+            TMJsonObjectAddChild(&jsonGraphic, &jsonRelUVs);
+        
+            TMJsonObjectAddChild(&jsonEntity, &jsonGraphic);
+
+        }
+
+        TMJsonObjectAddChild(&jsonScene, &jsonEntity);
 
     }
 
