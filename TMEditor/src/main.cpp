@@ -6,6 +6,7 @@
 #include <utils/tm_hashmap.h>
 #include <utils/tm_math.h>
 #include <utils/tm_darray.h>
+#include <utils/tm_json.h>
 #include <tm_input.h>
 #include <stdio.h>
 #include <math.h>
@@ -170,6 +171,101 @@ void LastMouseToWorld(float *mouseX, float *mouseY, TMMat4 proj, TMMat4 view, fl
     *mouseY = position.y;
 }
 
+
+void SaveScene(TMUIElement *element) {
+    printf("Scene Saved\n");
+
+/*
+TM_EXPORT void TMJsonObjectSetName(TMJsonObject *object, const char *name);
+TM_EXPORT void TMJsonObjectSetValue(TMJsonObject *object, const char *value);
+TM_EXPORT void TMJsonObjectSetValue(TMJsonObject *object, float value);
+TM_EXPORT void TMJsonObjectSetValue(TMJsonObject *object, TMJsonObject *value);
+TM_EXPORT void TMJsonObjectAddChild(TMJsonObject *parent, TMJsonObject *child);
+
+TM_EXPORT void TMJsonObjectStringify(TMJsonObject *object, char *buffer, int *position);
+
+
+TM_EXPORT TMJsonObject TMJsonObjectCreate();
+TM_EXPORT void TMJsonObjectFree(TMJsonObject *object);
+*/
+
+    TMJsonObject jsonRoot = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonRoot, "Root");
+
+    TMJsonObject jsonScene = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonScene, "Scene");
+
+    for(int i = 0; i < TMDarraySize(gEditorState.entities); ++i) {
+            Entity *entity = gEditorState.entities + i;
+
+            TMJsonObject jsonEntity = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonEntity, "Entity");
+            
+            // Save Graphic Component
+            {
+                TMJsonObject jsonGraphic = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonGraphic, "Graphics");
+
+                // graphics type
+                TMJsonObject jsonType = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonType, "Type");
+                TMJsonObjectSetValue(&jsonType, 0.0f); 
+
+                // position
+                TMJsonObject jsonPosition = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonPosition, "Position");
+                TMJsonObject xPos = TMJsonObjectCreate();
+                TMJsonObjectSetName(&xPos, "X");
+                TMJsonObjectSetValue(&xPos, entity->position.x);
+                TMJsonObject yPos = TMJsonObjectCreate();
+                TMJsonObjectSetName(&yPos, "Y");
+                TMJsonObjectSetValue(&yPos, entity->position.y);
+                TMJsonObjectAddChild(&jsonPosition, &xPos);
+                TMJsonObjectAddChild(&jsonPosition, &yPos);
+
+                // size
+                TMJsonObject jsonSize = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonSize, "Size");
+                TMJsonObject xSiz = TMJsonObjectCreate();
+                TMJsonObjectSetName(&xSiz, "X");
+                TMJsonObjectSetValue(&xSiz, entity->size.x);
+                TMJsonObject ySiz = TMJsonObjectCreate();
+                TMJsonObjectSetName(&ySiz, "Y");
+                TMJsonObjectSetValue(&ySiz, entity->size.y);
+                TMJsonObjectAddChild(&jsonSize, &xSiz);
+                TMJsonObjectAddChild(&jsonSize, &ySiz);
+
+                TMJsonObjectAddChild(&jsonGraphic, &jsonType);
+                TMJsonObjectAddChild(&jsonGraphic, &jsonPosition);
+                TMJsonObjectAddChild(&jsonGraphic, &jsonSize);
+            
+                TMJsonObjectAddChild(&jsonEntity, &jsonGraphic);
+
+            }
+
+            TMJsonObjectAddChild(&jsonScene, &jsonEntity);
+
+    }
+
+    TMJsonObjectAddChild(&jsonRoot, &jsonScene);
+
+    int bytesCount = 0;
+    TMJsonObjectStringify(&jsonRoot, NULL, &bytesCount);
+    
+    char *buffer = (char *)malloc(bytesCount + 1);
+    int bytesWriten = 0;
+    TMJsonObjectStringify(&jsonRoot, buffer, &bytesWriten);
+    printf("%s", buffer);
+    
+    TMFileWriteText("../../assets/json/testScene.json", buffer, bytesWriten);
+    free(buffer);
+
+
+    TMJsonObjectFree(&jsonRoot);
+
+
+}
+
 int main() {
 
     TMWindow *window = TMWindowCreate(1280, 720, "TMEditor");
@@ -259,6 +355,13 @@ int main() {
     TMUIElementAddChildLabel(Modify, TM_UI_ORIENTATION_VERTICAL, " Scale ", {1, 1, 1, 1}, ScaleEntity);
     TMUIElementAddChildLabel(Modify, TM_UI_ORIENTATION_VERTICAL, " Translate ", {1, 1, 1, 1}, TranslateEntity);
 
+TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
+                                              const char *text, TMVec4 color,
+                                              PFN_OnClick onCLick = NULL);
+    
+    TMUIElement *saveScene = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, (float)height/MetersToPixel - 0.25f}, {2.5, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
+    TMUIElementAddChildLabel(saveScene, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene);
+
     // TODO: add a way to enable depth test for z-index
     TMRendererDepthTestDisable(renderer);
 
@@ -275,11 +378,13 @@ int main() {
         if(!gEditorState.element && gEditorState.selectedEntity) {
             TMUIElementProcessInput(Modify, pos.x, pos.y, (float)width, (float)height);
         }
+        TMUIElementProcessInput(saveScene, pos.x, pos.y, (float)width, (float)height);
 
         gMouseIsHot = false;
-        TMUIMouseIsHot(options, &gMouseIsHot);
-        TMUIMouseIsHot(Blocks,  &gMouseIsHot);
-        TMUIMouseIsHot(Prefabs, &gMouseIsHot);
+        TMUIMouseIsHot(options,   &gMouseIsHot);
+        TMUIMouseIsHot(Blocks,    &gMouseIsHot);
+        TMUIMouseIsHot(Prefabs,   &gMouseIsHot);
+        TMUIMouseIsHot(saveScene, &gMouseIsHot);
         if(!gEditorState.element && gEditorState.selectedEntity) {
             TMUIMouseIsHot(Modify, &gMouseIsHot);
         }
@@ -345,10 +450,9 @@ int main() {
                 Entity *entity = gEditorState.selectedEntity;
                 entity->size.x += offsetX;
                 entity->size.y += offsetY;
-                entity->size.x = Max(entity->size.x, 0.1f);
-                entity->size.y = Max(entity->size.y, 0.1f);
+                entity->position.x += offsetX*0.5f;
+                entity->position.y += offsetY*0.5f;
             }
-
         }
 
 
@@ -389,6 +493,7 @@ int main() {
         TMDebugRenderDraw();
 
         TMUIElementDraw(renderer, options, 0.0f);
+        TMUIElementDraw(renderer, saveScene, 0.0f);
 
         if(gEditorState.option == 0) {
             TMUIElementDraw(renderer, Blocks, 0.0f);
@@ -424,6 +529,7 @@ int main() {
     TMUIShutdown(renderer);
     TMDebugRendererShutdown();
     free(fontUVs);
+    TMUIElementDestroy(saveScene);
     TMUIElementDestroy(options);
     TMHashmapDestroy(absUVs);
     TMRendererTextureDestroy(renderer, texture);
