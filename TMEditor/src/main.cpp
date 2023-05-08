@@ -33,11 +33,26 @@ struct Entity {
 enum ModifyOption {
     MODIFY_NONE,
     MODIFY_TRANSLATE,
-    MODIFY_SCALE
+    MODIFY_SCALE,
+    MODIFY_INC_ABS_U,
+    MODIFY_INC_ABS_V,
+    MODIFY_OFF_ABS_U,
+    MODIFY_OFF_ABS_V,
+    MODIFY_INC_REL_U,
+    MODIFY_INC_REL_V,
+    MODIFY_OFF_REL_U,
+    MODIFY_OFF_REL_V
+};
+
+enum BrushOption {
+    OPTION_TEXTURE,
+    OPTION_COLOR,
+    OPTION_CLEAR,
+    OPTIONCOLLIDER
 };
 
 struct EditorState {
-    int option;
+    BrushOption option;
     TMUIElement *element;
     Entity *entities;
     Entity *selectedEntity;
@@ -86,7 +101,7 @@ float Min(float a, float b) {
 
 void OptionSelected(TMUIElement *element) {
     printf("Option selected\n");
-    gEditorState.option = element->index;
+    gEditorState.option = (BrushOption)element->index;
     gEditorState.modifyOption = MODIFY_NONE;
     gEditorState.selectedEntity = NULL;
 }
@@ -130,6 +145,40 @@ void TranslateEntity(TMUIElement *element) {
 void ScaleEntity(TMUIElement *element) {
     gEditorState.modifyOption = MODIFY_SCALE;
 }
+
+void IncrementAbsU(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_INC_ABS_U;
+}
+
+void IncrementAbsV(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_INC_ABS_V;
+}
+
+void OffsetAbsU(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_OFF_ABS_U;
+}
+
+void OffsetAbsV(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_OFF_ABS_V;
+}
+
+void IncrementRelU(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_INC_REL_U;
+}
+
+void IncrementRelV(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_INC_REL_V;
+}
+
+void OffsetRelU(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_OFF_REL_U;
+}
+
+void OffsetRelV(TMUIElement *element) {
+    gEditorState.modifyOption = MODIFY_OFF_REL_V;
+}
+
+
 
 void MouseToWorld(float *mouseX, float *mouseY, float width, float height) {
     float x = (float)TMInputMousePositionX();
@@ -356,9 +405,21 @@ int main() {
         TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0, 0.1f + 0.1f*(float)i, 1}, ElementSelected);
     }
 
-    TMUIElement *Modify = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {8.8, 0}, {4, 1}, {0.1f, 0.1f, 0.1f, 1});
-    TMUIElementAddChildLabel(Modify, TM_UI_ORIENTATION_VERTICAL, " Scale ", {1, 1, 1, 1}, ScaleEntity);
-    TMUIElementAddChildLabel(Modify, TM_UI_ORIENTATION_VERTICAL, " Translate ", {1, 1, 1, 1}, TranslateEntity);
+    TMUIElement *Modify = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {8.0, 0}, {4.8, 2}, {0.1f, 0.1f, 0.1f, 1});
+    TMUIElementAddChildLabel(Modify, TM_UI_ORIENTATION_VERTICAL,   " Scale ", {1, 1, 1, 1}, ScaleEntity);
+    TMUIElementAddChildLabel(Modify, TM_UI_ORIENTATION_VERTICAL,   " Translate ", {1, 1, 1, 1}, TranslateEntity);
+    TMUIElementAddChildButton(Modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
+    TMUIElementAddChildButton(Modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
+    child = TMUIElementGetChild(Modify, 2);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL,   " inc absU ", {1, 1, 1, 1}, IncrementAbsU);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL,   " inc absV ", {1, 1, 1, 1}, IncrementAbsV);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL,   " off absU ", {1, 1, 1, 1}, OffsetAbsU);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL,   " off absV ", {1, 1, 1, 1}, OffsetAbsV);
+    child = TMUIElementGetChild(Modify, 3);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL,   " inc relU ", {1, 1, 1, 1}, IncrementRelU);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL,   " inc relV ", {1, 1, 1, 1}, IncrementRelV);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL,   " off relU ", {1, 1, 1, 1}, OffsetRelU);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL,   " off relV ", {1, 1, 1, 1}, OffsetRelV);
 
 TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
                                               const char *text, TMVec4 color,
@@ -388,10 +449,10 @@ TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec
  
         TMVec3 pos = gCameraPos;
         TMUIElementProcessInput(options, pos.x, pos.y, (float)width, (float)height, MetersToPixel);
-        if(gEditorState.option == 0) {
+        if(gEditorState.option == OPTION_TEXTURE) {
             TMUIElementProcessInput(Blocks, pos.x, pos.y, (float)width, (float)height, MetersToPixel);
         }
-        else {
+        else if (gEditorState.option == OPTION_COLOR){
             TMUIElementProcessInput(Prefabs, pos.x, pos.y, (float)width, (float)height, MetersToPixel);
         }
         if(!gEditorState.element && gEditorState.selectedEntity) {
@@ -408,13 +469,10 @@ TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec
             TMUIMouseIsHot(Modify, &gMouseIsHot);
         }
 
-        float mouseX;
-        float mouseY;
-        MouseToWorld(&mouseX, &mouseY, width, height);
-        printf("mouse X: %f Y: %f\n", mouseX, mouseY);
-
-
         if(!gMouseIsHot && TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT) && gEditorState.element) {
+            float mouseX;
+            float mouseY;
+            MouseToWorld(&mouseX, &mouseY, width, height);
             AddEntity(mouseX, mouseY);
         }
 
@@ -460,6 +518,42 @@ TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec
                 entity->size.y += offsetY;
                 entity->position.x += offsetX*0.5f;
                 entity->position.y += offsetY*0.5f;
+            }
+            else if(gEditorState.modifyOption == MODIFY_INC_REL_U) {
+                Entity *entity = gEditorState.selectedEntity;
+                entity->relUVs.z -= offsetX*0.02f;
+            }
+            else if(gEditorState.modifyOption == MODIFY_INC_REL_V) {
+                Entity *entity = gEditorState.selectedEntity;
+                entity->relUVs.w += offsetY*0.02f;
+            }
+            else if(gEditorState.modifyOption == MODIFY_OFF_REL_U) {
+                Entity *entity = gEditorState.selectedEntity;
+                entity->relUVs.x += offsetX*0.02f;
+                entity->relUVs.z += offsetX*0.02f;
+            }
+            else if(gEditorState.modifyOption == MODIFY_OFF_REL_V) {
+                Entity *entity = gEditorState.selectedEntity;
+                entity->relUVs.y += offsetY*0.02f;
+                entity->relUVs.w += offsetY*0.02f;
+            }
+            else if(gEditorState.modifyOption == MODIFY_INC_ABS_U) {
+                Entity *entity = gEditorState.selectedEntity;
+                entity->absUVs.z -= offsetX*0.08f;
+            }
+            else if(gEditorState.modifyOption == MODIFY_INC_ABS_V) {
+                Entity *entity = gEditorState.selectedEntity;
+                entity->absUVs.w += offsetY*0.08f;
+            }
+            else if(gEditorState.modifyOption == MODIFY_OFF_ABS_U) {
+                Entity *entity = gEditorState.selectedEntity;
+                entity->absUVs.x += offsetX*0.02f;
+                entity->absUVs.z += offsetX*0.02f;
+            }
+            else if(gEditorState.modifyOption == MODIFY_OFF_ABS_V) {
+                Entity *entity = gEditorState.selectedEntity;
+                entity->absUVs.y += offsetY*0.02f;
+                entity->absUVs.w += offsetY*0.02f;
             }
         }
 

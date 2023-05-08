@@ -82,6 +82,7 @@ TM_EXPORT TMTexture *TMRendererTextureCreateAtlas(TMRenderer *renderer, const ch
 TM_EXPORT void TMRendererTextureDestroy(TMRenderer *renderer, TMTexture *texture);
 TM_EXPORT void TMRendererTextureBind(TMRenderer* renderer, TMTexture *texture, TMShader *shader, const char *varName, int textureIndex);
 TM_EXPORT void TMRendererTextureUnbind(TMRenderer* renderer, TMTexture *texture, int textureIndex);
+TM_EXPORT void TMRendererTextureInfo(TMTexture *texture, int *width, int *height);
 
 TM_EXPORT TMFramebuffer *TMRendererFramebufferCreate(TMRenderer *renderer);
 TM_EXPORT void TMRendererFramebufferDestroy(TMRenderer *renderer, TMFramebuffer *framebuffer);

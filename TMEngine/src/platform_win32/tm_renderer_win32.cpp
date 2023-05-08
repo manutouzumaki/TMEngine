@@ -874,6 +874,12 @@ void TMRendererTextureUnbind(TMRenderer *renderer, TMTexture* texture, int textu
     renderer->deviceContext->PSSetSamplers(0, 1, NULL);
 }
 
+void TMRendererTextureInfo(TMTexture *texture, int *width, int *height) {
+    *width = texture->width;
+    *height = texture->height;
+}
+
+
 
 TMFramebuffer* TMRendererFramebufferCreate(TMRenderer* renderer) {
     return NULL;
