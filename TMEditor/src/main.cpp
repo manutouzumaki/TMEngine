@@ -66,7 +66,7 @@ static unsigned int indices[] = {
         1, 0, 2, 2, 0, 3
 };
 
-static TMVec3 pos = {0, 0, 0};
+static TMVec3 gCameraPos = {0, 0, 0};
 static bool gMouseIsHot;
 
 TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
@@ -131,63 +131,31 @@ void ScaleEntity(TMUIElement *element) {
     gEditorState.modifyOption = MODIFY_SCALE;
 }
 
-void MouseToWorld(float *mouseX, float *mouseY, TMMat4 proj, TMMat4 view, float width, float height) {
-    *mouseX = (float)TMInputMousePositionX();
-    *mouseY = height - (float)TMInputMousePositionY();
+void MouseToWorld(float *mouseX, float *mouseY, float width, float height) {
+    float x = (float)TMInputMousePositionX();
+    float y = height - (float)TMInputMousePositionY();
 
-    TMMat4 invView = TMMat4Inverse(view);
-    TMMat4 invProj = TMMat4Inverse(proj);
+    float worldMouseX = (x / width)  * (width/MetersToPixel);
+    float worldMouseY = (y / height) * (height/MetersToPixel);
 
-    TMVec2 screenCoord = {*mouseX, *mouseY};
-    TMVec2 viewportPos = {pos.x, pos.y};
-    TMVec2 viewportSize = {width, height};
-    TMVec2 normalizeP = (screenCoord - viewportPos) / viewportSize;
-    TMVec2 one = {1, 1};
-    normalizeP = (normalizeP * 2.0f) - one;
-    TMVec4 position = {normalizeP.x, normalizeP.y, 0 , 1};
-    position = invView * invProj * position;
-
-    *mouseX = position.x;
-    *mouseY = position.y;
+    *mouseX = worldMouseX + gCameraPos.x;
+    *mouseY = worldMouseY + gCameraPos.y;
 }
 
-void LastMouseToWorld(float *mouseX, float *mouseY, TMMat4 proj, TMMat4 view, float width, float height) {
-    *mouseX = (float)TMInputMouseLastPositionX();
-    *mouseY = height - (float)TMInputMouseLastPositionY();
+void LastMouseToWorld(float *mouseX, float *mouseY, float width, float height) {
+    float x = (float)TMInputMouseLastPositionX();
+    float y = height - (float)TMInputMouseLastPositionY();
 
-    TMMat4 invView = TMMat4Inverse(view);
-    TMMat4 invProj = TMMat4Inverse(proj);
+    float worldMouseX = (x / width)  * (width/MetersToPixel);
+    float worldMouseY = (y / height) * (height/MetersToPixel);
 
-    TMVec2 screenCoord = {*mouseX, *mouseY};
-    TMVec2 viewportPos = {pos.x, pos.y};
-    TMVec2 viewportSize = {width, height};
-    TMVec2 normalizeP = (screenCoord - viewportPos) / viewportSize;
-    TMVec2 one = {1, 1};
-    normalizeP = (normalizeP * 2.0f) - one;
-    TMVec4 position = {normalizeP.x, normalizeP.y, 0 , 1};
-    position = invView * invProj * position;
-
-    *mouseX = position.x;
-    *mouseY = position.y;
+    *mouseX = worldMouseX + gCameraPos.x;
+    *mouseY = worldMouseY + gCameraPos.y;
 }
 
 
 void SaveScene(TMUIElement *element) {
     printf("Scene Saved\n");
-
-/*
-TM_EXPORT void TMJsonObjectSetName(TMJsonObject *object, const char *name);
-TM_EXPORT void TMJsonObjectSetValue(TMJsonObject *object, const char *value);
-TM_EXPORT void TMJsonObjectSetValue(TMJsonObject *object, float value);
-TM_EXPORT void TMJsonObjectSetValue(TMJsonObject *object, TMJsonObject *value);
-TM_EXPORT void TMJsonObjectAddChild(TMJsonObject *parent, TMJsonObject *child);
-
-TM_EXPORT void TMJsonObjectStringify(TMJsonObject *object, char *buffer, int *position);
-
-
-TM_EXPORT TMJsonObject TMJsonObjectCreate();
-TM_EXPORT void TMJsonObjectFree(TMJsonObject *object);
-*/
 
     TMJsonObject jsonRoot = TMJsonObjectCreate();
     TMJsonObjectSetName(&jsonRoot, "Root");
@@ -217,7 +185,6 @@ TM_EXPORT void TMJsonObjectFree(TMJsonObject *object);
                 TMJsonObjectSetValue(&jsonType, 1.0f);
             }
 
-
             // position
             TMJsonObject jsonPosition = TMJsonObjectCreate();
             TMJsonObjectSetName(&jsonPosition, "Position");
@@ -242,8 +209,6 @@ TM_EXPORT void TMJsonObjectFree(TMJsonObject *object);
             TMJsonObjectAddChild(&jsonSize, &xSiz);
             TMJsonObjectAddChild(&jsonSize, &ySiz);
 
-
-
             // color
             TMJsonObject jsonColor = TMJsonObjectCreate();
             TMJsonObjectSetName(&jsonColor, "Color");
@@ -265,7 +230,6 @@ TM_EXPORT void TMJsonObjectFree(TMJsonObject *object);
             TMJsonObjectAddChild(&jsonColor, &a);
             
             // Texture
-            //
             TMJsonObject jsonAbsUVs = TMJsonObjectCreate();
             TMJsonObjectSetName(&jsonAbsUVs, "AbsUvs");
             TMJsonObjectSetValue(&jsonAbsUVs, entity->absUVs[0]);
@@ -278,7 +242,6 @@ TM_EXPORT void TMJsonObjectFree(TMJsonObject *object);
             TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[1]);
             TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[2]);
             TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[3]);
-
 
             TMJsonObjectAddChild(&jsonGraphic, &jsonType);
             TMJsonObjectAddChild(&jsonGraphic, &jsonPosition);
@@ -308,10 +271,7 @@ TM_EXPORT void TMJsonObjectFree(TMJsonObject *object);
     TMFileWriteText("../../assets/json/testScene.json", buffer, bytesWriten);
     free(buffer);
 
-
     TMJsonObjectFree(&jsonRoot);
-
-
 }
 
 int main() {
@@ -335,12 +295,9 @@ int main() {
     int height = TMRendererGetHeight(renderer);
     TMVec3 tar = {0, 0, 1};
     TMVec3 up  = {0, 1, 0};
-    TMMat4 view = TMMat4LookAt(pos, pos + tar, up);
-    TMMat4 proj = TMMat4Ortho(0, width/MetersToPixel, 0, height/MetersToPixel, 0.1f, 100.0f);
-
     ConstBuffer constBuffer{};
-    constBuffer.proj = proj;
-    constBuffer.view = view;
+    constBuffer.view = TMMat4LookAt(gCameraPos, gCameraPos + tar, up);
+    constBuffer.proj = TMMat4Ortho(0, width/MetersToPixel, 0, height/MetersToPixel, 0.1f, 100.0f);
     constBuffer.world = TMMat4Identity();
     gEditorState.shaderBuffer = TMRendererShaderBufferCreate(renderer, &constBuffer, sizeof(ConstBuffer), 0);
 
@@ -415,18 +372,32 @@ TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec
 
     while(!TMWindowShouldClose(window)) {
         TMWindowFlushEventQueue(window);
+
+        if(!gMouseIsHot) {
+            if(TMInputMousButtonIsDown(TM_MOUSE_BUTTON_RIGHT)) {
+                gCameraPos = {
+                    gCameraPos.x - (float)(TMInputMousePositionX() - TMInputMouseLastPositionX()) / MetersToPixel,
+                    gCameraPos.y + (float)(TMInputMousePositionY() - TMInputMouseLastPositionY()) / MetersToPixel,
+                    -1
+                };
+                constBuffer.view = TMMat4LookAt(gCameraPos, gCameraPos + tar, up);
+                TMRendererShaderBufferUpdate(renderer, gEditorState.shaderBuffer, &constBuffer);
+            }
+
+        }
  
-        TMUIElementProcessInput(options, pos.x, pos.y, (float)width, (float)height);
+        TMVec3 pos = gCameraPos;
+        TMUIElementProcessInput(options, pos.x, pos.y, (float)width, (float)height, MetersToPixel);
         if(gEditorState.option == 0) {
-            TMUIElementProcessInput(Blocks, pos.x, pos.y, (float)width, (float)height);
+            TMUIElementProcessInput(Blocks, pos.x, pos.y, (float)width, (float)height, MetersToPixel);
         }
         else {
-            TMUIElementProcessInput(Prefabs, pos.x, pos.y, (float)width, (float)height);
+            TMUIElementProcessInput(Prefabs, pos.x, pos.y, (float)width, (float)height, MetersToPixel);
         }
         if(!gEditorState.element && gEditorState.selectedEntity) {
-            TMUIElementProcessInput(Modify, pos.x, pos.y, (float)width, (float)height);
+            TMUIElementProcessInput(Modify, pos.x, pos.y, (float)width, (float)height, MetersToPixel);
         }
-        TMUIElementProcessInput(saveScene, pos.x, pos.y, (float)width, (float)height);
+        TMUIElementProcessInput(saveScene, pos.x, pos.y, (float)width, (float)height, MetersToPixel);
 
         gMouseIsHot = false;
         TMUIMouseIsHot(options,   &gMouseIsHot);
@@ -437,25 +408,14 @@ TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec
             TMUIMouseIsHot(Modify, &gMouseIsHot);
         }
 
+        float mouseX;
+        float mouseY;
+        MouseToWorld(&mouseX, &mouseY, width, height);
+        printf("mouse X: %f Y: %f\n", mouseX, mouseY);
+
+
         if(!gMouseIsHot && TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT) && gEditorState.element) {
-            float mouseX;
-            float mouseY;
-            MouseToWorld(&mouseX, &mouseY, constBuffer.proj, constBuffer.view, width, height);
             AddEntity(mouseX, mouseY);
-        }
-
-        if(!gMouseIsHot) {
-            if(TMInputMousButtonIsDown(TM_MOUSE_BUTTON_RIGHT)) {
-                pos = {
-                    pos.x - (float)(TMInputMousePositionX() - TMInputMouseLastPositionX()) / MetersToPixel,
-                    pos.y + (float)(TMInputMousePositionY() - TMInputMouseLastPositionY()) / MetersToPixel,
-                    0
-                };
-                view = TMMat4LookAt(pos, pos + tar, up);
-                constBuffer.view = view;
-                TMRendererShaderBufferUpdate(renderer, gEditorState.shaderBuffer, &constBuffer);
-            }
-
         }
 
         if(!gMouseIsHot && !gEditorState.element && gEditorState.entities) {
@@ -470,7 +430,7 @@ TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec
 
                     float mouseX;
                     float mouseY;
-                    MouseToWorld(&mouseX, &mouseY, constBuffer.proj, constBuffer.view, width, height);
+                    MouseToWorld(&mouseX, &mouseY, width, height);
 
                     if(mouseX > minX && mouseX <= maxX &&
                        mouseY > minY && mouseY <= maxY) {
@@ -484,8 +444,8 @@ TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec
         if(!gMouseIsHot && gEditorState.selectedEntity && TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
             float mouseX, mouseY;
             float lastMouseX, lastMouseY;
-            MouseToWorld(&mouseX, &mouseY, constBuffer.proj, constBuffer.view, width, height);
-            LastMouseToWorld(&lastMouseX, &lastMouseY, constBuffer.proj, constBuffer.view, width, height);
+            MouseToWorld(&mouseX, &mouseY, width, height);
+            LastMouseToWorld(&lastMouseX, &lastMouseY, width, height);
             float offsetX = mouseX - lastMouseX;
             float offsetY = mouseY - lastMouseY;
 

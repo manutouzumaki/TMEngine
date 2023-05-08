@@ -327,26 +327,23 @@ void TMUIMouseIsHot(TMUIElement *element, bool *result) {
     }
 }
 
+static void MouseToWorld(float *mouseX, float *mouseY, float width, float height, float scale) {
+    float x = (float)TMInputMousePositionX();
+    float y = height - (float)TMInputMousePositionY();
+    float worldMouseX = (x / width)  * (width/scale);
+    float worldMouseY = (y / height) * (height/scale);
+    *mouseX = worldMouseX;
+    *mouseY = worldMouseY;
+}
+
+
+
 void TMUIElementProcessInput(TMUIElement *element,
                              float offsetX, float offsetY,
-                             float width, float height) {
-    float mouseX = (float)TMInputMousePositionX();
-    float mouseY = height - (float)TMInputMousePositionY();
-
-    TMMat4 invView = TMMat4Inverse(gConstBuffer.view);
-    TMMat4 invProj = TMMat4Inverse(gConstBuffer.proj);
-
-    TMVec2 screenCoord = {mouseX, mouseY};
-    TMVec2 viewportPos = {offsetX, offsetY};
-    TMVec2 viewportSize = {width, height};
-    TMVec2 normalizeP = (screenCoord - viewportPos) / viewportSize;
-    TMVec2 one = {1, 1};
-    normalizeP = (normalizeP * 2.0f) - one;
-    TMVec4 position = {normalizeP.x, normalizeP.y, 0 , 1};
-    position = invView * invProj * position;
-
-    mouseX = position.x;
-    mouseY = position.y;
+                             float width, float height, float scale) {
+    float mouseX;
+    float mouseY;
+    MouseToWorld(&mouseX, &mouseY, width, height, scale);
 
     float minX = element->position.x;
     float maxX = minX + element->size.x;
@@ -359,7 +356,7 @@ void TMUIElementProcessInput(TMUIElement *element,
             int childCount = TMDarraySize(element->childs);
             for(int i = 0; i < childCount; ++i) {
                 TMUIElement *child = element->childs + i;
-                TMUIElementProcessInput(child, offsetX, offsetY, width, height);
+                TMUIElementProcessInput(child, offsetX, offsetY, width, height, scale);
             }
         }
         else {
@@ -381,7 +378,7 @@ void TMUIElementProcessInput(TMUIElement *element,
             int childCount = TMDarraySize(element->childs);
             for(int i = 0; i < childCount; ++i) {
                 TMUIElement *child = element->childs + i;
-                TMUIElementProcessInput(child, offsetX, offsetY, width, height);
+                TMUIElementProcessInput(child, offsetX, offsetY, width, height, scale);
             }
         }
         
