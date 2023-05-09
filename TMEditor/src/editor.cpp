@@ -60,6 +60,7 @@ static void AddEntity(EditorState *state, float posX, float posY) {
 }
 
 static void MouseToWorld(float *mouseX, float *mouseY, float width, float height, float meterToPixel) {
+
     float x = (float)TMInputMousePositionX();
     float y = height - (float)TMInputMousePositionY();
 
@@ -68,9 +69,11 @@ static void MouseToWorld(float *mouseX, float *mouseY, float width, float height
 
     *mouseX = worldMouseX + gState->cameraP.x;
     *mouseY = worldMouseY + gState->cameraP.y;
+
 }
 
 static void LastMouseToWorld(float *mouseX, float *mouseY, float width, float height, float meterToPixel) {
+
     float x = (float)TMInputMouseLastPositionX();
     float y = height - (float)TMInputMouseLastPositionY();
 
@@ -79,12 +82,12 @@ static void LastMouseToWorld(float *mouseX, float *mouseY, float width, float he
 
     *mouseX = worldMouseX + gState->cameraP.x;
     *mouseY = worldMouseY + gState->cameraP.y;
+
 }
 
 void EditorInitialize(EditorState *state, TMWindow *window) {
     // TODO: remove this ...
     gState = state;
-
 
     state->meterToPixel = 100.0f;
     state->renderer = TMRendererCreate(window);
@@ -283,7 +286,7 @@ void EditorRender(EditorState *state) {
 }
 
 void EditorShutdown(EditorState *state) {
-
+    if(state->entities) TMDarrayDestroy(state->entities);
     EditorUIShutdown(&state->ui);
     TMRendererTextureDestroy(state->renderer, gTexture);
     TMHashmapDestroy(gAbsUVs);
@@ -295,6 +298,8 @@ void EditorShutdown(EditorState *state) {
     TMRendererShaderDestroy(state->renderer, state->colorShader);
     TMRendererShaderDestroy(state->renderer, state->spriteShader);
     TMRendererDestroy(state->renderer);
+
+    printf("Shuting down !!!\n");
 
 }
 
