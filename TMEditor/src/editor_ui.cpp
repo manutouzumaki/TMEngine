@@ -5,14 +5,22 @@
 
 extern EditorState *gState;
 extern const char *gImages[7];
-extern float     *gFontUVs;
 extern TMHashmap *gAbsUVs;
 extern TMTexture *gTexture;
-extern int gFontCount;
 
 static TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
     TMVec4 result = *((TMVec4 *)TMHashmapGet(hashmap, filepath));
     return result; 
+}
+
+static int MinI32(int a, int b) {
+    if(a < b) return a;
+    return b;
+}
+
+static int MaxI32(int a, int b) {
+    if(a > b) return a;
+    return b;
 }
 
 static void OptionSelected(TMUIElement *element) {
@@ -44,6 +52,32 @@ static void IncrementRelU(TMUIElement *element)   { gState->modifyOption = MODIF
 static void IncrementRelV(TMUIElement *element)   { gState->modifyOption = MODIFY_INC_REL_V; }
 static void OffsetRelU(TMUIElement *element)      { gState->modifyOption = MODIFY_OFF_REL_U; }
 static void OffsetRelV(TMUIElement *element)      { gState->modifyOption = MODIFY_OFF_REL_V; }
+
+
+static void IncrementZ(TMUIElement *element) {
+
+    gState->modifyOption = MODIFY_NONE;
+
+    if(gState->selectedEntity) {
+        Entity *entity = gState->selectedEntity;
+        entity->zIndex++;
+        printf("zIndex: %d\n", entity->zIndex);
+    }
+
+}
+
+static void DecrementZ(TMUIElement *element) {
+
+    gState->modifyOption = MODIFY_NONE;
+
+    if(gState->selectedEntity) {
+        Entity *entity = gState->selectedEntity;
+        entity->zIndex--;
+        entity->zIndex = MaxI32(entity->zIndex, 1);
+        printf("zIndex: %d\n", entity->zIndex);
+    }
+
+}
 
 static void SaveScene(TMUIElement *element) {
     printf("Scene Saved\n");
@@ -206,6 +240,7 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     TMUIElementAddChildLabel(ui->modify, TM_UI_ORIENTATION_VERTICAL,   " Translate ", {1, 1, 1, 1}, TranslateEntity);
     TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
     TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
+    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
     child = TMUIElementGetChild(ui->modify, 2);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc absU ", {1, 1, 1, 1}, IncrementAbsU);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc absV ", {1, 1, 1, 1}, IncrementAbsV);
@@ -216,6 +251,9 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc relV ", {1, 1, 1, 1}, IncrementRelV);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off relU ", {1, 1, 1, 1}, OffsetRelU);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off relV ", {1, 1, 1, 1}, OffsetRelV);
+    child = TMUIElementGetChild(ui->modify, 4);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc z ", {1, 1, 1, 1}, IncrementZ);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " dec z ", {1, 1, 1, 1}, DecrementZ);
     
     ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {2.5, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene);

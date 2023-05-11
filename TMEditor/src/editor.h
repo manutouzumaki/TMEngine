@@ -14,6 +14,7 @@
 #include "editor_ui.h"
 
 struct Entity {
+    int id;
     TMVec4 color;
     TMVec4 absUVs;
     TMVec4 relUVs;
@@ -21,6 +22,7 @@ struct Entity {
     TMVec2 size;
     TMShader *shader;
     TMTexture *texture;
+    int zIndex;
 };
 
 struct EditorState {

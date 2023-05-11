@@ -37,6 +37,7 @@ float     *gFontUVs;
 TMHashmap *gAbsUVs;
 TMTexture *gTexture;
 int gFontCount;
+static int gEntityCount;
 
 
 static void AddEntity(EditorState *state, float posX, float posY) {
@@ -49,6 +50,8 @@ static void AddEntity(EditorState *state, float posX, float posY) {
     entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
     entity.size = {1, 1};
     entity.texture = element->texture;
+    entity.zIndex = 2;
+    entity.id = gEntityCount++;
     if(element->type == TM_UI_TYPE_BUTTON) {
         entity.shader = state->colorShader;
     }
@@ -83,6 +86,21 @@ static void LastMouseToWorld(float *mouseX, float *mouseY, float width, float he
     *mouseX = worldMouseX + gState->cameraP.x;
     *mouseY = worldMouseY + gState->cameraP.y;
 
+}
+
+static void InsertionSortEntities(Entity *entities, int length)
+{
+    for(int j = 1; j < length; ++j)
+    {
+        Entity key = entities[j];
+        int i = j - 1;
+        while(i > -1 && entities[i].zIndex < key.zIndex)
+        {
+            entities[i + 1] = entities[i];
+            --i;
+        }
+        entities[i + 1] = key;
+    }
 }
 
 void EditorInitialize(EditorState *state, TMWindow *window) {
@@ -130,9 +148,6 @@ void EditorInitialize(EditorState *state, TMWindow *window) {
     gTexture = TMRendererTextureCreateAtlas(state->renderer, gImages, ARRAY_LENGTH(gImages), 1024*2, 1024*2, gAbsUVs);
 
     EditorUIInitialize(&state->ui, (float)clientWidth, (float)clientHeight, state->meterToPixel);
-
-    // TODO: add a way to enable depth test for z-index
-    TMRendererDepthTestDisable(state->renderer);
 
 }
 
@@ -237,6 +252,23 @@ void EditorUpdate(EditorState *state) {
         }
     }
 
+    // TODO: clean this up ...
+    if(state->entities) {
+        int id = 0;
+        if(state->selectedEntity) {
+            id = state->selectedEntity->id;
+        }
+        InsertionSortEntities(state->entities, TMDarraySize(state->entities));
+        if(state->selectedEntity) {
+            for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+                Entity *entity = state->entities + i;
+                if(id == entity->id) {
+                    state->selectedEntity = entity;
+                }
+            }
+        }
+    }
+
 }
 
 void EditorRender(EditorState *state) {
@@ -244,6 +276,9 @@ void EditorRender(EditorState *state) {
 
     int width  = TMRendererGetWidth(state->renderer);
     int height = TMRendererGetHeight(state->renderer);
+
+
+    TMRendererDepthTestEnable(state->renderer);
 
     TMVec3 pos = state->cameraP;
     for(int y = 0; y < (height/state->meterToPixel) + 2; ++y) {
@@ -261,7 +296,7 @@ void EditorRender(EditorState *state) {
             TMRendererBindShader(state->renderer, entity->shader);
             if(entity->texture) TMRendererTextureBind(state->renderer, entity->texture, entity->shader, "uTexture", 0);
 
-                TMMat4 trans = TMMat4Translate(entity->position.x, entity->position.y, 2.0f);
+                TMMat4 trans = TMMat4Translate(entity->position.x, entity->position.y, entity->zIndex);
                 TMMat4 scale = TMMat4Scale(entity->size.x, entity->size.y, 1.0f);
                 gConstBuffer.world = trans * scale;
                 gConstBuffer.color = entity->color;
@@ -272,6 +307,8 @@ void EditorRender(EditorState *state) {
         }
     }
 
+
+    TMRendererDepthTestDisable(state->renderer);
 
     if(state->selectedEntity) {
         Entity *entity = state->selectedEntity;

@@ -50,6 +50,7 @@ struct TMUIElement {
 };
 
 TM_EXPORT void TMUIMouseIsHot(TMUIElement *element, bool *result);
+
 TM_EXPORT void TMUIInitialize(TMRenderer *renderer, float MetersToPixel);
 TM_EXPORT void TMUIShutdown(TMRenderer *renderer);
 

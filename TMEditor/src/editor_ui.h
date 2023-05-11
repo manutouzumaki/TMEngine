@@ -14,7 +14,7 @@ enum ModifyOption {
     MODIFY_INC_REL_U,
     MODIFY_INC_REL_V,
     MODIFY_OFF_REL_U,
-    MODIFY_OFF_REL_V
+    MODIFY_OFF_REL_V,
 };
 
 enum BrushOption {

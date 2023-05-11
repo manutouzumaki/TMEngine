@@ -40,7 +40,6 @@ static int gFontCount;
 
 void TMUIInitialize(TMRenderer *renderer, float MetersToPixel) {
 
-
     gSpriteShader = TMRendererShaderCreate(renderer,
                                            "../../assets/shaders/uiVert.hlsl",
                                            "../../assets/shaders/spriteFrag.hlsl");
