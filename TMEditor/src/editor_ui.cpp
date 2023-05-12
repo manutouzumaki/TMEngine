@@ -259,6 +259,74 @@ static void SaveScene(TMUIElement *element) {
 
         }
 
+        if(entity->collision) {
+            TMJsonObject jsonCollision = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonCollision, "Collision");
+
+            TMJsonObject solid = TMJsonObjectCreate();
+            TMJsonObjectSetName(&solid, "Solid");
+            TMJsonObjectSetValue(&solid, (float)((int)entity->collision->solid));
+
+            TMJsonObjectAddChild(&jsonCollision, &solid);
+
+            switch(entity->collision->type) {
+            
+                case COLLISION_TYPE_AABB: {
+                    TMJsonObject aabb = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&aabb, "AABB");
+
+                    TMJsonObject min = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&min, "Min");
+                    TMJsonObjectSetValue(&min, entity->collision->aabb.min.x);
+                    TMJsonObjectSetValue(&min, entity->collision->aabb.min.y);
+
+                    TMJsonObject max = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&max, "Max");
+                    TMJsonObjectSetValue(&max, entity->collision->aabb.max.x);
+                    TMJsonObjectSetValue(&max, entity->collision->aabb.max.y);
+
+                    TMJsonObjectAddChild(&aabb, &min);
+                    TMJsonObjectAddChild(&aabb, &max);
+
+                    TMJsonObjectAddChild(&jsonCollision, &aabb);
+                    
+                } break;
+                case COLLISION_TYPE_CIRCLE: {
+                    // TODO: ...
+
+                } break;
+                case COLLISION_TYPE_CAPSULE: {
+                    TMJsonObject capsule = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&capsule, "Capsule");
+
+                    TMJsonObject a = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&a, "A");
+                    TMJsonObjectSetValue(&a, entity->collision->capsule.a.x);
+                    TMJsonObjectSetValue(&a, entity->collision->capsule.a.y);
+
+                    TMJsonObject b = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&b, "B");
+                    TMJsonObjectSetValue(&b, entity->collision->capsule.b.x);
+                    TMJsonObjectSetValue(&b, entity->collision->capsule.b.y);
+
+                    TMJsonObject r = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&r, "Radio");
+                    TMJsonObjectSetValue(&r, entity->collision->capsule.r);
+
+                    TMJsonObjectAddChild(&capsule, &a);
+                    TMJsonObjectAddChild(&capsule, &b);
+                    TMJsonObjectAddChild(&capsule, &r);
+
+                    TMJsonObjectAddChild(&jsonCollision, &capsule);
+
+                } break;
+
+            }
+ 
+            TMJsonObjectAddChild(&jsonEntity, &jsonCollision);
+
+        }
+
         TMJsonObjectAddChild(&jsonScene, &jsonEntity);
 
     }
