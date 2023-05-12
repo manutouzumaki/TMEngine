@@ -13,6 +13,39 @@
 #include <math.h>
 #include "editor_ui.h"
 
+struct AABB {
+    TMVec2 min;
+    TMVec2 max;
+};
+
+struct Circle {
+    TMVec2 c;
+    float r;
+};
+
+struct Capsule {
+    TMVec2 a;
+    TMVec2 b;
+    float r;
+};
+
+enum CollisionType {
+    COLLISION_TYPE_AABB,
+    COLLISION_TYPE_OBB,
+    COLLISION_TYPE_CIRCLE,
+    COLLISION_TYPE_CAPSULE
+};
+
+struct Collision {
+    CollisionType type;
+    union {
+        AABB aabb;
+        Circle circle;
+        Capsule capsule;
+    };
+    bool solid;
+};
+
 struct Entity {
     int id;
     TMVec4 color;
@@ -23,6 +56,7 @@ struct Entity {
     TMShader *shader;
     TMTexture *texture;
     int zIndex;
+    Collision *collision;
 };
 
 struct EditorState {

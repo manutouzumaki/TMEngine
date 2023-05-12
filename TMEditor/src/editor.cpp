@@ -10,22 +10,12 @@ struct ConstBuffer {
     TMVec4 relUVs;
 };
 
-static ConstBuffer gConstBuffer;
-
-static TMVertex gVertices[] = {
-        TMVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec3{0, 0, 0}}, // 0
-        TMVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec3{0, 0, 0}}, // 1
-        TMVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec3{0, 0, 0}}, // 2
-        TMVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec3{0, 0, 0}}  // 3
-};
-
-static unsigned int gIndices[] = {
-        1, 0, 2, 2, 0, 3
-};
-
-
+// globals
+///////////////////////////////////////////////////
 EditorState *gState;
-const char *gImages[] = {
+TMHashmap   *gAbsUVs;
+TMTexture   *gTexture;
+const char  *gImages[] = {
     "../../assets/images/moon.png",
     "../../assets/images/paddle_1.png",
     "../../assets/images/characters_packed.png",
@@ -34,12 +24,26 @@ const char *gImages[] = {
     "../../assets/images/paddle_2.png",
     "../../assets/images/font.png"
 };
-float     *gFontUVs;
-TMHashmap *gAbsUVs;
-TMTexture *gTexture;
-int gFontCount;
-static int gEntityCount;
+///////////////////////////////////////////////////
 
+
+// local to the obj file
+///////////////////////////////////////////////////
+static float       *gFontUVs;
+static int          gFontCount;
+static int          gEntityCount;
+static ConstBuffer  gConstBuffer;
+static unsigned int gIndices[] = { 1, 0, 2, 2, 0, 3 };
+static TMVertex     gVertices[] = {
+        TMVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec3{0, 0, 0}}, // 0
+        TMVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec3{0, 0, 0}}, // 1
+        TMVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec3{0, 0, 0}}, // 2
+        TMVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec3{0, 0, 0}}  // 3
+};
+///////////////////////////////////////////////////
+
+
+// TODO: add collision geometry ...
 
 static void AddEntity(EditorState *state, float posX, float posY) {
     printf("Entity added\n");
@@ -102,6 +106,33 @@ static void InsertionSortEntities(Entity *entities, int length)
         }
         entities[i + 1] = key;
     }
+}
+
+static void UpdateCollision(Entity *entity) {
+    Collision *collision = entity->collision;
+    switch(collision->type) {
+    
+        case COLLISION_TYPE_AABB: 
+        {
+            AABB aabb;
+            aabb.min = entity->position;
+            aabb.max = entity->position + entity->size;
+            collision->aabb = aabb;
+        } break;
+        case COLLISION_TYPE_CIRCLE:
+        {
+            //collision->circle
+            // TODO: ....
+        } break;
+        case COLLISION_TYPE_CAPSULE:
+        {
+            //collision->capsule
+            // TODO: ....
+        } break;
+
+    }
+
+
 }
 
 void EditorInitialize(EditorState *state, TMWindow *window) {
@@ -224,12 +255,15 @@ void EditorUpdate(EditorState *state) {
         if(state->modifyOption == MODIFY_TRANSLATE) {
             entity->position.x += offsetX;
             entity->position.y += offsetY;
+            if(entity->collision) UpdateCollision(entity);
+
         }
         else if (state->modifyOption == MODIFY_SCALE){
             entity->size.x += offsetX;
             entity->size.y += offsetY;
             entity->position.x += offsetX*0.5f;
             entity->position.y += offsetY*0.5f;
+            if(entity->collision) UpdateCollision(entity);
         }
         else if(state->modifyOption == MODIFY_INC_REL_U) {
             entity->relUVs.z -= offsetX*0.02f;
@@ -277,7 +311,6 @@ void EditorUpdate(EditorState *state) {
             }
         }
     }
-    // this is a test for a github problem when trying to commit my changes ...
 
 }
 
@@ -290,6 +323,27 @@ void EditorRender(EditorState *state) {
 
     TMRendererDepthTestEnable(state->renderer);
 
+    if(state->entities) {
+        for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+            Entity *entity = state->entities + i;
+            TMRendererBindShader(state->renderer, entity->shader);
+            if(entity->texture) TMRendererTextureBind(state->renderer, entity->texture, entity->shader, "uTexture", 0);
+
+            TMMat4 trans = TMMat4Translate(entity->position.x, entity->position.y, entity->zIndex);
+            TMMat4 scale = TMMat4Scale(entity->size.x, entity->size.y, 1.0f);
+            gConstBuffer.world = trans * scale;
+            gConstBuffer.color = entity->color;
+            gConstBuffer.absUVs = entity->absUVs;
+            gConstBuffer.relUVs = entity->relUVs;
+            TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &gConstBuffer);
+            TMRendererDrawBufferElements(state->renderer, state->vertexBuffer);
+
+        }
+    }
+
+
+    TMRendererDepthTestDisable(state->renderer);
+
     TMVec3 pos = state->cameraP;
     for(int y = 0; y < (height/state->meterToPixel) + 2; ++y) {
         int offsetY = (int)pos.y;
@@ -300,30 +354,50 @@ void EditorRender(EditorState *state) {
         TMDebugRendererDrawLine(x + offsetX, 0 + pos.y, x + offsetX, height/state->meterToPixel + pos.y, 0xFF666666);
     }
 
-    if(state->entities) {
-        for(int i = 0; i < TMDarraySize(state->entities); ++i) {
-            Entity *entity = state->entities + i;
-            TMRendererBindShader(state->renderer, entity->shader);
-            if(entity->texture) TMRendererTextureBind(state->renderer, entity->texture, entity->shader, "uTexture", 0);
-
-                TMMat4 trans = TMMat4Translate(entity->position.x, entity->position.y, entity->zIndex);
-                TMMat4 scale = TMMat4Scale(entity->size.x, entity->size.y, 1.0f);
-                gConstBuffer.world = trans * scale;
-                gConstBuffer.color = entity->color;
-                gConstBuffer.absUVs = entity->absUVs;
-                gConstBuffer.relUVs = entity->relUVs;
-                TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &gConstBuffer);
-                TMRendererDrawBufferElements(state->renderer, state->vertexBuffer);
-        }
-    }
-
-
-    TMRendererDepthTestDisable(state->renderer);
-
     if(state->selectedEntity) {
         Entity *entity = state->selectedEntity;
         TMDebugRendererDrawQuad(entity->position.x, entity->position.y, entity->size.x, entity->size.y, 0, 0xFF00FF00);
     }
+
+    TMDebugRenderDraw();
+
+    if(state->entities) {
+        for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+            Entity *entity = state->entities + i;
+
+            if(entity->collision) {
+
+                unsigned int color = 0xFF00FFFF;
+                if(entity->collision->solid) {
+                    color = 0xFFFF0000;
+                }
+
+                switch(entity->collision->type) {
+                
+                    case COLLISION_TYPE_AABB: 
+                    {
+                        TMVec2 position = entity->collision->aabb.min;
+                        TMVec2 size = entity->collision->aabb.max - entity->collision->aabb.min;
+                        TMDebugRendererDrawQuad(position.x, position.y, size.x, size.y, 0, color);
+                    } break;
+                    case COLLISION_TYPE_CIRCLE:
+                    {
+                        //collision->circle
+                        // TODO: ....
+                    } break;
+                    case COLLISION_TYPE_CAPSULE:
+                    {
+                        //collision->capsule
+                        // TODO: ....
+                    } break;
+                }
+            }
+
+
+
+        }
+    }
+
 
     TMDebugRenderDraw();
 

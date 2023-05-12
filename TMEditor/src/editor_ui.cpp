@@ -4,9 +4,9 @@
 #include <stdio.h>
 
 extern EditorState *gState;
-extern const char *gImages[7];
-extern TMHashmap *gAbsUVs;
-extern TMTexture *gTexture;
+extern const char  *gImages[7];
+extern TMHashmap   *gAbsUVs;
+extern TMTexture   *gTexture;
 
 static TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
     TMVec4 result = *((TMVec4 *)TMHashmapGet(hashmap, filepath));
@@ -75,6 +75,86 @@ static void DecrementZ(TMUIElement *element) {
         entity->zIndex--;
         entity->zIndex = MaxI32(entity->zIndex, 1);
         printf("zIndex: %d\n", entity->zIndex);
+    }
+
+}
+
+
+
+static void AddCollisionToEntity(Entity *entity, CollisionType type) {
+
+    if(!entity->collision) {
+
+        entity->collision = (Collision *)malloc(sizeof(Collision));
+        Collision *collision = entity->collision;
+
+        collision->type = type;
+        collision->solid = true;
+        
+        switch(type) {
+        
+            case COLLISION_TYPE_AABB: 
+            {
+                AABB aabb;
+
+                aabb.min = entity->position;
+                aabb.max = entity->position + entity->size;
+
+                collision->aabb = aabb;
+            } break;
+            case COLLISION_TYPE_CIRCLE:
+            {
+                //collision->circle
+                // TODO: ....
+            } break;
+            case COLLISION_TYPE_CAPSULE:
+            {
+                //collision->capsule
+                // TODO: ....
+            } break;
+
+        }
+
+    }
+
+}
+
+static void RemoveCollisionToEntity(Entity *entity) {
+    if(entity->collision) free(entity->collision);
+    entity->collision = NULL;
+}
+
+
+static void AddCollision(TMUIElement *element) {
+
+    gState->modifyOption = MODIFY_NONE;
+
+    if(gState->selectedEntity) {
+        Entity *entity = gState->selectedEntity;
+        AddCollisionToEntity(entity, COLLISION_TYPE_AABB);
+    }
+
+}
+
+static void RemCollision(TMUIElement *element) {
+
+    gState->modifyOption = MODIFY_NONE;
+
+    if(gState->selectedEntity) {
+        Entity *entity = gState->selectedEntity;
+        RemoveCollisionToEntity(entity);
+    }
+
+}
+
+static void SolidCollision(TMUIElement *element) {
+
+    gState->modifyOption = MODIFY_NONE;
+    if(gState->selectedEntity) {
+        Entity *entity = gState->selectedEntity;
+        if(entity->collision) {
+            entity->collision->solid = !entity->collision->solid;
+        }
     }
 
 }
@@ -201,7 +281,7 @@ static void SaveScene(TMUIElement *element) {
 
 void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPixel) {
 
-    ui->options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {4, 0.4}, {0.1, 0.1, 0.1, 1});
+    ui->options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {6, 0.4}, {0.1, 0.1, 0.1, 1});
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, OptionSelected);
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Colors ",   {1, 1, 1, 1}, OptionSelected);
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Clear Brush ",   {1, 1, 1, 1}, ClearSelected);
@@ -241,6 +321,7 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
     TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
     TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
+    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
     child = TMUIElementGetChild(ui->modify, 2);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc absU ", {1, 1, 1, 1}, IncrementAbsU);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc absV ", {1, 1, 1, 1}, IncrementAbsV);
@@ -254,6 +335,10 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     child = TMUIElementGetChild(ui->modify, 4);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc z ", {1, 1, 1, 1}, IncrementZ);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " dec z ", {1, 1, 1, 1}, DecrementZ);
+    child = TMUIElementGetChild(ui->modify, 5);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " add Collider ", {1, 1, 1, 1}, AddCollision);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " rem Collider ", {1, 1, 1, 1}, RemCollision);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Solid ",        {1, 1, 1, 1}, SolidCollision);
     
     ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {2.5, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene);
