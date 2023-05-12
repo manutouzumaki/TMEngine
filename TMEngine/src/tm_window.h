@@ -17,4 +17,7 @@ TM_EXPORT void TMWindowPresent(TMWindow *window);
 // TODO: implement this for macos
 TM_EXPORT void TMSleep(float milliseconds);
 
+TM_EXPORT void TMMouseSetCapture(TMWindow *window);
+TM_EXPORT void TMMouseReleaseCapture();
+
 #endif

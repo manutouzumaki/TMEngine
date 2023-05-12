@@ -22,7 +22,6 @@ static WORD XInputButtons[] = {
     XINPUT_GAMEPAD_Y
 };
 
-
 LRESULT WindowProcA(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     LRESULT result = 0;
     switch (msg) {
@@ -203,4 +202,12 @@ void TMWindowPresent(TMWindow* window) {
 
 void TMSleep(float milliseconds) {
     Sleep(milliseconds);
+}
+
+void TMMouseSetCapture(TMWindow *window) {
+    SetCapture(window->hwndWindow);
+}
+
+void TMMouseReleaseCapture() {
+    ReleaseCapture();
 }

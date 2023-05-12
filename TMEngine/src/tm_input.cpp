@@ -3,7 +3,6 @@
 extern TMInput gCurrentInput;
 extern TMInput gLastInput;
 
-
 // TODO: add support for the joystics ....
 
 bool TMInputKeyboardKeyIsDown(unsigned int keyCode) {
@@ -66,10 +65,6 @@ float TMInputJoystickRightStickX() {
 float TMInputJoystickRightStickY() {
     return gCurrentInput.rightStickY;
 }
-
-
-
-
 
 
 

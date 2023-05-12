@@ -27,6 +27,7 @@ struct Entity {
 
 struct EditorState {
 
+    TMWindow       *window;
     TMRenderer     *renderer;
     TMBuffer       *vertexBuffer;
     TMShaderBuffer *shaderBuffer;

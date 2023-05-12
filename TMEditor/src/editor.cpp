@@ -1,4 +1,5 @@
 #include "editor.h"
+#include <tm_window.h>
 
 struct ConstBuffer {
     TMMat4 proj;
@@ -106,7 +107,8 @@ static void InsertionSortEntities(Entity *entities, int length)
 void EditorInitialize(EditorState *state, TMWindow *window) {
     // TODO: remove this ...
     gState = state;
-
+    
+    state->window = window;
     state->meterToPixel = 100.0f;
     state->renderer = TMRendererCreate(window);
 
@@ -158,7 +160,14 @@ void EditorUpdate(EditorState *state) {
 
 
     if(!state->mouseIsHot) {
+        if(TMInputMousButtonJustDown(TM_MOUSE_BUTTON_RIGHT)) {
+            TMMouseSetCapture(state->window);
+        }
+        if(TMInputMousButtonJustUp(TM_MOUSE_BUTTON_RIGHT)) { 
+            TMMouseReleaseCapture();
+        }
         if(TMInputMousButtonIsDown(TM_MOUSE_BUTTON_RIGHT)) {
+
             state->cameraP = {
                 state->cameraP.x - (float)(TMInputMousePositionX() - TMInputMouseLastPositionX()) / state->meterToPixel,
                 state->cameraP.y + (float)(TMInputMousePositionY() - TMInputMouseLastPositionY()) / state->meterToPixel,

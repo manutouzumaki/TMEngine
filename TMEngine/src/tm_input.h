@@ -137,5 +137,4 @@ TM_EXPORT int TMInputMousePositionY();
 TM_EXPORT int TMInputMouseLastPositionX();
 TM_EXPORT int TMInputMouseLastPositionY();
 
-
 #endif
