@@ -46,6 +46,12 @@ struct Collision {
     bool solid;
 };
 
+enum PrefabsType {
+    PREFAB_TYPE_NONE,
+    PREFAB_TYPE_PLAYER,
+    PREFAB_TYPE_ENEMY
+};
+
 struct Entity {
     int id;
     TMVec4 color;
@@ -78,6 +84,7 @@ struct EditorState {
     TMVec3       cameraP;
     float        meterToPixel;
     ModifyOption modifyOption;
+    PrefabsType prefabType;
     BrushOption  option;
     bool         mouseIsHot;
 

@@ -27,11 +27,13 @@ static void OptionSelected(TMUIElement *element) {
     printf("Option selected\n");
     gState->option = (BrushOption)element->index;
     gState->modifyOption = MODIFY_NONE;
+    gState->prefabType = PREFAB_TYPE_NONE;
     gState->selectedEntity = NULL;
 }
 
 static void ClearSelected(TMUIElement *element) {
     printf("Clear selected\n");
+    gState->prefabType = PREFAB_TYPE_NONE;
     gState->element = NULL;
 }
 
@@ -41,6 +43,24 @@ static void ElementSelected(TMUIElement *element) {
     gState->modifyOption = MODIFY_NONE;
     gState->selectedEntity = NULL;
 }
+
+static void PlayerPrefabSelected(TMUIElement *element) {
+    printf("Prefab player selected\n");
+    gState->element = element;
+    gState->modifyOption = MODIFY_NONE;
+    gState->prefabType = PREFAB_TYPE_PLAYER;
+    gState->selectedEntity = NULL;
+
+}
+
+static void EnemyPrefabSelected(TMUIElement *element) {
+    printf("Prefab enemy selected\n");
+    gState->element = element;
+    gState->modifyOption = MODIFY_NONE;
+    gState->prefabType = PREFAB_TYPE_ENEMY;
+    gState->selectedEntity = NULL;
+}
+
 
 static void TranslateEntity(TMUIElement *element) { gState->modifyOption = MODIFY_TRANSLATE; }
 static void ScaleEntity(TMUIElement *element)     { gState->modifyOption = MODIFY_SCALE;     }
@@ -81,40 +101,19 @@ static void DecrementZ(TMUIElement *element) {
 
 
 
-static void AddCollisionToEntity(Entity *entity, CollisionType type) {
+static void AddCollisionToEntity(Entity *entity) {
 
     if(!entity->collision) {
 
         entity->collision = (Collision *)malloc(sizeof(Collision));
         Collision *collision = entity->collision;
 
-        collision->type = type;
+        collision->type = COLLISION_TYPE_AABB;
         collision->solid = true;
-        
-        switch(type) {
-        
-            case COLLISION_TYPE_AABB: 
-            {
-                AABB aabb;
-
-                aabb.min = entity->position;
-                aabb.max = entity->position + entity->size;
-
-                collision->aabb = aabb;
-            } break;
-            case COLLISION_TYPE_CIRCLE:
-            {
-                //collision->circle
-                // TODO: ....
-            } break;
-            case COLLISION_TYPE_CAPSULE:
-            {
-                //collision->capsule
-                // TODO: ....
-            } break;
-
-        }
-
+        AABB aabb;
+        aabb.min = entity->position;
+        aabb.max = entity->position + entity->size;
+        collision->aabb = aabb;
     }
 
 }
@@ -131,7 +130,7 @@ static void AddCollision(TMUIElement *element) {
 
     if(gState->selectedEntity) {
         Entity *entity = gState->selectedEntity;
-        AddCollisionToEntity(entity, COLLISION_TYPE_AABB);
+        AddCollisionToEntity(entity);
     }
 
 }
@@ -352,6 +351,7 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     ui->options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {6, 0.4}, {0.1, 0.1, 0.1, 1});
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, OptionSelected);
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Colors ",   {1, 1, 1, 1}, OptionSelected);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Prefabs ",   {1, 1, 1, 1}, OptionSelected);
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Clear Brush ",   {1, 1, 1, 1}, ClearSelected);
 
     ui->textures = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.4f, 0.1f, 1});
@@ -382,6 +382,15 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     for(int i = 0; i < 8; ++i) {
         TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0, 0.1f + 0.1f*(float)i, 1}, ElementSelected);
     }
+
+    ui->prefabs = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.4f, 0.1f, 0.1f, 1});
+    TMUIElementAddChildButton(ui->prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
+    TMUIElementAddChildButton(ui->prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
+    TMUIElementAddChildButton(ui->prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
+    child = TMUIElementGetChild(ui->prefabs, 0);
+    TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0.5f, 0.5f, 1}, EnemyPrefabSelected);
+    child = TMUIElementGetChild(ui->prefabs, 1);
+    TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0.5f, 0.5f, 0, 1}, PlayerPrefabSelected);
 
     ui->modify = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {8.0, 0}, {4.8, 2}, {0.1f, 0.1f, 0.1f, 1});
     TMUIElementAddChildLabel(ui->modify, TM_UI_ORIENTATION_VERTICAL,   " Scale ", {1, 1, 1, 1}, ScaleEntity);
@@ -421,9 +430,13 @@ void EditorUIUpdate(EditorUI *ui, float width, float height, float meterToPixel)
     if(gState->option == OPTION_TEXTURE) {
         TMUIElementProcessInput(ui->textures, pos.x, pos.y, width, height, meterToPixel);
     }
-    else if (gState->option == OPTION_COLOR){
+    else if (gState->option == OPTION_COLOR) {
         TMUIElementProcessInput(ui->colors, pos.x, pos.y, width, height, meterToPixel);
     }
+    else if (gState->option == OPTION_PREFABS) {
+        TMUIElementProcessInput(ui->prefabs, pos.x, pos.y, width, height, meterToPixel);
+    }
+
     if(!gState->element && gState->selectedEntity) {
         TMUIElementProcessInput(ui->modify, pos.x, pos.y, width, height, meterToPixel);
     }
@@ -432,6 +445,7 @@ void EditorUIUpdate(EditorUI *ui, float width, float height, float meterToPixel)
     TMUIMouseIsHot(ui->options,  &gState->mouseIsHot);
     TMUIMouseIsHot(ui->textures, &gState->mouseIsHot);
     TMUIMouseIsHot(ui->colors,   &gState->mouseIsHot);
+    TMUIMouseIsHot(ui->prefabs,   &gState->mouseIsHot);
     TMUIMouseIsHot(ui->save,     &gState->mouseIsHot);
     if(!gState->element && gState->selectedEntity) {
         TMUIMouseIsHot(ui->modify, &gState->mouseIsHot);
@@ -449,6 +463,9 @@ void EditorUIDraw(EditorUI *ui, TMRenderer *renderer) {
     }
     else if (gState->option == OPTION_COLOR) {
         TMUIElementDraw(renderer, ui->colors, 0.0f);
+    }
+    else if(gState->option == OPTION_PREFABS) {
+        TMUIElementDraw(renderer, ui->prefabs, 0.0f);
     }
 
     if(!gState->element && gState->selectedEntity) {

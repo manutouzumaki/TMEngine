@@ -45,9 +45,11 @@ static TMVertex     gVertices[] = {
 
 // TODO: add collision geometry ...
 
-static void AddEntity(EditorState *state, float posX, float posY) {
+static void AddDefaultEntity(EditorState *state, float posX, float posY) {
     printf("Entity added\n");
+
     TMUIElement *element = state->element;
+
     Entity entity = {};
     entity.color = element->oldColor;
     entity.absUVs = element->absUVs;
@@ -57,6 +59,8 @@ static void AddEntity(EditorState *state, float posX, float posY) {
     entity.texture = element->texture;
     entity.zIndex = 2;
     entity.id = gEntityCount++;
+
+
     if(element->type == TM_UI_TYPE_BUTTON) {
         entity.shader = state->colorShader;
     }
@@ -64,6 +68,68 @@ static void AddEntity(EditorState *state, float posX, float posY) {
         entity.shader = state->spriteShader;
     }
     TMDarrayPush(state->entities, entity, Entity);
+}
+
+static TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
+    TMVec4 result = *((TMVec4 *)TMHashmapGet(hashmap, filepath));
+    return result; 
+}
+
+static void AddPlayerEntity(EditorState *state, float posX, float posY) {
+
+    printf("Player added\n");
+
+    Entity entity = {};
+    entity.color = {1, 1, 1, 1};
+    entity.absUVs = Texture(gAbsUVs, gImages[ARRAY_LENGTH(gImages) - 1]);
+    entity.relUVs = {0, 0, 0.25, 0.5};
+    entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
+    entity.size = {1.2, 1.2};
+    entity.texture = gTexture;
+    entity.shader = state->spriteShader;
+    entity.zIndex = 2;
+    entity.id = gEntityCount++;
+
+    entity.collision = (Collision *)malloc(sizeof(Collision));
+
+    TMVec2 offset = {0, entity.size.y * 0.15f};
+
+    Capsule capsule;
+    capsule.r = entity.size.x*0.35f;
+    capsule.a = entity.position + offset;
+    capsule.b = entity.position - offset;
+
+    entity.collision->capsule = capsule;
+    entity.collision->type = COLLISION_TYPE_CAPSULE;
+    entity.collision->solid = true;
+
+    TMDarrayPush(state->entities, entity, Entity);
+
+}
+
+static void AddEnemyEntity(EditorState *state, float posX, float posY) {
+    printf("Enemy added\n");
+
+}
+
+static void AddEntity(EditorState *state, float posX, float posY) {
+    switch(state->prefabType) {
+
+        case PREFAB_TYPE_NONE:
+        {
+            AddDefaultEntity(state, posX, posY);
+        } break;
+        case PREFAB_TYPE_PLAYER:
+        {
+            AddPlayerEntity(state, posX, posY);
+        } break;
+        case PREFAB_TYPE_ENEMY:
+        {
+            AddEnemyEntity(state, posX, posY);    
+        } break;
+
+    }
+
 
 }
 
@@ -126,8 +192,13 @@ static void UpdateCollision(Entity *entity) {
         } break;
         case COLLISION_TYPE_CAPSULE:
         {
-            //collision->capsule
-            // TODO: ....
+            // TODO: improve this function to  update the capsule size
+            Capsule *capsule = &collision->capsule;
+            TMVec2 ab = capsule->b - capsule->a;
+            float halfHeight = TMVec2Len(ab)*0.5f; 
+            TMVec2 up = {0, 1};
+            capsule->a = entity->position + up * halfHeight;
+            capsule->b = entity->position - up * halfHeight;
         } break;
 
     }
@@ -387,8 +458,10 @@ void EditorRender(EditorState *state) {
                     } break;
                     case COLLISION_TYPE_CAPSULE:
                     {
-                        //collision->capsule
-                        // TODO: ....
+                        Capsule capsule = entity->collision->capsule;
+                        TMVec2 ab = capsule.b - capsule.a;
+                        float halfHeight = TMVec2Len(ab)*0.5f;
+                        TMDebugRendererDrawCapsule(entity->position.x, entity->position.y, capsule.r, halfHeight, 0, color, 20);
                     } break;
                 }
             }

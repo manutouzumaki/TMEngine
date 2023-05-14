@@ -20,14 +20,15 @@ enum ModifyOption {
 enum BrushOption {
     OPTION_TEXTURE,
     OPTION_COLOR,
-    OPTION_CLEAR,
-    OPTION_COLLIDER
+    OPTION_PREFABS,
+    OPTION_CLEAR
 };
 
 struct EditorUI {
     TMUIElement *options;
     TMUIElement *textures;
     TMUIElement *colors;
+    TMUIElement *prefabs;
     TMUIElement *modify;
     TMUIElement *save;
 };
