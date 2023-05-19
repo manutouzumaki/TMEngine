@@ -12,16 +12,19 @@ struct GameState {
     
     TMRenderer *renderer;
 
+    TMShader       *colorShader;
+    TMShader       *spriteShader;
+
     TMMat4 view;
     TMMat4 proj;
 
     Entity **entities;
-    Entity *player;
+    //Entity *player;
 
     // TODO: this should be a hashmap or somthing like that
     //TMVec4 *absUVs;
     //TMHashmap *absUVs;
-    float  *relUVs;
+    //float  *relUVs;
     //int relUVsCount;
 };
 

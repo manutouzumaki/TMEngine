@@ -247,12 +247,17 @@ static void SaveScene(TMUIElement *element) {
             TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[2]);
             TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[3]);
 
+            TMJsonObject jsonZIndex = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonZIndex, "ZIndex");
+            TMJsonObjectSetValue(&jsonZIndex, entity->zIndex);
+
             TMJsonObjectAddChild(&jsonGraphic, &jsonType);
             TMJsonObjectAddChild(&jsonGraphic, &jsonPosition);
             TMJsonObjectAddChild(&jsonGraphic, &jsonSize);
             TMJsonObjectAddChild(&jsonGraphic, &jsonColor);
             TMJsonObjectAddChild(&jsonGraphic, &jsonAbsUVs);
             TMJsonObjectAddChild(&jsonGraphic, &jsonRelUVs);
+            TMJsonObjectAddChild(&jsonGraphic, &jsonZIndex);
         
             TMJsonObjectAddChild(&jsonEntity, &jsonGraphic);
 

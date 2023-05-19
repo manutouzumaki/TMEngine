@@ -15,7 +15,9 @@ enum GraphicsComponentType {
 
 struct GraphicsComponent {
 
-    float *relUVs;
+    TMShader *shader;
+
+    TMVec4 relUVs;
     TMVec4 absUVs;
     TMVec4 color;
 
@@ -93,10 +95,14 @@ Entity *EntityCreate();
 void EntityDestroy(Entity *entity);
 
 
-void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color);
-void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, float *uvs);
+void EntityAddGraphicsComponent(Entity *entity, GraphicsComponentType type,
+                                TMVec2 position, TMVec2 size, TMVec4 color,
+                                TMVec4 absUVs, TMVec4 relUVs, int zIndex, TMShader *shader);
+
+void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color, TMShader *shader);
+void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, float *uvs, TMShader *shader);
 void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size,
-                                         TMVec4 absUVs, int index, float *uvs);
+                                         TMVec4 absUVs, int index, float *uvs, TMShader *shader);
 
 
 void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity, TMVec2 acceleration, float damping);

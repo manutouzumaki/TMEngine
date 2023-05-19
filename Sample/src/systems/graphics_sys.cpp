@@ -17,8 +17,6 @@ struct ConstBuffer {
 struct GraphycsSystemState {
     TMBuffer       *vertexBuffer;
     TMShaderBuffer *shaderBuffer;
-    TMShader       *colorShader;
-    TMShader       *spriteShader;
     float meterToPixel;
     // TODO: this should be temporal
     TMTexture *texture;
@@ -74,21 +72,12 @@ void GraphicsSystemOnMessage(MessageType type, void *sender, void * listener, Me
 
 }
 
-void GraphicsSystemInitialize(TMRenderer *renderer) {
+void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
 
     MessageRegister(MESSAGE_TYPE_GRAPHICS_UPDATE_POSITIONS, NULL, GraphicsSystemOnMessage);
     MessageRegister(MESSAGE_TYPE_GRAPHICS_UPDATE_ANIMATION_INDEX, NULL, GraphicsSystemOnMessage);
 
     gGraphicsState.meterToPixel = 100.0f;
-
-    
-    gGraphicsState.spriteShader = TMRendererShaderCreate(renderer,
-                                                 "../../assets/shaders/defaultVert.hlsl",
-                                                 "../../assets/shaders/spriteFrag.hlsl");
-    gGraphicsState.colorShader  =  TMRendererShaderCreate(renderer,
-                                                 "../../assets/shaders/defaultVert.hlsl",
-                                                 "../../assets/shaders/colorFrag.hlsl");
-
 
     // create the shader buffer to store the ConstBuffer on the GPU
     gGraphicsState.shaderBuffer = TMRendererShaderBufferCreate(renderer, &gConstBuffer,
@@ -97,7 +86,7 @@ void GraphicsSystemInitialize(TMRenderer *renderer) {
     gGraphicsState.vertexBuffer = TMRendererBufferCreate(renderer,
                                                  gVertices, ARRAY_LENGTH(gVertices),
                                                  gIndices, ARRAY_LENGTH(gIndices),
-                                                 gGraphicsState.colorShader);
+                                                 shader);
 
     gFontUVs = TMGenerateUVs(128, 64, 7, 9, &gFontCount);
     gAbsUVs = TMHashmapCreate(sizeof(TMVec4));
@@ -136,28 +125,21 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
             GraphicsComponent *graphics = entity->graphics;
             
 #if 1
-            if(graphics->type == GRAPHICS_TYPE_SOLID_COLOR) {
-                TMRendererBindShader(renderer, gGraphicsState.colorShader);
-                gConstBuffer.color = graphics->color; // Init color
-            }
-            else {
-                TMRendererBindShader(renderer, gGraphicsState.spriteShader);
-                TMRendererTextureBind(renderer, gGraphicsState.texture,
-                                      gGraphicsState.spriteShader, "uTexture", 0);
-                gConstBuffer.color = {1, 1, 1, 1}; // Init color
-            }
 
-            TMMat4 trans = TMMat4Translate(entity->graphics->position.x,
-                                           entity->graphics->position.y,
-                                           2); // TODO: add zIndex
-            TMMat4 scale = TMMat4Scale(entity->graphics->size.x,
-                                       entity->graphics->size.y,
+            TMRendererBindShader(renderer, graphics->shader);
+            TMRendererTextureBind(renderer, gGraphicsState.texture, graphics->shader, "uTexture", 0);
+
+        
+            TMMat4 trans = TMMat4Translate(graphics->position.x,
+                                           graphics->position.y,
+                                           (float)graphics->zIndex); // TODO: add zIndex
+            TMMat4 scale = TMMat4Scale(graphics->size.x,
+                                       graphics->size.y,
                                        1.0f);
             gConstBuffer.world = trans * scale;
-            gConstBuffer.absUVs = {0, 0, 1, 1};
-            if(entity->graphics->relUVs) {
-                gConstBuffer.relUVs = *((TMVec4 *)entity->graphics->relUVs);
-            }
+            gConstBuffer.absUVs = graphics->absUVs;
+            gConstBuffer.relUVs = graphics->relUVs;
+            gConstBuffer.color = graphics->color;
             TMRendererShaderBufferUpdate(renderer, gGraphicsState.shaderBuffer, &gConstBuffer);
             TMRendererDrawBufferElements(renderer, gGraphicsState.vertexBuffer);
 
@@ -198,46 +180,53 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
         Entity *entity = entities[i];
         if(entity->collision, entity->graphics) {
             CollisionComponent *collision = entity->collision;
-            GraphicsComponent *graphics = entity->graphics;
+            if(collision) {
 
-            switch(collision->type) {
-                    case COLLISION_TYPE_AABB: {
-                        AABB aabb = collision->aabb;
-                        float width = aabb.max.x - aabb.min.x;
-                        float height = aabb.max.y - aabb.min.y;
-                        float x = aabb.min.x + width*0.5f;
-                        float y = aabb.min.y + height*0.5f;
-                        
-                        TMDebugRendererDrawQuad(graphics->position.x, graphics->position.y, width, height, 0, 0xFF00FF00);
+                GraphicsComponent *graphics = entity->graphics;
 
-                        TMDebugRendererDrawCircle(aabb.max.x, aabb.min.y, 0.4, 0xFFFFFF00, 20);
-                        TMDebugRendererDrawCircle(aabb.min.x, aabb.max.y, 0.4, 0xFFFFFF00, 20);
-                        TMDebugRendererDrawCircle(aabb.min.x, aabb.min.y, 0.4, 0xFFFFFF00, 20);
-                        TMDebugRendererDrawCircle(aabb.max.x, aabb.max.y, 0.4, 0xFFFFFF00, 20);
+                switch(collision->type) {
+                        case COLLISION_TYPE_AABB: {
+                            AABB aabb = collision->aabb;
+                            float width = aabb.max.x - aabb.min.x;
+                            float height = aabb.max.y - aabb.min.y;
+                            
+                            TMDebugRendererDrawQuad(aabb.min.x, aabb.min.y, width, height, 0, 0xFFFF0000);
 
-                        aabb.min = {aabb.min.x - 0.4f, aabb.min.y - 0.4f};
-                        aabb.max = {aabb.max.x + 0.4f, aabb.max.y + 0.4f};
-                        width = aabb.max.x - aabb.min.x;
-                        height = aabb.max.y - aabb.min.y;
-                        x = aabb.min.x + width*0.5f;
-                        y = aabb.min.y + height*0.5f;
-                        TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
+                            aabb.min.x = aabb.min.x - width*0.5f;
+                            aabb.max.x = aabb.max.x - width*0.5f;
 
-                    }break;
-                    case COLLISION_TYPE_CIRCLE: {
-                        Circle circle = collision->circle;
-                        TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, circle.r, 0xFF00FF00, 20);
-                    }break;
-                    case COLLISION_TYPE_OBB: {
+                            aabb.min.y = aabb.min.y - height*0.5f;
+                            aabb.max.y = aabb.max.y - height*0.5f;
 
-                    }break;
-                    case COLLISION_TYPE_CAPSULE: {
-                        Capsule capsule = collision->capsule;
-                        TMVec2 ab = capsule.b - capsule.a;
-                        float halfHeight = TMVec2Len(ab)*0.5f;
-                        TMDebugRendererDrawCapsule(graphics->position.x, graphics->position.y, capsule.r, halfHeight, 0, 0xFF00FF00, 20);
+                            TMDebugRendererDrawCircle(aabb.max.x, aabb.min.y, 0.4, 0xFFFFFF00, 20);
+                            TMDebugRendererDrawCircle(aabb.min.x, aabb.max.y, 0.4, 0xFFFFFF00, 20);
+                            TMDebugRendererDrawCircle(aabb.min.x, aabb.min.y, 0.4, 0xFFFFFF00, 20);
+                            TMDebugRendererDrawCircle(aabb.max.x, aabb.max.y, 0.4, 0xFFFFFF00, 20);
 
-                    }break;           
+                            aabb.min = {aabb.min.x - 0.4f, aabb.min.y - 0.4f};
+                            aabb.max = {aabb.max.x + 0.4f, aabb.max.y + 0.4f};
+                            width = aabb.max.x - aabb.min.x;
+                            height = aabb.max.y - aabb.min.y;
+                            float x = aabb.min.x + width*0.5f;
+                            float y = aabb.min.y + height*0.5f;
+                            TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
+
+                        }break;
+                        case COLLISION_TYPE_CIRCLE: {
+                            Circle circle = collision->circle;
+                            TMDebugRendererDrawCircle(graphics->position.x, graphics->position.y, circle.r, 0xFF00FF00, 20);
+                        }break;
+                        case COLLISION_TYPE_OBB: {
+
+                        }break;
+                        case COLLISION_TYPE_CAPSULE: {
+                            Capsule capsule = collision->capsule;
+                            TMVec2 ab = capsule.b - capsule.a;
+                            float halfHeight = TMVec2Len(ab)*0.5f;
+                            TMDebugRendererDrawCapsule(graphics->position.x, graphics->position.y, capsule.r, halfHeight, 0, 0xFF00FF00, 20);
+
+                        }break;           
+                }
             }
         }
         if(entity->graphics) {

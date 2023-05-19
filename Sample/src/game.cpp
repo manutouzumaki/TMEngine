@@ -369,13 +369,14 @@ static const char *StringToNullTerString(const char *c, size_t size) {
     return (const char *)nullTerString;
 }
 
-void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, float *uvs) {
+void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state) {
     TMJsonObject *jsonType     = TMJsonFindChildByName(jsonObject, "Type");
     TMJsonObject *jsonPosition = TMJsonFindChildByName(jsonObject, "Position"); 
     TMJsonObject *jsonSize     = TMJsonFindChildByName(jsonObject, "Size");
     TMJsonObject *jsonColor     = TMJsonFindChildByName(jsonObject, "Color");
-    TMJsonObject *jsonUVs      = TMJsonFindChildByName(jsonObject, "Uvs");
-    TMJsonObject *jsonIndex    = TMJsonFindChildByName(jsonObject, "Index");
+    TMJsonObject *jsonAbsUVs      = TMJsonFindChildByName(jsonObject, "AbsUvs");
+    TMJsonObject *jsonRelUVs    = TMJsonFindChildByName(jsonObject, "RelUvs");
+    TMJsonObject *jsonZIndex    = TMJsonFindChildByName(jsonObject, "ZIndex");
 
     TMJsonValue jsonValue = jsonPosition->childs[0].values[0];
     float xPos = StringToFloat(jsonValue.value, jsonValue.size);
@@ -389,17 +390,40 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, float
     float ySiz = StringToFloat(jsonValue.value, jsonValue.size);
     TMVec2 size = {xSiz, ySiz};
 
+    int zIndex = StringToInt(jsonZIndex->values[0].value, jsonZIndex->values[0].size); 
+
     GraphicsComponentType type = (GraphicsComponentType)StringToInt(jsonType->values[0].value,
                                                                     jsonType->values[0].size);
+
+    float r = StringToFloat(jsonColor->childs[0].values[0].value, jsonColor->childs[0].values[0].size);
+    float g = StringToFloat(jsonColor->childs[1].values[0].value, jsonColor->childs[1].values[0].size);
+    float b = StringToFloat(jsonColor->childs[2].values[0].value, jsonColor->childs[2].values[0].size);
+    float a = StringToFloat(jsonColor->childs[3].values[0].value, jsonColor->childs[3].values[0].size);
+    TMVec4 color = {r, g, b, a};
+
+    float absX = StringToFloat(jsonAbsUVs->values[0].value, jsonAbsUVs->values[0].size);
+    float absY = StringToFloat(jsonAbsUVs->values[1].value, jsonAbsUVs->values[1].size);
+    float absZ = StringToFloat(jsonAbsUVs->values[2].value, jsonAbsUVs->values[2].size);
+    float absW = StringToFloat(jsonAbsUVs->values[3].value, jsonAbsUVs->values[3].size);
+    TMVec4 absUvs = {absX, absY, absZ, absW};
+
+    float relX = StringToFloat(jsonRelUVs->values[0].value, jsonRelUVs->values[0].size);
+    float relY = StringToFloat(jsonRelUVs->values[1].value, jsonRelUVs->values[1].size);
+    float relZ = StringToFloat(jsonRelUVs->values[2].value, jsonRelUVs->values[2].size);
+    float relW = StringToFloat(jsonRelUVs->values[3].value, jsonRelUVs->values[3].size);
+    TMVec4 relUvs = {relX, relY, relZ, relW};
+
+    TMShader *shader = (type == GRAPHICS_TYPE_SOLID_COLOR) ? state->colorShader : state->spriteShader;
+
+    EntityAddGraphicsComponent(entity, type, position, size, color,
+                               absUvs, relUvs, zIndex, shader);
+
+#if 0
     switch(type) {
 
         case GRAPHICS_TYPE_SOLID_COLOR: {
-            float r = StringToFloat(jsonColor->childs[0].values[0].value, jsonColor->childs[0].values[0].size);
-            float g = StringToFloat(jsonColor->childs[1].values[0].value, jsonColor->childs[1].values[0].size);
-            float b = StringToFloat(jsonColor->childs[2].values[0].value, jsonColor->childs[2].values[0].size);
-            float a = StringToFloat(jsonColor->childs[3].values[0].value, jsonColor->childs[3].values[0].size);
-            TMVec4 color = {r, g, b, a};
-            EntityAddGraphicsComponentSolidColor(entity, position, size, color);
+
+            EntityAddGraphicsComponentSolidColor(entity, position, size, color, state->colorShader);
         } break;
         case GRAPHICS_TYPE_SPRITE: {
             float x = StringToFloat(jsonUVs->values[0].value, jsonUVs->values[0].size);
@@ -408,7 +432,7 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, float
             float w = StringToFloat(jsonUVs->values[3].value, jsonUVs->values[3].size);
             // TODO: fix this hack ...
             entity->uvs = {x, y, z, w};
-            EntityAddGraphicsComponentSprite(entity, position, size, entity->uvs.v);
+            EntityAddGraphicsComponentSprite(entity, position, size, entity->uvs.v, state->spriteShader);
         } break;
         case GRAPHICS_TYPE_SUBSPRITE: {
             int index = StringToInt(jsonIndex->values[0].value, jsonIndex->values[0].size);
@@ -417,9 +441,10 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, float
             float z = StringToFloat(jsonUVs->values[2].value, jsonUVs->values[2].size);
             float w = StringToFloat(jsonUVs->values[3].value, jsonUVs->values[3].size);
             TMVec4 absUvs = {x, y, z, w};
-            EntityAddGraphicsComponentSubSprite(entity, position, size, absUvs, index, uvs);
+            EntityAddGraphicsComponentSubSprite(entity, position, size, absUvs, index, state->relUVs, state->spriteShader);
         } break;
     }
+#endif
 
 }
 
@@ -545,7 +570,7 @@ void EntityAddAnimationCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
 }
 
 void EntityAddInputCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state) {
-    state->player = entity;
+    //state->player = entity;
     EntityAddInputComponent(entity);
 }
 
@@ -558,10 +583,10 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
     TMJsonObject *jsonScene = TMJsonFindChildByName(jsonRoot, "Scene");
     TMJsonObject *jsonUVs = TMJsonFindChildByName(jsonRoot, "PlayerUvs");
     
-    state->relUVs = (float *)malloc(jsonUVs->valuesCount * sizeof(float));
-    for(int i = 0; i < jsonUVs->valuesCount; ++i) {
-        state->relUVs[i] = StringToFloat(jsonUVs->values[i].value, jsonUVs->values[i].size);
-    } 
+    //state->relUVs = (float *)malloc(jsonUVs->valuesCount * sizeof(float));
+    //for(int i = 0; i < jsonUVs->valuesCount; ++i) {
+    //    state->relUVs[i] = StringToFloat(jsonUVs->values[i].value, jsonUVs->values[i].size);
+    //} 
 
     for(int i = 0; i < jsonScene->childsCount; ++i) {
         TMJsonObject *jsonEntity = jsonScene->childs + i;
@@ -574,7 +599,7 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
 
         Entity *entity = EntityCreate();
 
-        if(jsonGraphic) EntityAddGraphicCmpFromJson(entity, jsonGraphic, state->relUVs);
+        if(jsonGraphic) EntityAddGraphicCmpFromJson(entity, jsonGraphic, state);
         if(jsonPhysics) EntityAddPhysicsCmpFromJson(entity, jsonPhysics);
         if(jsonCollision) EntityAddCollisionCmpFromJson(entity, jsonCollision);
         if(jsonAnimation) EntityAddAnimationCmpFromJson(entity, jsonAnimation);
@@ -641,6 +666,13 @@ void GameInitialize(GameState *state, TMWindow *window) {
     state->batchRenderer = TMRendererRenderBatchCreate(state->renderer, state->shader, state->texture, 100);
 
 #endif
+    state->spriteShader = TMRendererShaderCreate(state->renderer,
+                                  "../../assets/shaders/defaultVert.hlsl",
+                                  "../../assets/shaders/spriteFrag.hlsl");
+    state->colorShader  =  TMRendererShaderCreate(state->renderer,
+                                  "../../assets/shaders/defaultVert.hlsl",
+                                  "../../assets/shaders/colorFrag.hlsl");
+
 
     TMDebugRendererInitialize(state->renderer, 100);
 
@@ -652,14 +684,15 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     PhysicSystemInitialize();
     CollisionSystemInitialize();
-    GraphicsSystemInitialize(state->renderer);
+    GraphicsSystemInitialize(state->renderer, state->colorShader);
     AnimationSystemInitialize();
 
 
 #if 1
     int width = TMRendererGetWidth(state->renderer);
     int height = TMRendererGetHeight(state->renderer);
-    TMVec3 pos = {(-width*0.5f)/MetersToPixel, (-height*0.5f)/MetersToPixel, 0};
+    //TMVec3 pos = {(-width*0.5f)/MetersToPixel, (-height*0.5f)/MetersToPixel, 0};
+    TMVec3 pos = {2, 2, 0};
     TMVec3 tar = {0, 0, 1};
     TMVec3 up  = {0, 1, 0};
     state->view = TMMat4LookAt(pos, pos + tar, up);
@@ -673,7 +706,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntitySystemInitialize(100);
 
 
-    LoadSceneFromFile(state, "../../assets/json/scene.json");
+    LoadSceneFromFile(state, "../../assets/json/testScene.json");
     
 
 }
@@ -693,7 +726,7 @@ void GameFixUpdate(GameState *state, float dt) {
 void GamePostUpdate(GameState *state, float t) {
     PhysicSystemPostUpdate(state->entities, t);
     CollisionSystemUpdate(state->entities);
-    UpdateCameraToFollowTarget(state, state->player);
+    //UpdateCameraToFollowTarget(state, state->player);
 }
 
 void GameRender(GameState *state) {
@@ -715,7 +748,7 @@ void GameShutdown(GameState *state) {
         EntityDestroy(entity);
     }
     EntitySystemShutdown();
-    free(state->relUVs);
+    //free(state->relUVs);
     GraphicsSystemShutdown();
     CollisionSystemShutdown();
     PhysicSystemShutdown();

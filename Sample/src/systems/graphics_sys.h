@@ -1,10 +1,9 @@
 #ifndef _GRAPHYCS_SYS_H_
 #define _GRAPHYCS_SYS_H_
 
-struct TMRenderBatch;
 struct Entity;
 
-void GraphicsSystemInitialize(TMRenderer *renderer);
+void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader);
 void GraphicsSystemShutdown();
 //void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities);
 void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities);
