@@ -59,6 +59,7 @@ static void AddDefaultEntity(EditorState *state, float posX, float posY) {
     entity.texture = element->texture;
     entity.zIndex = 2;
     entity.id = gEntityCount++;
+    entity.prefabType = PREFAB_TYPE_NONE;
 
 
     if(element->type == TM_UI_TYPE_BUTTON) {
@@ -89,6 +90,7 @@ static void AddPlayerEntity(EditorState *state, float posX, float posY) {
     entity.shader = state->spriteShader;
     entity.zIndex = 2;
     entity.id = gEntityCount++;
+    entity.prefabType = PREFAB_TYPE_PLAYER;
 
     entity.collision = (Collision *)malloc(sizeof(Collision));
 
@@ -181,8 +183,8 @@ static void UpdateCollision(Entity *entity) {
         case COLLISION_TYPE_AABB: 
         {
             AABB aabb;
-            aabb.min = entity->position;
-            aabb.max = entity->position + entity->size;
+            aabb.min = entity->position - entity->size*0.5f;
+            aabb.max = entity->position + entity->size*0.5f;
             collision->aabb = aabb;
         } break;
         case COLLISION_TYPE_CIRCLE:
@@ -447,7 +449,7 @@ void EditorRender(EditorState *state) {
                 
                     case COLLISION_TYPE_AABB: 
                     {
-                        TMVec2 position = entity->collision->aabb.min;
+                        TMVec2 position = entity->collision->aabb.min + entity->size*0.5f;
                         TMVec2 size = entity->collision->aabb.max - entity->collision->aabb.min;
                         TMDebugRendererDrawQuad(position.x, position.y, size.x, size.y, 0, color);
                     } break;

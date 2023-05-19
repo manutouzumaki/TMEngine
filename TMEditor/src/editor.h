@@ -63,6 +63,7 @@ struct Entity {
     TMTexture *texture;
     int zIndex;
     Collision *collision;
+    PrefabsType prefabType;
 };
 
 struct EditorState {

@@ -570,7 +570,7 @@ void EntityAddAnimationCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
 }
 
 void EntityAddInputCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state) {
-    //state->player = entity;
+    state->player = entity;
     EntityAddInputComponent(entity);
 }
 
@@ -726,7 +726,7 @@ void GameFixUpdate(GameState *state, float dt) {
 void GamePostUpdate(GameState *state, float t) {
     PhysicSystemPostUpdate(state->entities, t);
     CollisionSystemUpdate(state->entities);
-    //UpdateCameraToFollowTarget(state, state->player);
+    UpdateCameraToFollowTarget(state, state->player);
 }
 
 void GameRender(GameState *state) {

@@ -19,7 +19,7 @@ struct GameState {
     TMMat4 proj;
 
     Entity **entities;
-    //Entity *player;
+    Entity *player;
 
     // TODO: this should be a hashmap or somthing like that
     //TMVec4 *absUVs;

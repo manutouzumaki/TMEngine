@@ -23,8 +23,6 @@ struct GraphycsSystemState {
 };
 
 // TODO: create a nice lit system for all this piace of shit code
-static float       *gFontUVs;
-static int          gFontCount;
 static ConstBuffer  gConstBuffer;
 static unsigned int gIndices[] = { 1, 0, 2, 2, 0, 3 };
 static TMVertex     gVertices[] = {
@@ -88,7 +86,6 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
                                                  gIndices, ARRAY_LENGTH(gIndices),
                                                  shader);
 
-    gFontUVs = TMGenerateUVs(128, 64, 7, 9, &gFontCount);
     gAbsUVs = TMHashmapCreate(sizeof(TMVec4));
     gGraphicsState.texture = TMRendererTextureCreateAtlas(renderer, gImages, ARRAY_LENGTH(gImages), 1024*2, 1024*2, gAbsUVs);
     
@@ -115,7 +112,6 @@ void GraphicsSystemSetWorldMatrix(TMRenderer *renderer, TMMat4 world) {
 }
 
 
-//void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
 void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
 
     TMRendererDepthTestEnable(renderer);
@@ -124,7 +120,6 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
         if(entity->graphics) {
             GraphicsComponent *graphics = entity->graphics;
             
-#if 1
 
             TMRendererBindShader(renderer, graphics->shader);
             TMRendererTextureBind(renderer, gGraphicsState.texture, graphics->shader, "uTexture", 0);
@@ -143,36 +138,10 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
             TMRendererShaderBufferUpdate(renderer, gGraphicsState.shaderBuffer, &gConstBuffer);
             TMRendererDrawBufferElements(renderer, gGraphicsState.vertexBuffer);
 
-#else
-
-            switch(graphics->type) {
-                case GRAPHICS_TYPE_SOLID_COLOR: {
-                    TMRendererRenderBatchAdd(batchRenderer,
-                                             graphics->position.x, graphics->position.y, 1,
-                                             graphics->size.x, graphics->size.y, 0,
-                                             graphics->color.x, graphics->color.y,
-                                             graphics->color.z, graphics->color.w);
-                } break;
-                case GRAPHICS_TYPE_SPRITE: {
-                    TMRendererRenderBatchAdd(batchRenderer, graphics->position.x, graphics->position.y, 1,
-                                             graphics->size.x, graphics->size.y, 0, graphics->relUVs);
-                } break;
-                case GRAPHICS_TYPE_SUBSPRITE: {
-                    TMRendererRenderBatchAdd(batchRenderer, graphics->position.x, graphics->position.y, 1,
-                                             graphics->size.x, graphics->size.y, 0, graphics->absUVs, graphics->index, graphics->relUVs);
-                } break;
-
-            }
-#endif
-
-
-
-
         }
     }
 
     TMRendererDepthTestDisable(renderer);
-    //TMRendererRenderBatchDraw(batchRenderer);
 
 #ifdef TM_DEBUG
     // draw debug geometry
@@ -189,14 +158,10 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
                             AABB aabb = collision->aabb;
                             float width = aabb.max.x - aabb.min.x;
                             float height = aabb.max.y - aabb.min.y;
+                            float x = aabb.min.x + width*0.5f;
+                            float y = aabb.min.y + height*0.5f;
                             
-                            TMDebugRendererDrawQuad(aabb.min.x, aabb.min.y, width, height, 0, 0xFFFF0000);
-
-                            aabb.min.x = aabb.min.x - width*0.5f;
-                            aabb.max.x = aabb.max.x - width*0.5f;
-
-                            aabb.min.y = aabb.min.y - height*0.5f;
-                            aabb.max.y = aabb.max.y - height*0.5f;
+                            TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
 
                             TMDebugRendererDrawCircle(aabb.max.x, aabb.min.y, 0.4, 0xFFFFFF00, 20);
                             TMDebugRendererDrawCircle(aabb.min.x, aabb.max.y, 0.4, 0xFFFFFF00, 20);
@@ -207,8 +172,8 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
                             aabb.max = {aabb.max.x + 0.4f, aabb.max.y + 0.4f};
                             width = aabb.max.x - aabb.min.x;
                             height = aabb.max.y - aabb.min.y;
-                            float x = aabb.min.x + width*0.5f;
-                            float y = aabb.min.y + height*0.5f;
+                            x = aabb.min.x + width*0.5f;
+                            y = aabb.min.y + height*0.5f;
                             TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
 
                         }break;

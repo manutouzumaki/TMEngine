@@ -111,8 +111,8 @@ static void AddCollisionToEntity(Entity *entity) {
         collision->type = COLLISION_TYPE_AABB;
         collision->solid = true;
         AABB aabb;
-        aabb.min = entity->position;
-        aabb.max = entity->position + entity->size;
+        aabb.min = entity->position - entity->size*0.5f;
+        aabb.max = entity->position + entity->size*0.5f;
         collision->aabb = aabb;
     }
 
@@ -262,7 +262,67 @@ static void SaveScene(TMUIElement *element) {
             TMJsonObjectAddChild(&jsonEntity, &jsonGraphic);
 
         }
+        if(entity->prefabType != PREFAB_TYPE_NONE) {
+        
+            // add Physics Component
+            {
+                TMJsonObject jsonPhysics = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonPhysics, "Physics");
 
+                // position
+                TMJsonObject jsonPosition = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonPosition, "Position");
+                TMJsonObject xPos = TMJsonObjectCreate();
+                TMJsonObjectSetName(&xPos, "X");
+                TMJsonObjectSetValue(&xPos, entity->position.x);
+                TMJsonObject yPos = TMJsonObjectCreate();
+                TMJsonObjectSetName(&yPos, "Y");
+                TMJsonObjectSetValue(&yPos, entity->position.y);
+                TMJsonObjectAddChild(&jsonPosition, &xPos);
+                TMJsonObjectAddChild(&jsonPosition, &yPos);
+
+                TMJsonObject jsonVelocity = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonVelocity, "Velocity");
+                TMJsonObject xVel = TMJsonObjectCreate();
+                TMJsonObjectSetName(&xVel, "X");
+                TMJsonObjectSetValue(&xVel, 0.0f);
+                TMJsonObject yVel = TMJsonObjectCreate();
+                TMJsonObjectSetName(&yVel, "Y");
+                TMJsonObjectSetValue(&yVel, 0.0f);
+                TMJsonObjectAddChild(&jsonVelocity, &xVel);
+                TMJsonObjectAddChild(&jsonVelocity, &yVel);
+
+                TMJsonObject jsonAccel = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonAccel, "Acceleration");
+                TMJsonObject xAcc = TMJsonObjectCreate();
+                TMJsonObjectSetName(&xAcc, "X");
+                TMJsonObjectSetValue(&xAcc, 0.0f);
+                TMJsonObject yAcc = TMJsonObjectCreate();
+                TMJsonObjectSetName(&yAcc, "Y");
+                TMJsonObjectSetValue(&yAcc, 0.0f);
+                TMJsonObjectAddChild(&jsonAccel, &xAcc);
+                TMJsonObjectAddChild(&jsonAccel, &yAcc);
+
+                TMJsonObject jsonDamping = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonDamping, "Damping");
+                TMJsonObjectSetValue(&jsonDamping, 0.01f);
+
+                TMJsonObjectAddChild(&jsonPhysics, &jsonPosition);
+                TMJsonObjectAddChild(&jsonPhysics, &jsonVelocity);
+                TMJsonObjectAddChild(&jsonPhysics, &jsonAccel);
+                TMJsonObjectAddChild(&jsonPhysics, &jsonDamping);
+
+                TMJsonObjectAddChild(&jsonEntity, &jsonPhysics);
+            }
+
+            if(entity->prefabType == PREFAB_TYPE_PLAYER) {
+                TMJsonObject jsonInput = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonInput, "Input");
+                TMJsonObjectSetValue(&jsonInput, 1.0f);
+                TMJsonObjectAddChild(&jsonEntity, &jsonInput);
+            }
+
+        }
         if(entity->collision) {
             TMJsonObject jsonCollision = TMJsonObjectCreate();
             TMJsonObjectSetName(&jsonCollision, "Collision");
