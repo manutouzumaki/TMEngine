@@ -601,18 +601,25 @@ void UpdateCameraToFollowTarget(GameState *state, Entity *target) {
         TMVec3 tar = {0, 0, 1};
         TMVec3 up  = {0, 1, 0};
         state->view = TMMat4LookAt(pos, pos + tar, up);
-        ShaderMatrix mats{};
-        mats.proj = state->proj;
-        mats.view = state->view;
-        mats.world = TMMat4Identity();
-        TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
+        GraphicsSystemSetViewMatrix(state->renderer, state->view);
+        
+        //ShaderMatrix mats{};
+        //mats.proj = state->proj;
+        //mats.view = state->view;
+        //mats.world = TMMat4Identity();
+        //TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
     }
 
 }
 
+
+// TODO: change the renderer system to use the new way of rendering ...
+// no batch renderer any more ...
+
 void GameInitialize(GameState *state, TMWindow *window) {
     state->renderer = TMRendererCreate(window);
 
+#if 0
     state->shader = TMRendererShaderCreate(state->renderer,
                                            "../../assets/shaders/batchVert.hlsl",
                                            "../../assets/shaders/batchFrag.hlsl");
@@ -632,8 +639,24 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
 
     state->batchRenderer = TMRendererRenderBatchCreate(state->renderer, state->shader, state->texture, 100);
+
+#endif
+
     TMDebugRendererInitialize(state->renderer, 100);
 
+    //TMRendererDepthTestDisable(state->renderer);
+    //TMRendererFaceCulling(state->renderer, false, 0);
+
+
+    MessageSystemInitialize();
+
+    PhysicSystemInitialize();
+    CollisionSystemInitialize();
+    GraphicsSystemInitialize(state->renderer);
+    AnimationSystemInitialize();
+
+
+#if 1
     int width = TMRendererGetWidth(state->renderer);
     int height = TMRendererGetHeight(state->renderer);
     TMVec3 pos = {(-width*0.5f)/MetersToPixel, (-height*0.5f)/MetersToPixel, 0};
@@ -642,23 +665,10 @@ void GameInitialize(GameState *state, TMWindow *window) {
     state->view = TMMat4LookAt(pos, pos + tar, up);
     state->proj = TMMat4Ortho(0, width/MetersToPixel, 0, height/MetersToPixel, 0.1f, 100.0f);
 
-    ShaderMatrix mats{};
-    mats.proj = state->proj;
-    mats.view = state->view;
-    mats.world = TMMat4Identity();
-    state->shaderBuffer = TMRendererShaderBufferCreate(state->renderer, &mats, sizeof(ShaderMatrix), 0);
-
-    TMRendererDepthTestDisable(state->renderer);
-    TMRendererFaceCulling(state->renderer, false, 0);
-
-
-    MessageSystemInitialize();
-
-    PhysicSystemInitialize();
-    CollisionSystemInitialize();
-    GraphicsSystemInitialize();
-    AnimationSystemInitialize();
-
+    GraphicsSystemSetViewMatrix(state->renderer, state->view);
+    GraphicsSystemSetProjMatrix(state->renderer, state->proj);
+    GraphicsSystemSetWorldMatrix(state->renderer, TMMat4Identity());
+#endif
 
     EntitySystemInitialize(100);
 
@@ -690,8 +700,8 @@ void GameRender(GameState *state) {
     TMRendererClear(state->renderer, 0.6, 0.6, 0.9, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
 
 
-    TMRendererBindShader(state->renderer, state->shader);
-    GraphicsSystemDraw(state->batchRenderer, state->entities);
+    GraphicsSystemDraw(state->renderer, state->entities);
+    
     TMDebugRenderDraw();
 
     TMRendererPresent(state->renderer, 1);
@@ -699,7 +709,7 @@ void GameRender(GameState *state) {
 
 void GameShutdown(GameState *state) {
     // TODO: this should be handle by the entity system not the game directly
-    TMHashmapDestroy(state->absUVs);
+    //TMHashmapDestroy(state->absUVs);
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
         Entity *entity = state->entities[i];
         EntityDestroy(entity);
@@ -712,10 +722,10 @@ void GameShutdown(GameState *state) {
     AnimationSystemShutdown(state->entities);
     MessageSystemShoutdown();
     TMDebugRendererShutdown();
-    TMRendererRenderBatchDestroy(state->renderer, state->batchRenderer);
-    TMRendererTextureDestroy(state->renderer, state->texture);
-    TMRendererShaderBufferDestroy(state->renderer, state->shaderBuffer);
-    TMRendererShaderDestroy(state->renderer, state->shader);
+    //TMRendererRenderBatchDestroy(state->renderer, state->batchRenderer);
+    //TMRendererTextureDestroy(state->renderer, state->texture);
+    //TMRendererShaderBufferDestroy(state->renderer, state->shaderBuffer);
+    //TMRendererShaderDestroy(state->renderer, state->shader);
     TMRendererDestroy(state->renderer);
 
 }

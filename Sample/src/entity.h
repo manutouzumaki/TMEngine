@@ -1,6 +1,7 @@
 #ifndef _ENTITY_H_
 #define _ENTITY_H_
 
+#include <tm_renderer.h>
 #include <utils/tm_math.h>
 #include <stdlib.h>
 #include "collision.h"
@@ -13,12 +14,17 @@ enum GraphicsComponentType {
 };
 
 struct GraphicsComponent {
+
+    float *relUVs;
+    TMVec4 absUVs;
+    TMVec4 color;
+
     TMVec2 position;
     TMVec2 size;
-    TMVec4 color;
-    TMVec4 absUVs;
-    float *relUVs;
+    
     int index;
+    int zIndex;  // TODO: this probably should be a float
+    
     GraphicsComponentType type;
 };
 

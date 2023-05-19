@@ -4,6 +4,53 @@
 #include <tm_debug_renderer.h>
 #include "../message.h"
 
+struct ConstBuffer {
+    TMMat4 proj;
+    TMMat4 view;
+    TMMat4 world;
+    TMVec4 color;
+    TMVec4 absUVs;
+    TMVec4 relUVs;
+};
+
+
+struct GraphycsSystemState {
+    TMBuffer       *vertexBuffer;
+    TMShaderBuffer *shaderBuffer;
+    TMShader       *colorShader;
+    TMShader       *spriteShader;
+    float meterToPixel;
+    // TODO: this should be temporal
+    TMTexture *texture;
+};
+
+// TODO: create a nice lit system for all this piace of shit code
+static float       *gFontUVs;
+static int          gFontCount;
+static ConstBuffer  gConstBuffer;
+static unsigned int gIndices[] = { 1, 0, 2, 2, 0, 3 };
+static TMVertex     gVertices[] = {
+        TMVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec3{0, 0, 0}}, // 0
+        TMVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec3{0, 0, 0}}, // 1
+        TMVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec3{0, 0, 0}}, // 2
+        TMVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec3{0, 0, 0}}  // 3
+};
+static TMHashmap   *gAbsUVs;
+static const char  *gImages[] = {
+    "../../assets/images/moon.png",
+    "../../assets/images/paddle_1.png",
+    "../../assets/images/characters_packed.png",
+    "../../assets/images/clone.png",
+    "../../assets/images/player.png",
+    "../../assets/images/paddle_2.png",
+    "../../assets/images/font.png"
+};
+
+
+
+static GraphycsSystemState gGraphicsState;
+
+
 static void GraphicsUpdatePositions(Entity *entity, TMVec2 position) {
     if(entity->graphics) {
         entity->graphics->position = position;
@@ -27,24 +74,95 @@ void GraphicsSystemOnMessage(MessageType type, void *sender, void * listener, Me
 
 }
 
-void GraphicsSystemInitialize() {
+void GraphicsSystemInitialize(TMRenderer *renderer) {
+
     MessageRegister(MESSAGE_TYPE_GRAPHICS_UPDATE_POSITIONS, NULL, GraphicsSystemOnMessage);
     MessageRegister(MESSAGE_TYPE_GRAPHICS_UPDATE_ANIMATION_INDEX, NULL, GraphicsSystemOnMessage);
+
+    gGraphicsState.meterToPixel = 100.0f;
+
+    
+    gGraphicsState.spriteShader = TMRendererShaderCreate(renderer,
+                                                 "../../assets/shaders/defaultVert.hlsl",
+                                                 "../../assets/shaders/spriteFrag.hlsl");
+    gGraphicsState.colorShader  =  TMRendererShaderCreate(renderer,
+                                                 "../../assets/shaders/defaultVert.hlsl",
+                                                 "../../assets/shaders/colorFrag.hlsl");
+
+
+    // create the shader buffer to store the ConstBuffer on the GPU
+    gGraphicsState.shaderBuffer = TMRendererShaderBufferCreate(renderer, &gConstBuffer,
+                                                       sizeof(ConstBuffer), 0);
+    // create the buffer to store the vertices on the GPU
+    gGraphicsState.vertexBuffer = TMRendererBufferCreate(renderer,
+                                                 gVertices, ARRAY_LENGTH(gVertices),
+                                                 gIndices, ARRAY_LENGTH(gIndices),
+                                                 gGraphicsState.colorShader);
+
+    gFontUVs = TMGenerateUVs(128, 64, 7, 9, &gFontCount);
+    gAbsUVs = TMHashmapCreate(sizeof(TMVec4));
+    gGraphicsState.texture = TMRendererTextureCreateAtlas(renderer, gImages, ARRAY_LENGTH(gImages), 1024*2, 1024*2, gAbsUVs);
+    
 }
 
 void GraphicsSystemShutdown() {
-
+    // TODO: FREEEE THE FUCKING MEMORYYYYYYY ....
 
 }
 
+void GraphicsSystemSetProjMatrix(TMRenderer *renderer, TMMat4 proj) {
+    gConstBuffer.proj = proj;
+    TMRendererShaderBufferUpdate(renderer, gGraphicsState.shaderBuffer, &gConstBuffer);
+}
 
-void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
+void GraphicsSystemSetViewMatrix(TMRenderer *renderer, TMMat4 view) {
+    gConstBuffer.view = view;
+    TMRendererShaderBufferUpdate(renderer, gGraphicsState.shaderBuffer, &gConstBuffer);
+}
 
+void GraphicsSystemSetWorldMatrix(TMRenderer *renderer, TMMat4 world) {
+    gConstBuffer.world = world;
+    TMRendererShaderBufferUpdate(renderer, gGraphicsState.shaderBuffer, &gConstBuffer);
+}
+
+
+//void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
+void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
+
+    TMRendererDepthTestEnable(renderer);
     for(int i = 0; i < TMDarraySize(entities); ++i) {
         Entity *entity = entities[i];
         if(entity->graphics) {
             GraphicsComponent *graphics = entity->graphics;
             
+#if 1
+            if(graphics->type == GRAPHICS_TYPE_SOLID_COLOR) {
+                TMRendererBindShader(renderer, gGraphicsState.colorShader);
+                gConstBuffer.color = graphics->color; // Init color
+            }
+            else {
+                TMRendererBindShader(renderer, gGraphicsState.spriteShader);
+                TMRendererTextureBind(renderer, gGraphicsState.texture,
+                                      gGraphicsState.spriteShader, "uTexture", 0);
+                gConstBuffer.color = {1, 1, 1, 1}; // Init color
+            }
+
+            TMMat4 trans = TMMat4Translate(entity->graphics->position.x,
+                                           entity->graphics->position.y,
+                                           2); // TODO: add zIndex
+            TMMat4 scale = TMMat4Scale(entity->graphics->size.x,
+                                       entity->graphics->size.y,
+                                       1.0f);
+            gConstBuffer.world = trans * scale;
+            gConstBuffer.absUVs = {0, 0, 1, 1};
+            if(entity->graphics->relUVs) {
+                gConstBuffer.relUVs = *((TMVec4 *)entity->graphics->relUVs);
+            }
+            TMRendererShaderBufferUpdate(renderer, gGraphicsState.shaderBuffer, &gConstBuffer);
+            TMRendererDrawBufferElements(renderer, gGraphicsState.vertexBuffer);
+
+#else
+
             switch(graphics->type) {
                 case GRAPHICS_TYPE_SOLID_COLOR: {
                     TMRendererRenderBatchAdd(batchRenderer,
@@ -63,11 +181,16 @@ void GraphicsSystemDraw(TMRenderBatch *batchRenderer, Entity **entities) {
                 } break;
 
             }
+#endif
+
+
 
 
         }
     }
-    TMRendererRenderBatchDraw(batchRenderer);
+
+    TMRendererDepthTestDisable(renderer);
+    //TMRendererRenderBatchDraw(batchRenderer);
 
 #ifdef TM_DEBUG
     // draw debug geometry

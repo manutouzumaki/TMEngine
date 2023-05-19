@@ -11,10 +11,6 @@
 struct GameState {
     
     TMRenderer *renderer;
-    TMRenderBatch *batchRenderer;
-    TMShader *shader;
-    TMTexture *texture;
-    TMShaderBuffer *shaderBuffer;
 
     TMMat4 view;
     TMMat4 proj;
@@ -24,9 +20,9 @@ struct GameState {
 
     // TODO: this should be a hashmap or somthing like that
     //TMVec4 *absUVs;
-    TMHashmap *absUVs;
+    //TMHashmap *absUVs;
     float  *relUVs;
-    int relUVsCount;
+    //int relUVsCount;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);
