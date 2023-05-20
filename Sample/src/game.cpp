@@ -417,35 +417,6 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameS
 
     EntityAddGraphicsComponent(entity, type, position, size, color,
                                absUvs, relUvs, zIndex, shader);
-
-#if 0
-    switch(type) {
-
-        case GRAPHICS_TYPE_SOLID_COLOR: {
-
-            EntityAddGraphicsComponentSolidColor(entity, position, size, color, state->colorShader);
-        } break;
-        case GRAPHICS_TYPE_SPRITE: {
-            float x = StringToFloat(jsonUVs->values[0].value, jsonUVs->values[0].size);
-            float y = StringToFloat(jsonUVs->values[1].value, jsonUVs->values[1].size);
-            float z = StringToFloat(jsonUVs->values[2].value, jsonUVs->values[2].size);
-            float w = StringToFloat(jsonUVs->values[3].value, jsonUVs->values[3].size);
-            // TODO: fix this hack ...
-            entity->uvs = {x, y, z, w};
-            EntityAddGraphicsComponentSprite(entity, position, size, entity->uvs.v, state->spriteShader);
-        } break;
-        case GRAPHICS_TYPE_SUBSPRITE: {
-            int index = StringToInt(jsonIndex->values[0].value, jsonIndex->values[0].size);
-            float x = StringToFloat(jsonUVs->values[0].value, jsonUVs->values[0].size);
-            float y = StringToFloat(jsonUVs->values[1].value, jsonUVs->values[1].size);
-            float z = StringToFloat(jsonUVs->values[2].value, jsonUVs->values[2].size);
-            float w = StringToFloat(jsonUVs->values[3].value, jsonUVs->values[3].size);
-            TMVec4 absUvs = {x, y, z, w};
-            EntityAddGraphicsComponentSubSprite(entity, position, size, absUvs, index, state->relUVs, state->spriteShader);
-        } break;
-    }
-#endif
-
 }
 
 void EntityAddPhysicsCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
@@ -538,18 +509,19 @@ void EntityAddCollisionCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
 }
 
 void EntityAddAnimationCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
+
     EntityAddAnimationComponet(entity);
     
     TMJsonObject *jsonCount = TMJsonFindChildByName(jsonObject, "AnimationStatesCount");
     int count = StringToInt(jsonCount->values[0].value, jsonCount->values[0].size);
 
     for(int i = 1; i <= count; ++i) {
+
         TMJsonObject *jsonAnimationState = jsonObject->childs + i;
 
         TMJsonObject *jsonFrameCount = TMJsonFindChildByName(jsonAnimationState, "FrameCount");
         TMJsonObject *jsonFrames     = TMJsonFindChildByName(jsonAnimationState, "Frames");
         TMJsonObject *jsonSpeed      = TMJsonFindChildByName(jsonAnimationState, "Speed");
-
 
         int frameCount = StringToInt(jsonFrameCount->values[0].value, jsonFrameCount->values[0].size);
         float speed = StringToFloat(jsonSpeed->values[0].value, jsonSpeed->values[0].size);
@@ -570,8 +542,10 @@ void EntityAddAnimationCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
 }
 
 void EntityAddInputCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state) {
+
     state->player = entity;
     EntityAddInputComponent(entity);
+
 }
 
 void LoadSceneFromFile(GameState *state, const char *filepath) {
@@ -583,12 +557,8 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
     TMJsonObject *jsonScene = TMJsonFindChildByName(jsonRoot, "Scene");
     TMJsonObject *jsonUVs = TMJsonFindChildByName(jsonRoot, "PlayerUvs");
     
-    //state->relUVs = (float *)malloc(jsonUVs->valuesCount * sizeof(float));
-    //for(int i = 0; i < jsonUVs->valuesCount; ++i) {
-    //    state->relUVs[i] = StringToFloat(jsonUVs->values[i].value, jsonUVs->values[i].size);
-    //} 
-
     for(int i = 0; i < jsonScene->childsCount; ++i) {
+
         TMJsonObject *jsonEntity = jsonScene->childs + i;
 
         TMJsonObject *jsonGraphic   = TMJsonFindChildByName(jsonEntity, "Graphics");
@@ -606,6 +576,7 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
         if(jsonInput) EntityAddInputCmpFromJson(entity, jsonInput, state);
 
         TMDarrayPush(state->entities, entity, Entity *);
+
     }
 
     TMJsonClose(jsonFile);
@@ -627,45 +598,14 @@ void UpdateCameraToFollowTarget(GameState *state, Entity *target) {
         TMVec3 up  = {0, 1, 0};
         state->view = TMMat4LookAt(pos, pos + tar, up);
         GraphicsSystemSetViewMatrix(state->renderer, state->view);
-        
-        //ShaderMatrix mats{};
-        //mats.proj = state->proj;
-        //mats.view = state->view;
-        //mats.world = TMMat4Identity();
-        //TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &mats);
     }
 
 }
 
-
-// TODO: change the renderer system to use the new way of rendering ...
-// no batch renderer any more ...
-
 void GameInitialize(GameState *state, TMWindow *window) {
+
     state->renderer = TMRendererCreate(window);
 
-#if 0
-    state->shader = TMRendererShaderCreate(state->renderer,
-                                           "../../assets/shaders/batchVert.hlsl",
-                                           "../../assets/shaders/batchFrag.hlsl");
-
-    const char *images[] = {
-        "../../assets/images/moon.png",
-        "../../assets/images/paddle_1.png",
-        "../../assets/images/characters_packed.png",
-        "../../assets/images/clone.png",
-        "../../assets/images/player.png",
-        "../../assets/images/paddle_2.png"
-    };
-
-
-    state->absUVs = TMHashmapCreate(sizeof(TMVec4));
-    state->texture = TMRendererTextureCreateAtlas(state->renderer, images, ARRAY_LENGTH(images), 1024*2, 1024*2, state->absUVs);
-
-
-    state->batchRenderer = TMRendererRenderBatchCreate(state->renderer, state->shader, state->texture, 100);
-
-#endif
     state->spriteShader = TMRendererShaderCreate(state->renderer,
                                   "../../assets/shaders/defaultVert.hlsl",
                                   "../../assets/shaders/spriteFrag.hlsl");
@@ -673,12 +613,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
                                   "../../assets/shaders/defaultVert.hlsl",
                                   "../../assets/shaders/colorFrag.hlsl");
 
-
     TMDebugRendererInitialize(state->renderer, 100);
-
-    //TMRendererDepthTestDisable(state->renderer);
-    //TMRendererFaceCulling(state->renderer, false, 0);
-
 
     MessageSystemInitialize();
 
@@ -687,12 +622,9 @@ void GameInitialize(GameState *state, TMWindow *window) {
     GraphicsSystemInitialize(state->renderer, state->colorShader);
     AnimationSystemInitialize();
 
-
-#if 1
     int width = TMRendererGetWidth(state->renderer);
     int height = TMRendererGetHeight(state->renderer);
-    //TMVec3 pos = {(-width*0.5f)/MetersToPixel, (-height*0.5f)/MetersToPixel, 0};
-    TMVec3 pos = {2, 2, 0};
+    TMVec3 pos = {(-width*0.5f)/MetersToPixel, (-height*0.5f)/MetersToPixel, 0};
     TMVec3 tar = {0, 0, 1};
     TMVec3 up  = {0, 1, 0};
     state->view = TMMat4LookAt(pos, pos + tar, up);
@@ -701,13 +633,11 @@ void GameInitialize(GameState *state, TMWindow *window) {
     GraphicsSystemSetViewMatrix(state->renderer, state->view);
     GraphicsSystemSetProjMatrix(state->renderer, state->proj);
     GraphicsSystemSetWorldMatrix(state->renderer, TMMat4Identity());
-#endif
 
     EntitySystemInitialize(100);
 
 
     LoadSceneFromFile(state, "../../assets/json/testScene.json");
-    
 
 }
 
@@ -742,23 +672,19 @@ void GameRender(GameState *state) {
 
 void GameShutdown(GameState *state) {
     // TODO: this should be handle by the entity system not the game directly
-    //TMHashmapDestroy(state->absUVs);
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
         Entity *entity = state->entities[i];
         EntityDestroy(entity);
     }
     EntitySystemShutdown();
-    //free(state->relUVs);
-    GraphicsSystemShutdown();
+    GraphicsSystemShutdown(state->renderer);
     CollisionSystemShutdown();
     PhysicSystemShutdown();
     AnimationSystemShutdown(state->entities);
     MessageSystemShoutdown();
     TMDebugRendererShutdown();
-    //TMRendererRenderBatchDestroy(state->renderer, state->batchRenderer);
-    //TMRendererTextureDestroy(state->renderer, state->texture);
-    //TMRendererShaderBufferDestroy(state->renderer, state->shaderBuffer);
-    //TMRendererShaderDestroy(state->renderer, state->shader);
+    TMRendererShaderDestroy(state->renderer, state->colorShader);
+    TMRendererShaderDestroy(state->renderer, state->spriteShader);
     TMRendererDestroy(state->renderer);
 
 }

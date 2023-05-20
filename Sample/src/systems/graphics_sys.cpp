@@ -17,7 +17,10 @@ struct ConstBuffer {
 struct GraphycsSystemState {
     TMBuffer       *vertexBuffer;
     TMShaderBuffer *shaderBuffer;
-    float meterToPixel;
+
+    TMHashmap *texturesMap;
+    TMHashmap *shadersMap;
+
     // TODO: this should be temporal
     TMTexture *texture;
 };
@@ -41,7 +44,6 @@ static const char  *gImages[] = {
     "../../assets/images/paddle_2.png",
     "../../assets/images/font.png"
 };
-
 
 
 static GraphycsSystemState gGraphicsState;
@@ -75,8 +77,6 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
     MessageRegister(MESSAGE_TYPE_GRAPHICS_UPDATE_POSITIONS, NULL, GraphicsSystemOnMessage);
     MessageRegister(MESSAGE_TYPE_GRAPHICS_UPDATE_ANIMATION_INDEX, NULL, GraphicsSystemOnMessage);
 
-    gGraphicsState.meterToPixel = 100.0f;
-
     // create the shader buffer to store the ConstBuffer on the GPU
     gGraphicsState.shaderBuffer = TMRendererShaderBufferCreate(renderer, &gConstBuffer,
                                                        sizeof(ConstBuffer), 0);
@@ -91,8 +91,12 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
     
 }
 
-void GraphicsSystemShutdown() {
-    // TODO: FREEEE THE FUCKING MEMORYYYYYYY ....
+void GraphicsSystemShutdown(TMRenderer *renderer) {
+
+    TMRendererShaderBufferDestroy(renderer, gGraphicsState.shaderBuffer);
+    TMRendererBufferDestroy(renderer, gGraphicsState.vertexBuffer);
+    TMRendererTextureDestroy(renderer, gGraphicsState.texture);
+    TMHashmapDestroy(gAbsUVs);
 
 }
 

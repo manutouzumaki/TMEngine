@@ -87,6 +87,7 @@ struct EditorState {
     ModifyOption modifyOption;
     PrefabsType prefabType;
     BrushOption  option;
+    LoadOption loadOption;
     bool         mouseIsHot;
 
 };

@@ -24,6 +24,12 @@ enum BrushOption {
     OPTION_CLEAR
 };
 
+enum LoadOption {
+    LOAD_OPTION_NONE,
+    LOAD_OPTION_TEXTURE,
+    LOAD_OPTION_SHADER
+};
+
 struct EditorUI {
     TMUIElement *options;
     TMUIElement *textures;
@@ -31,6 +37,7 @@ struct EditorUI {
     TMUIElement *prefabs;
     TMUIElement *modify;
     TMUIElement *save;
+    TMUIElement *loadOptions;
 };
 
 void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPixel);

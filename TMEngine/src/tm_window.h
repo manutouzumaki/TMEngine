@@ -20,4 +20,7 @@ TM_EXPORT void TMSleep(float milliseconds);
 TM_EXPORT void TMMouseSetCapture(TMWindow *window);
 TM_EXPORT void TMMouseReleaseCapture();
 
+
+TM_EXPORT void TMGetFileNamesInDirectory(char *directoryPath, char ***files);
+
 #endif

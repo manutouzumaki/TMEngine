@@ -2,6 +2,9 @@
 #include "editor.h"
 
 #include <stdio.h>
+#include <tm_window.h>
+#include <utils/tm_darray.h>
+#include <memory.h>
 
 extern EditorState *gState;
 extern const char  *gImages[7];
@@ -156,6 +159,52 @@ static void SolidCollision(TMUIElement *element) {
         }
     }
 
+}
+
+
+static char **gTexturesNames;
+
+static void LoadFileNamesFromDirectory(char *path) {
+    TMGetFileNamesInDirectory(path, &gTexturesNames);
+    if(gTexturesNames) {
+        for (int i = 0; i < TMDarraySize(gTexturesNames); ++i) {
+            printf("%s\n", gTexturesNames[i]);
+        }
+    }
+}
+
+static void FreeFileNames() {
+    if(gTexturesNames) {
+        for (int i = 0; i < TMDarraySize(gTexturesNames); ++i) {
+            if(gTexturesNames[i]) {
+                printf("deleted %s\n", gTexturesNames[i]);
+                free((void *)gTexturesNames[i]);
+            }
+        }
+        TMDarrayDestroy(gTexturesNames);
+        gTexturesNames  = NULL;
+    }
+}
+
+static void LoadTexture(TMUIElement *element) {
+
+    if(gState->loadOption == LOAD_OPTION_NONE) {
+        gState->loadOption = LOAD_OPTION_TEXTURE;
+    }
+    else {
+        gState->loadOption = LOAD_OPTION_NONE;
+    }
+
+}
+
+static void LoadShader(TMUIElement *element) {
+
+    if(gState->loadOption == LOAD_OPTION_NONE) {
+        gState->loadOption = LOAD_OPTION_SHADER;
+    }
+    else {
+        gState->loadOption = LOAD_OPTION_NONE;
+    }
 }
 
 static void SaveScene(TMUIElement *element) {
@@ -413,6 +462,8 @@ static void SaveScene(TMUIElement *element) {
 
 void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPixel) {
 
+    LoadFileNamesFromDirectory("../../assets/images");
+
     ui->options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {6, 0.4}, {0.1, 0.1, 0.1, 1});
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, OptionSelected);
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Colors ",   {1, 1, 1, 1}, OptionSelected);
@@ -482,8 +533,17 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " rem Collider ", {1, 1, 1, 1}, RemCollision);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Solid ",        {1, 1, 1, 1}, SolidCollision);
     
-    ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {2.5, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
+    ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {7.5, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture ", {1, 1, 1, 1}, LoadTexture);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader ", {1, 1, 1, 1}, LoadShader);
+
+    ui->loadOptions = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {2.5f, height/meterToPixel - 0.25f - 4.0f}, {3, 4}, {0.02f, 0.02f, 0.02f, 1.0f});
+    if(gTexturesNames) {
+        for(int i = 0; i < TMDarraySize(gTexturesNames); ++i) {
+            TMUIElementAddChildLabel(ui->loadOptions, TM_UI_ORIENTATION_VERTICAL, gTexturesNames[i], {1, 1, 1, 1}, NULL);
+        }
+    }
 
 }
 
@@ -506,6 +566,10 @@ void EditorUIUpdate(EditorUI *ui, float width, float height, float meterToPixel)
         TMUIElementProcessInput(ui->modify, pos.x, pos.y, width, height, meterToPixel);
     }
 
+    if(gState->loadOption == LOAD_OPTION_TEXTURE) {
+        TMUIElementProcessInput(ui->loadOptions, pos.x, pos.y, width, height, meterToPixel);
+    }
+
     gState->mouseIsHot = false;
     TMUIMouseIsHot(ui->options,  &gState->mouseIsHot);
     TMUIMouseIsHot(ui->textures, &gState->mouseIsHot);
@@ -514,6 +578,9 @@ void EditorUIUpdate(EditorUI *ui, float width, float height, float meterToPixel)
     TMUIMouseIsHot(ui->save,     &gState->mouseIsHot);
     if(!gState->element && gState->selectedEntity) {
         TMUIMouseIsHot(ui->modify, &gState->mouseIsHot);
+    }
+    if(gState->loadOption == LOAD_OPTION_TEXTURE) {
+        TMUIMouseIsHot(ui->loadOptions, &gState->mouseIsHot);
     }
 
 }
@@ -531,6 +598,10 @@ void EditorUIDraw(EditorUI *ui, TMRenderer *renderer) {
     }
     else if(gState->option == OPTION_PREFABS) {
         TMUIElementDraw(renderer, ui->prefabs, 0.0f);
+    }
+
+    if(gState->loadOption == LOAD_OPTION_TEXTURE) {
+        TMUIElementDraw(renderer, ui->loadOptions, 0.0f);
     }
 
     if(!gState->element && gState->selectedEntity) {
@@ -563,5 +634,7 @@ void EditorUIShutdown(EditorUI *ui) {
     TMUIElementDestroy(ui->colors);
     TMUIElementDestroy(ui->textures);
     TMUIElementDestroy(ui->options);
+    TMUIElementDestroy(ui->loadOptions);
+    FreeFileNames();
 
 }

@@ -3,7 +3,11 @@
 #include "tm_window_win32.h"
 #include "../tm_window.h"
 #include "../tm_input.h"
+#include "../utils/tm_darray.h"
+
 #include <xinput.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 TMInput gCurrentInput;
 TMInput gLastInput;
@@ -210,4 +214,55 @@ void TMMouseSetCapture(TMWindow *window) {
 
 void TMMouseReleaseCapture() {
     ReleaseCapture();
+}
+
+static int StringLength(char *string) {
+    int counter = 0;
+    char *letter = string; 
+    while(*letter++ != L'\0') counter++;
+    return counter;
+}
+
+#include <strsafe.h>
+
+void TMGetFileNamesInDirectory(char *directoryPath, char ***files) {
+    
+    char path[MAX_PATH];
+
+    char *postPath = "//*";
+    int postPathSize = 3;
+
+    int dirPathSize = StringLength(directoryPath);
+    int i = 0;
+
+    memcpy(path, directoryPath, dirPathSize);
+    memcpy(path + dirPathSize, postPath, postPathSize);
+
+    path[dirPathSize + postPathSize] = '\0';
+    
+    printf("path: %s\n", path);
+
+    WIN32_FIND_DATAA findData;
+
+    HANDLE hFind = FindFirstFile(path, &findData);
+    if(hFind == INVALID_HANDLE_VALUE) {
+        printf("ERROR: directory: %s NOT FOUND\n", path);
+        return;
+    }
+
+    do {
+        if(!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+
+            int fileNameSize = StringLength(findData.cFileName);
+            char *fileName = (char *)malloc(fileNameSize + 1);
+            memcpy(fileName, findData.cFileName, fileNameSize);
+            fileName[fileNameSize] = '\0';
+            TMDarrayPush(*files, fileName, char *);
+            i++;
+        } 
+    }
+    while(FindNextFile(hFind, &findData) != 0);
+
+    FindClose(hFind);
+
 }

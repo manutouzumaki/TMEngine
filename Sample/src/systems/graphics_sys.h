@@ -4,7 +4,7 @@
 struct Entity;
 
 void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader);
-void GraphicsSystemShutdown();
+void GraphicsSystemShutdown(TMRenderer *renderer);
 void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities);
 
 
