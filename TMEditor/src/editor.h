@@ -62,6 +62,7 @@ struct Entity {
     TMShader *shader;
     TMTexture *texture;
     int zIndex;
+    int textureIndex;
     Collision *collision;
     PrefabsType prefabType;
 };
@@ -75,19 +76,22 @@ struct EditorState {
     TMShader       *colorShader;
     TMShader       *spriteShader;
 
+    TMTexture **textures;
+    TMShader  **shaders;
+    Entity     *entities;
+    char      **texturesAddedNames;
+    char      **shadersAddedNames;
 
     TMUIElement *element;
-    Entity      *entities;
     Entity      *selectedEntity;
 
-
-    EditorUI ui;
+    EditorUI     ui;
     TMVec3       cameraP;
     float        meterToPixel;
     ModifyOption modifyOption;
-    PrefabsType prefabType;
+    PrefabsType  prefabType;
     BrushOption  option;
-    LoadOption loadOption;
+    LoadOption   loadOption;
     bool         mouseIsHot;
 
 };

@@ -47,6 +47,8 @@ struct TMUIElement {
 
     PFN_OnClick onCLick;
     TMUIElement *childs;
+
+    void *userData;
 };
 
 TM_EXPORT void TMUIMouseIsHot(TMUIElement *element, bool *result);
@@ -55,22 +57,22 @@ TM_EXPORT void TMUIInitialize(TMRenderer *renderer, float MetersToPixel);
 TM_EXPORT void TMUIShutdown(TMRenderer *renderer);
 
 TM_EXPORT TMUIElement *TMUIElementCreateButton(TMUIOrientation orientation, TMVec2 position, TMVec2 size, TMVec4 color,
-                                               PFN_OnClick onCLick = NULL);
+                                               PFN_OnClick onCLick = NULL, void *userData = NULL);
 TM_EXPORT TMUIElement *TMUIElementCreateImageButton(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
                                                     TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
-                                                    PFN_OnClick onCLick = NULL);
+                                                    PFN_OnClick onCLick = NULL, void *userData = NULL);
 TM_EXPORT TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
                                               const char *text, TMVec4 color,
-                                              PFN_OnClick onCLick = NULL);
+                                              PFN_OnClick onCLick = NULL, void *userData = NULL);
 
 TM_EXPORT void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation, TMVec4 color,
-                                         PFN_OnClick onCLick = NULL);
+                                         PFN_OnClick onCLick = NULL, void *userData = NULL);
 TM_EXPORT void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation,
                                               TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
-                                              PFN_OnClick onCLick = NULL);
+                                              PFN_OnClick onCLick = NULL, void *userData = NULL);
 TM_EXPORT void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation orientation,
                                         const char *text, TMVec4 color,
-                                        PFN_OnClick onCLick = NULL);
+                                        PFN_OnClick onCLick = NULL, void *userData = NULL);
 
 TM_EXPORT TMUIElement *TMUIElementGetChild(TMUIElement *element, int index);
 

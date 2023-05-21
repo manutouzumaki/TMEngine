@@ -85,7 +85,7 @@ void TMUIShutdown(TMRenderer *renderer) {
 
 TMUIElement *TMUIElementCreateButton(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
                                      TMVec4 color,
-                                     PFN_OnClick onCLick) {
+                                     PFN_OnClick onCLick, void *userData) {
 
     TMUIElement *element = (TMUIElement *)malloc(sizeof(TMUIElement));
     memset(element, 0, sizeof(TMUIElement));
@@ -100,13 +100,15 @@ TMUIElement *TMUIElementCreateButton(TMUIOrientation orientation, TMVec2 positio
     element->oldColor = color;
     
     element->onCLick = onCLick;
+    
+    element->userData = userData;
 
     return element;
 }
 
 TMUIElement *TMUIElementCreateImageButton(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
                                           TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
-                                          PFN_OnClick onCLick) {
+                                          PFN_OnClick onCLick, void *userData) {
 
     TMUIElement *element = (TMUIElement *)malloc(sizeof(TMUIElement));
     memset(element, 0, sizeof(TMUIElement));
@@ -124,13 +126,15 @@ TMUIElement *TMUIElementCreateImageButton(TMUIOrientation orientation, TMVec2 po
     element->oldColor = {1, 1, 1, 1};
     
     element->onCLick = onCLick;
+    
+    element->userData = userData;
 
     return element;
 }
 
 TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec2 position, TMVec2 size,
                                     const char *text, TMVec4 color,
-                                    PFN_OnClick onCLick) {
+                                    PFN_OnClick onCLick, void *userData) {
 
     TMUIElement *element = (TMUIElement *)malloc(sizeof(TMUIElement));
     memset(element, 0, sizeof(TMUIElement));
@@ -149,6 +153,8 @@ TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec2 position
     element->oldColor = color;
     
     element->onCLick = onCLick;
+
+    element->userData = userData;
 
     return element;
 }
@@ -172,7 +178,7 @@ void TMUIElementDestroy(TMUIElement *element) {
 
 void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation,
                                TMVec4 color,
-                               PFN_OnClick onCLick) {
+                               PFN_OnClick onCLick, void *userData) {
     TMUIElement element{};
     element.type = TM_UI_TYPE_BUTTON;
     element.orientation = orientation;
@@ -180,6 +186,7 @@ void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation,
     element.color = color;
     element.oldColor = color;
     element.onCLick = onCLick;
+    element.userData = userData;
 
     TMDarrayPush(parent->childs, element, TMUIElement);
     int childCount = TMDarraySize(parent->childs);
@@ -210,7 +217,7 @@ void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation,
 
 void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation,
                                     TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
-                                    PFN_OnClick onCLick) {
+                                    PFN_OnClick onCLick, void *userData) {
     TMUIElement element{};
     element.type = TM_UI_TYPE_IMAGE_BUTTON;
     element.orientation = orientation;
@@ -221,6 +228,7 @@ void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orienta
     element.color = {1, 1, 1, 1};
     element.oldColor = {1, 1, 1, 1};
     element.onCLick = onCLick;
+    element.userData = userData;
 
 
     TMDarrayPush(parent->childs, element, TMUIElement);
@@ -252,7 +260,7 @@ void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orienta
 
 void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation orientation,
                               const char *text, TMVec4 color,
-                              PFN_OnClick onCLick) {
+                              PFN_OnClick onCLick, void *userData) {
     TMUIElement element{};
     element.type = TM_UI_TYPE_LABEL;
     element.orientation = orientation;
@@ -264,6 +272,7 @@ void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation orientation,
     element.color = color;
     element.oldColor = color;
     element.onCLick = onCLick;
+    element.userData = userData;
 
     TMDarrayPush(parent->childs, element, TMUIElement);
     int childCount = TMDarraySize(parent->childs);

@@ -33,11 +33,14 @@ enum LoadOption {
 struct EditorUI {
     TMUIElement *options;
     TMUIElement *textures;
+    TMUIElement *texturesChilds[3];
     TMUIElement *colors;
+    TMUIElement *shaders;
     TMUIElement *prefabs;
     TMUIElement *modify;
     TMUIElement *save;
-    TMUIElement *loadOptions;
+    TMUIElement *loadTexture;
+    TMUIElement *loadShader;
 };
 
 void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPixel);

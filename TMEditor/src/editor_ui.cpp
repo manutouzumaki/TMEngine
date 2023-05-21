@@ -5,11 +5,16 @@
 #include <tm_window.h>
 #include <utils/tm_darray.h>
 #include <memory.h>
+#include <assert.h>
 
 extern EditorState *gState;
 extern const char  *gImages[7];
 extern TMHashmap   *gAbsUVs;
 extern TMTexture   *gTexture;
+
+
+static char **gTexturesNames;
+static char **gShadersNames;
 
 static TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
     TMVec4 result = *((TMVec4 *)TMHashmapGet(hashmap, filepath));
@@ -24,6 +29,13 @@ static int MinI32(int a, int b) {
 static int MaxI32(int a, int b) {
     if(a > b) return a;
     return b;
+}
+
+static int StringLength(char *string) {
+    int counter = 0;
+    char *letter = string; 
+    while(*letter++ != L'\0') counter++;
+    return counter;
 }
 
 static void OptionSelected(TMUIElement *element) {
@@ -102,8 +114,6 @@ static void DecrementZ(TMUIElement *element) {
 
 }
 
-
-
 static void AddCollisionToEntity(Entity *entity) {
 
     if(!entity->collision) {
@@ -161,34 +171,31 @@ static void SolidCollision(TMUIElement *element) {
 
 }
 
-
-static char **gTexturesNames;
-
-static void LoadFileNamesFromDirectory(char *path) {
-    TMGetFileNamesInDirectory(path, &gTexturesNames);
-    if(gTexturesNames) {
-        for (int i = 0; i < TMDarraySize(gTexturesNames); ++i) {
-            printf("%s\n", gTexturesNames[i]);
+static void LoadFileNamesFromDirectory(char *path, char ***filesNames) {
+    TMGetFileNamesInDirectory(path, filesNames);
+    if(*filesNames) {
+        for (int i = 0; i < TMDarraySize(*filesNames); ++i) {
+            printf("%s\n", (*filesNames)[i]);
         }
     }
 }
 
-static void FreeFileNames() {
-    if(gTexturesNames) {
-        for (int i = 0; i < TMDarraySize(gTexturesNames); ++i) {
-            if(gTexturesNames[i]) {
-                printf("deleted %s\n", gTexturesNames[i]);
-                free((void *)gTexturesNames[i]);
+static void FreeFileNames(char ***filesNames) {
+    if(*filesNames) {
+        for (int i = 0; i < TMDarraySize(*filesNames); ++i) {
+            if((*filesNames)[i]) {
+                printf("deleted %s\n", (*filesNames)[i]);
+                free((void *)(*filesNames)[i]);
             }
         }
-        TMDarrayDestroy(gTexturesNames);
-        gTexturesNames  = NULL;
+        TMDarrayDestroy(*filesNames);
+        *filesNames  = NULL;
     }
 }
 
 static void LoadTexture(TMUIElement *element) {
 
-    if(gState->loadOption == LOAD_OPTION_NONE) {
+    if(gState->loadOption == LOAD_OPTION_NONE || gState->loadOption == LOAD_OPTION_SHADER) {
         gState->loadOption = LOAD_OPTION_TEXTURE;
     }
     else {
@@ -199,7 +206,7 @@ static void LoadTexture(TMUIElement *element) {
 
 static void LoadShader(TMUIElement *element) {
 
-    if(gState->loadOption == LOAD_OPTION_NONE) {
+    if(gState->loadOption == LOAD_OPTION_NONE || gState->loadOption == LOAD_OPTION_TEXTURE) {
         gState->loadOption = LOAD_OPTION_SHADER;
     }
     else {
@@ -207,11 +214,56 @@ static void LoadShader(TMUIElement *element) {
     }
 }
 
+static void SelectTexture(TMUIElement *element) {
+    
+    printf("Texture Selected: %s\n", gTexturesNames[element->index]);
+
+    char filepath[10000] = "../../assets/images/";
+    int headerSize = StringLength(filepath);
+    int nameSize = StringLength(gTexturesNames[element->index]);
+    assert(headerSize + nameSize < 10000);
+
+    memcpy(filepath + headerSize, gTexturesNames[element->index], nameSize);
+
+    filepath[headerSize + nameSize] = '\0';
+
+    printf("path created: %s\n", filepath);
+
+    TMTexture *texture = TMRendererTextureCreate(gState->renderer, filepath);
+    
+    TMDarrayPush(gState->textures, texture, TMTexture *);
+    TMDarrayPush(gState->texturesAddedNames, gTexturesNames[element->index], char *);
+
+    int index = (TMDarraySize(gState->textures) - 1) / 8;
+    if(TMDarraySize(gState->textures) <= 3*8) {
+
+        TMVec4 uvs = {0, 0, 1, 1};
+        TMUIElementAddChildImageButton(gState->ui.texturesChilds[index], TM_UI_ORIENTATION_HORIZONTAL,
+                                       texture, uvs, uvs, ElementSelected, (void *)&element->index);
+
+    }
+
+}
+
+static void SelectShader(TMUIElement *element) {
+    printf("Shader Selected: %s\n", gShadersNames[element->index]);
+}
+
 static void SaveScene(TMUIElement *element) {
     printf("Scene Saved\n");
 
     TMJsonObject jsonRoot = TMJsonObjectCreate();
     TMJsonObjectSetName(&jsonRoot, "Root");
+
+    TMJsonObject jsonLevelTextures = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonLevelTextures, "LevelTextures");
+
+    for(int i = 0; i < TMDarraySize(gState->texturesAddedNames); ++i) {
+        const char *textureName =  (const char *)gState->texturesAddedNames[i];
+        TMJsonObjectSetValue(&jsonLevelTextures, textureName);
+    
+    }
+    TMJsonObjectAddChild(&jsonRoot, &jsonLevelTextures);
 
     TMJsonObject jsonScene = TMJsonObjectCreate();
     TMJsonObjectSetName(&jsonScene, "Scene");
@@ -462,7 +514,8 @@ static void SaveScene(TMUIElement *element) {
 
 void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPixel) {
 
-    LoadFileNamesFromDirectory("../../assets/images");
+    LoadFileNamesFromDirectory("../../assets/images", &gTexturesNames);
+    LoadFileNamesFromDirectory("../../assets/shaders", &gShadersNames);
 
     ui->options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {6, 0.4}, {0.1, 0.1, 0.1, 1});
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, OptionSelected);
@@ -473,15 +526,12 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     ui->textures = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.4f, 0.1f, 1});
     TMUIElementAddChildButton(ui->textures, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
     TMUIElementAddChildButton(ui->textures, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
-    TMUIElement *child = TMUIElementGetChild(ui->textures, 0);
-    for(int i = 0; i < ARRAY_LENGTH(gImages); ++i) {
-        TMUIElementAddChildImageButton(child, TM_UI_ORIENTATION_VERTICAL, gTexture, {0, 0, 1, 1}, Texture(gAbsUVs, gImages[i]), ElementSelected);
-    }
-    child = TMUIElementGetChild(ui->textures, 1);
-    for(int i = ARRAY_LENGTH(gImages) - 1; i >= 0;  --i) {
-        TMUIElementAddChildImageButton(child, TM_UI_ORIENTATION_VERTICAL, gTexture, {0, 0, 1, 1}, Texture(gAbsUVs, gImages[i]), ElementSelected);
-    }
+    TMUIElementAddChildButton(ui->textures, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
+    ui->texturesChilds[0] = TMUIElementGetChild(ui->textures, 2);
+    ui->texturesChilds[1] = TMUIElementGetChild(ui->textures, 1);
+    ui->texturesChilds[2] = TMUIElementGetChild(ui->textures, 0);
 
+    TMUIElement *child = NULL;
     ui->colors = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.4f, 0.1f, 0.1f, 1});
     TMUIElementAddChildButton(ui->colors, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
     TMUIElementAddChildButton(ui->colors, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
@@ -538,10 +588,17 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture ", {1, 1, 1, 1}, LoadTexture);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader ", {1, 1, 1, 1}, LoadShader);
 
-    ui->loadOptions = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {2.5f, height/meterToPixel - 0.25f - 4.0f}, {3, 4}, {0.02f, 0.02f, 0.02f, 1.0f});
+    ui->loadTexture = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {2.5f, height/meterToPixel - 0.25f - 4.0f}, {2.5, 4}, {0.02f, 0.02f, 0.02f, 1.0f});
     if(gTexturesNames) {
         for(int i = 0; i < TMDarraySize(gTexturesNames); ++i) {
-            TMUIElementAddChildLabel(ui->loadOptions, TM_UI_ORIENTATION_VERTICAL, gTexturesNames[i], {1, 1, 1, 1}, NULL);
+            TMUIElementAddChildLabel(ui->loadTexture, TM_UI_ORIENTATION_VERTICAL, gTexturesNames[i], {1, 1, 1, 1}, SelectTexture);
+        }
+    }
+
+    ui->loadShader = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {5.0f, height/meterToPixel - 0.25f - 4.5f}, {2.5, 4.5}, {0.02f, 0.02f, 0.02f, 1.0f});
+    if(gShadersNames) {
+        for(int i = 0; i < TMDarraySize(gShadersNames); ++i) {
+            TMUIElementAddChildLabel(ui->loadShader, TM_UI_ORIENTATION_VERTICAL, gShadersNames[i], {1, 1, 1, 1}, SelectShader);
         }
     }
 
@@ -567,7 +624,11 @@ void EditorUIUpdate(EditorUI *ui, float width, float height, float meterToPixel)
     }
 
     if(gState->loadOption == LOAD_OPTION_TEXTURE) {
-        TMUIElementProcessInput(ui->loadOptions, pos.x, pos.y, width, height, meterToPixel);
+        TMUIElementProcessInput(ui->loadTexture, pos.x, pos.y, width, height, meterToPixel);
+    }
+
+    if(gState->loadOption == LOAD_OPTION_SHADER) {
+        TMUIElementProcessInput(ui->loadShader, pos.x, pos.y, width, height, meterToPixel);
     }
 
     gState->mouseIsHot = false;
@@ -580,7 +641,10 @@ void EditorUIUpdate(EditorUI *ui, float width, float height, float meterToPixel)
         TMUIMouseIsHot(ui->modify, &gState->mouseIsHot);
     }
     if(gState->loadOption == LOAD_OPTION_TEXTURE) {
-        TMUIMouseIsHot(ui->loadOptions, &gState->mouseIsHot);
+        TMUIMouseIsHot(ui->loadTexture, &gState->mouseIsHot);
+    }
+    if(gState->loadOption == LOAD_OPTION_SHADER) {
+        TMUIMouseIsHot(ui->loadShader, &gState->mouseIsHot);
     }
 
 }
@@ -601,7 +665,10 @@ void EditorUIDraw(EditorUI *ui, TMRenderer *renderer) {
     }
 
     if(gState->loadOption == LOAD_OPTION_TEXTURE) {
-        TMUIElementDraw(renderer, ui->loadOptions, 0.0f);
+        TMUIElementDraw(renderer, ui->loadTexture, 0.0f);
+    }
+    if(gState->loadOption == LOAD_OPTION_SHADER) {
+        TMUIElementDraw(renderer, ui->loadShader, 0.0f);
     }
 
     if(!gState->element && gState->selectedEntity) {
@@ -634,7 +701,9 @@ void EditorUIShutdown(EditorUI *ui) {
     TMUIElementDestroy(ui->colors);
     TMUIElementDestroy(ui->textures);
     TMUIElementDestroy(ui->options);
-    TMUIElementDestroy(ui->loadOptions);
-    FreeFileNames();
+    TMUIElementDestroy(ui->loadTexture);
+    TMUIElementDestroy(ui->loadShader);
+    FreeFileNames(&gShadersNames);
+    FreeFileNames(&gTexturesNames);
 
 }

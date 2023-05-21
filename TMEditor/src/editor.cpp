@@ -58,9 +58,14 @@ static void AddDefaultEntity(EditorState *state, float posX, float posY) {
     entity.size = {1, 1};
     entity.texture = element->texture;
     entity.zIndex = 2;
+    if(element->userData) {
+        entity.textureIndex = *((int *)element->userData);
+    }
+    else {
+        entity.textureIndex = -1;
+    }
     entity.id = gEntityCount++;
     entity.prefabType = PREFAB_TYPE_NONE;
-
 
     if(element->type == TM_UI_TYPE_BUTTON) {
         entity.shader = state->colorShader;
@@ -251,6 +256,7 @@ void EditorInitialize(EditorState *state, TMWindow *window) {
     // TODO: make a system to add and remove textures on the fly
     gFontUVs = TMGenerateUVs(128, 64, 7, 9, &gFontCount);
     gAbsUVs = TMHashmapCreate(sizeof(TMVec4));
+
     gTexture = TMRendererTextureCreateAtlas(state->renderer, gImages, ARRAY_LENGTH(gImages), 1024*2, 1024*2, gAbsUVs);
 
     EditorUIInitialize(&state->ui, (float)clientWidth, (float)clientHeight, state->meterToPixel);
@@ -482,10 +488,32 @@ void EditorRender(EditorState *state) {
 }
 
 void EditorShutdown(EditorState *state) {
+
+
     if(state->entities) TMDarrayDestroy(state->entities);
+
+    if(state->textures) {
+        for(int i = 0; i < TMDarraySize(state->textures); ++i) {
+            TMTexture *texture = state->textures[i];
+            TMRendererTextureDestroy(state->renderer, texture);
+        }
+        TMDarrayDestroy(state->textures);
+    }
+
+    if(state->shaders) {
+        for(int i = 0; i < TMDarraySize(state->shaders); ++i) {
+            TMShader *shader = state->shaders[i];
+            TMRendererShaderDestroy(state->renderer, shader);
+        }
+        TMDarrayDestroy(state->shaders);
+    }
+    if(state->texturesAddedNames) TMDarrayDestroy(state->texturesAddedNames);
+    if(state->shadersAddedNames) TMDarrayDestroy(state->shadersAddedNames);
+
     EditorUIShutdown(&state->ui);
     TMRendererTextureDestroy(state->renderer, gTexture);
     TMHashmapDestroy(gAbsUVs);
+
     free(gFontUVs);
     TMRendererBufferDestroy(state->renderer, state->vertexBuffer);
     TMRendererShaderBufferDestroy(state->renderer, state->shaderBuffer);
