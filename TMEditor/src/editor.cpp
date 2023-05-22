@@ -58,12 +58,7 @@ static void AddDefaultEntity(EditorState *state, float posX, float posY) {
     entity.size = {1, 1};
     entity.texture = element->texture;
     entity.zIndex = 2;
-    if(element->userData) {
-        entity.textureIndex = *((int *)element->userData);
-    }
-    else {
-        entity.textureIndex = -1;
-    }
+    entity.textureIndex = (int)((long long)element->userData);
     entity.id = gEntityCount++;
     entity.prefabType = PREFAB_TYPE_NONE;
 
@@ -92,6 +87,7 @@ static void AddPlayerEntity(EditorState *state, float posX, float posY) {
     entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
     entity.size = {1.2, 1.2};
     entity.texture = gTexture;
+    entity.textureIndex = -1;
     entity.shader = state->spriteShader;
     entity.zIndex = 2;
     entity.id = gEntityCount++;

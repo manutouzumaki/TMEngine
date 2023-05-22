@@ -234,12 +234,15 @@ static void SelectTexture(TMUIElement *element) {
     TMDarrayPush(gState->textures, texture, TMTexture *);
     TMDarrayPush(gState->texturesAddedNames, gTexturesNames[element->index], char *);
 
+    long long textureIndex = (long long)TMDarraySize(gState->texturesAddedNames) - 1;
+
+
     int index = (TMDarraySize(gState->textures) - 1) / 8;
     if(TMDarraySize(gState->textures) <= 3*8) {
 
         TMVec4 uvs = {0, 0, 1, 1};
         TMUIElementAddChildImageButton(gState->ui.texturesChilds[index], TM_UI_ORIENTATION_HORIZONTAL,
-                                       texture, uvs, uvs, ElementSelected, (void *)&element->index);
+                                       texture, uvs, uvs, ElementSelected, (void *)textureIndex);
 
     }
 
@@ -352,6 +355,10 @@ static void SaveScene(TMUIElement *element) {
             TMJsonObjectSetName(&jsonZIndex, "ZIndex");
             TMJsonObjectSetValue(&jsonZIndex, entity->zIndex);
 
+            TMJsonObject jsonTextureIndex = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonTextureIndex, "TextureIndex");
+            TMJsonObjectSetValue(&jsonTextureIndex, entity->textureIndex);
+
             TMJsonObjectAddChild(&jsonGraphic, &jsonType);
             TMJsonObjectAddChild(&jsonGraphic, &jsonPosition);
             TMJsonObjectAddChild(&jsonGraphic, &jsonSize);
@@ -359,6 +366,7 @@ static void SaveScene(TMUIElement *element) {
             TMJsonObjectAddChild(&jsonGraphic, &jsonAbsUVs);
             TMJsonObjectAddChild(&jsonGraphic, &jsonRelUVs);
             TMJsonObjectAddChild(&jsonGraphic, &jsonZIndex);
+            TMJsonObjectAddChild(&jsonGraphic, &jsonTextureIndex);
         
             TMJsonObjectAddChild(&jsonEntity, &jsonGraphic);
 

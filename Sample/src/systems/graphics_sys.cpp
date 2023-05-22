@@ -126,7 +126,12 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
             
 
             TMRendererBindShader(renderer, graphics->shader);
-            TMRendererTextureBind(renderer, gGraphicsState.texture, graphics->shader, "uTexture", 0);
+            if(graphics->texture) {
+                TMRendererTextureBind(renderer, graphics->texture, graphics->shader, "uTexture", 0);
+            }
+            else {
+                TMRendererTextureBind(renderer, gGraphicsState.texture, graphics->shader, "uTexture", 0);
+            }
 
         
             TMMat4 trans = TMMat4Translate(graphics->position.x,

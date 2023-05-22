@@ -14,6 +14,7 @@ struct GameState {
 
     TMShader       *colorShader;
     TMShader       *spriteShader;
+    TMTexture     **levelTextures;
 
     TMMat4 view;
     TMMat4 proj;

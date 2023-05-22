@@ -45,7 +45,7 @@ Entity *EntityCreate() {
 
 void EntityAddGraphicsComponent(Entity *entity, GraphicsComponentType type,
                                 TMVec2 position, TMVec2 size, TMVec4 color,
-                                TMVec4 absUVs, TMVec4 relUVs, int zIndex, TMShader *shader) {
+                                TMVec4 absUVs, TMVec4 relUVs, int zIndex, TMShader *shader, TMTexture *texture) {
 
     assert(entity->graphics == NULL);
     entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
@@ -60,6 +60,7 @@ void EntityAddGraphicsComponent(Entity *entity, GraphicsComponentType type,
     entity->graphics->size = size;
     entity->graphics->index = 0;
     entity->graphics->zIndex = zIndex;  // TODO: this probably should be a float
+    entity->graphics->texture = texture;
 
 }
 
@@ -72,6 +73,7 @@ void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec
     entity->graphics->size = size;
     entity->graphics->color = color;
     entity->graphics->shader = shader;
+    entity->graphics->texture = 0;
 }
 
 #if 0

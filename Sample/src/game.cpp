@@ -369,6 +369,13 @@ static const char *StringToNullTerString(const char *c, size_t size) {
     return (const char *)nullTerString;
 }
 
+static int StringLength(char *string) {
+    int counter = 0;
+    char *letter = string; 
+    while(*letter++ != L'\0') counter++;
+    return counter;
+}
+
 void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state) {
     TMJsonObject *jsonType     = TMJsonFindChildByName(jsonObject, "Type");
     TMJsonObject *jsonPosition = TMJsonFindChildByName(jsonObject, "Position"); 
@@ -377,6 +384,7 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameS
     TMJsonObject *jsonAbsUVs      = TMJsonFindChildByName(jsonObject, "AbsUvs");
     TMJsonObject *jsonRelUVs    = TMJsonFindChildByName(jsonObject, "RelUvs");
     TMJsonObject *jsonZIndex    = TMJsonFindChildByName(jsonObject, "ZIndex");
+    TMJsonObject *jsonTextureIndex    = TMJsonFindChildByName(jsonObject, "TextureIndex");
 
     TMJsonValue jsonValue = jsonPosition->childs[0].values[0];
     float xPos = StringToFloat(jsonValue.value, jsonValue.size);
@@ -391,6 +399,9 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameS
     TMVec2 size = {xSiz, ySiz};
 
     int zIndex = StringToInt(jsonZIndex->values[0].value, jsonZIndex->values[0].size); 
+    int textureIndex = StringToInt(jsonTextureIndex->values[0].value, jsonTextureIndex->values[0].size); 
+
+    printf("textureIndex: %d\n", textureIndex);
 
     GraphicsComponentType type = (GraphicsComponentType)StringToInt(jsonType->values[0].value,
                                                                     jsonType->values[0].size);
@@ -415,8 +426,13 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameS
 
     TMShader *shader = (type == GRAPHICS_TYPE_SOLID_COLOR) ? state->colorShader : state->spriteShader;
 
+    TMTexture *texture = NULL;
+    if(textureIndex >= 0) {
+        texture = state->levelTextures[textureIndex];
+    }
+
     EntityAddGraphicsComponent(entity, type, position, size, color,
-                               absUvs, relUvs, zIndex, shader);
+                               absUvs, relUvs, zIndex, shader, texture);
 }
 
 void EntityAddPhysicsCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
@@ -554,8 +570,29 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
 
     TMJsonObject *jsonRoot = &jsonFile->root.childs[0];
     
+    TMJsonObject *jsonLevelTextures = TMJsonFindChildByName(jsonRoot, "LevelTextures");
     TMJsonObject *jsonScene = TMJsonFindChildByName(jsonRoot, "Scene");
-    TMJsonObject *jsonUVs = TMJsonFindChildByName(jsonRoot, "PlayerUvs");
+
+    for(int i = 0; i < jsonLevelTextures->valuesCount; ++i) {
+        TMJsonValue *jsonValue = jsonLevelTextures->values + i;
+
+
+        char filepath[10000] = "../../assets/images/";
+        int headerSize = StringLength(filepath);
+        int nameSize = jsonValue->size;
+        assert(headerSize + nameSize < 10000);
+
+        memcpy(filepath + headerSize, jsonValue->value, nameSize);
+        filepath[headerSize + nameSize] = '\0';
+
+        printf("path created: %s\n", filepath);
+
+        TMTexture *texture = TMRendererTextureCreate(state->renderer, filepath);
+        
+        TMDarrayPush(state->levelTextures, texture, TMTexture *);
+    }
+    
+    int texturesCount = TMDarraySize(state->levelTextures);
     
     for(int i = 0; i < jsonScene->childsCount; ++i) {
 
@@ -683,6 +720,13 @@ void GameShutdown(GameState *state) {
     AnimationSystemShutdown(state->entities);
     MessageSystemShoutdown();
     TMDebugRendererShutdown();
+    if(state->levelTextures) {
+        for(int i = 0; i < TMDarraySize(state->levelTextures); ++i) {
+            TMTexture *texture = state->levelTextures[i];
+            TMRendererTextureDestroy(state->renderer, texture);
+        }
+        TMDarrayDestroy(state->levelTextures);
+    }
     TMRendererShaderDestroy(state->renderer, state->colorShader);
     TMRendererShaderDestroy(state->renderer, state->spriteShader);
     TMRendererDestroy(state->renderer);
