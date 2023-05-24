@@ -79,6 +79,8 @@ TM_EXPORT void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation ori
 
 TM_EXPORT TMUIElement *TMUIElementGetChild(TMUIElement *element, int index);
 
+TM_EXPORT void TMUIElementRecalculateChilds(TMUIElement *element);
+
 TM_EXPORT void TMUIElementDestroy(TMUIElement *element);
 TM_EXPORT void TMUIElementProcessInput(TMUIElement *element, float offsetX, float offsetY, float width, float height, float scale);
 TM_EXPORT void TMUIElementDraw(TMRenderer *renderer, TMUIElement *element, float increment);

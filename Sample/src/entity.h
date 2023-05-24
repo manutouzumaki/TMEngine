@@ -41,6 +41,7 @@ struct AnimationComponet {
     AnimationState *states;
     AnimationState *current;
     int statesCount;
+    int index;
     float timer;
 };
 

@@ -354,6 +354,45 @@ static void MouseToWorld(float *mouseX, float *mouseY, float width, float height
 }
 
 
+void TMUIElementRecalculateChilds(TMUIElement *element) {
+
+    TMUIElement *parent = element;
+    int childCount = TMDarraySize(parent->childs);
+
+    if(parent->orientation == TM_UI_ORIENTATION_HORIZONTAL) {
+
+        for(int i = 0; i < childCount; ++i) {
+            
+            TMUIElement *child = parent->childs + i;
+            child->position.x = parent->position.x + (parent->size.x/childCount)*i;
+            child->position.y = parent->position.y;
+            child->size.x = (parent->size.x/childCount);
+            child->size.y = parent->size.y;
+            child->index = i;
+            if(child->childs) {
+                TMUIElementRecalculateChilds(child);
+            }
+
+        }
+    }
+    else if(parent->orientation == TM_UI_ORIENTATION_VERTICAL) {
+
+        for(int i = 0; i < childCount; ++i) {
+            TMUIElement *child = parent->childs + i;
+            child->position.x = parent->position.x;
+            child->position.y = parent->position.y + (parent->size.y/childCount)*i;
+            child->size.x = parent->size.x;
+            child->size.y = (parent->size.y/childCount);
+            child->index = i;
+            if(child->childs) {
+                TMUIElementRecalculateChilds(child);
+            }
+        }
+    }
+
+}
+
+
 
 void TMUIElementProcessInput(TMUIElement *element,
                              float offsetX, float offsetY,

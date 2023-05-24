@@ -531,9 +531,14 @@ void EntityAddAnimationCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
     TMJsonObject *jsonCount = TMJsonFindChildByName(jsonObject, "AnimationStatesCount");
     int count = StringToInt(jsonCount->values[0].value, jsonCount->values[0].size);
 
+    TMJsonObject *jsonAnimIndex = TMJsonFindChildByName(jsonObject, "AnimationIndex");
+    int index = StringToInt(jsonAnimIndex->values[0].value, jsonAnimIndex->values[0].size);
+    
+    entity->animation->index = index;
+
     for(int i = 1; i <= count; ++i) {
 
-        TMJsonObject *jsonAnimationState = jsonObject->childs + i;
+        TMJsonObject *jsonAnimationState = jsonObject->childs + (i+1);
 
         TMJsonObject *jsonFrameCount = TMJsonFindChildByName(jsonAnimationState, "FrameCount");
         TMJsonObject *jsonFrames     = TMJsonFindChildByName(jsonAnimationState, "Frames");

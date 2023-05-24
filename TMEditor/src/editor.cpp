@@ -84,8 +84,44 @@ static void AddPlayerEntity(EditorState *state, float posX, float posY) {
     entity.collision->type = COLLISION_TYPE_CAPSULE;
     entity.collision->solid = true;
 
-    TMDarrayPush(state->entities, entity, Entity);
+    entity.animation = (Animation *)malloc(sizeof(Animation));
 
+    AnimationState walkLeft;
+    walkLeft.frames[0] = 0;
+    walkLeft.frames[1] = 1;
+    walkLeft.frames[2] = 2;
+    walkLeft.frames[3] = 3;
+    walkLeft.frameCount = 4;
+    walkLeft.speed = 15.0f;
+
+    AnimationState walkRight;
+    walkRight.frames[0] = 4;
+    walkRight.frames[1] = 5;
+    walkRight.frames[2] = 6;
+    walkRight.frames[3] = 7;
+    walkRight.frameCount = 4;
+    walkRight.speed = 15.0f;
+
+    AnimationState idleLeft;
+    idleLeft.frames[0] = 0;
+    idleLeft.frames[1] = 3;
+    idleLeft.frameCount = 2;
+    idleLeft.speed = 7.0f;
+
+    AnimationState idleRight;
+    idleRight.frames[0] = 4;
+    idleRight.frames[1] = 7;
+    idleRight.frameCount = 2;
+    idleRight.speed = 7.0f;
+
+    entity.animation->states[0] = walkLeft;
+    entity.animation->states[1] = walkRight;
+    entity.animation->states[2] = idleLeft;
+    entity.animation->states[3] = idleRight;
+    entity.animation->statesCount = 4;
+    entity.animation->index = 0;
+
+    TMDarrayPush(state->entities, entity, Entity);
 }
 
 static void AddEnemyEntity(EditorState *state, float posX, float posY) {
@@ -349,7 +385,6 @@ void EditorUpdate(EditorState *state) {
 
 void EditorRender(EditorState *state) {
 
-
     int clientWidth, clientHeight = 0;
     if(TMRendererUpdateRenderArea(state->renderer, &clientWidth, &clientHeight)) {
 
@@ -358,7 +393,15 @@ void EditorRender(EditorState *state) {
         gConstBuffer.proj = TMMat4Ortho(0, clientWidth/state->meterToPixel, 0, clientHeight/state->meterToPixel, 0.1f, 100.0f);
         TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &gConstBuffer);
 
-        // TODO: update editor ui position ...
+        state->ui.modify->position      = {clientWidth/state->meterToPixel - 4.8f, 0.0f};  
+        state->ui.save->position        = {0.0f, clientHeight/state->meterToPixel - 0.25f};
+        state->ui.loadTexture->position = {2.5f, clientHeight/state->meterToPixel - 0.25f - 4.0f};
+        state->ui.loadShader->position  = {5.0f, clientHeight/state->meterToPixel - 0.25f - 4.5f};
+
+        TMUIElementRecalculateChilds(state->ui.modify);
+        TMUIElementRecalculateChilds(state->ui.save);
+        TMUIElementRecalculateChilds(state->ui.loadTexture);
+        TMUIElementRecalculateChilds(state->ui.loadShader);
 
     }
 
@@ -457,7 +500,14 @@ void EditorRender(EditorState *state) {
 
 void EditorShutdown(EditorState *state) {
 
-    if(state->entities) TMDarrayDestroy(state->entities);
+    if(state->entities) {
+        for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+            Entity *entity = state->entities + i;
+            if (entity->collision) free(entity->collision);
+            if (entity->animation) free(entity->animation);
+        }
+        TMDarrayDestroy(state->entities);
+    }
 
     if(state->textures) {
         for(int i = 0; i < TMDarraySize(state->textures); ++i) {

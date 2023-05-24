@@ -52,8 +52,25 @@ enum PrefabsType {
     PREFAB_TYPE_ENEMY
 };
 
+struct AnimationState {
+    int frames[32];
+    int frameCount;
+    float speed;
+};
+
+struct Animation {
+    AnimationState states[32];
+    int statesCount;
+    int index;
+    float timer;
+};
+
+
 struct Entity {
+    // ids
     int id;
+    PrefabsType prefabType;
+    // properties
     TMVec4 color;
     TMVec4 absUVs;
     TMVec4 relUVs;
@@ -63,8 +80,9 @@ struct Entity {
     TMTexture *texture;
     int zIndex;
     int textureIndex;
+    // components
     Collision *collision;
-    PrefabsType prefabType;
+    Animation *animation;
 };
 
 struct EditorState {

@@ -29,6 +29,8 @@ static TMVertex     gVertices[] = {
         TMVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec3{0, 0, 0}}  // 3
 };
 static TMTexture *gPlayerTexture;
+static float     *gUVs[32];
+static int        gUVsCount[32];
 
 static GraphycsSystemState gGraphicsState;
 
@@ -72,11 +74,14 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
 
     gPlayerTexture = TMRendererTextureCreate(renderer, "../../assets/images/player.png");
 
+    gUVs[0] = TMGenerateUVs(gPlayerTexture, 16, 16, &gUVsCount[0]);
+
     
 }
 
 void GraphicsSystemShutdown(TMRenderer *renderer) {
 
+    free(gUVs[0]);
     TMRendererTextureDestroy(renderer, gPlayerTexture);
     TMRendererShaderBufferDestroy(renderer, gGraphicsState.shaderBuffer);
     TMRendererBufferDestroy(renderer, gGraphicsState.vertexBuffer);
@@ -125,7 +130,16 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
                                        1.0f);
             gConstBuffer.world = trans * scale;
             gConstBuffer.absUVs = graphics->absUVs;
-            gConstBuffer.relUVs = graphics->relUVs;
+
+
+            if(entity->animation) {
+                TMVec4 *uvs = (TMVec4 *)gUVs[entity->animation->index];
+                gConstBuffer.relUVs = uvs[graphics->index];
+            }
+            else {
+                gConstBuffer.relUVs = graphics->relUVs;
+            }
+
             gConstBuffer.color = graphics->color;
             TMRendererShaderBufferUpdate(renderer, gGraphicsState.shaderBuffer, &gConstBuffer);
             TMRendererDrawBufferElements(renderer, gGraphicsState.vertexBuffer);

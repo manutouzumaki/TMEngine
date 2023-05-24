@@ -14,6 +14,7 @@ struct GameState {
 
     TMShader       *colorShader;
     TMShader       *spriteShader;
+
     TMTexture     **levelTextures;
 
     TMMat4 view;
@@ -22,11 +23,6 @@ struct GameState {
     Entity **entities;
     Entity *player;
 
-    // TODO: this should be a hashmap or somthing like that
-    //TMVec4 *absUVs;
-    //TMHashmap *absUVs;
-    //float  *relUVs;
-    //int relUVsCount;
 };
 
 void GameInitialize(GameState *state, TMWindow *window);

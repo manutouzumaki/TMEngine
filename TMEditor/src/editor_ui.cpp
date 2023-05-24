@@ -380,6 +380,52 @@ static void SaveScene(TMUIElement *element) {
             }
 
         }
+
+        if(entity->animation) {
+
+            TMJsonObject jsonAnimation = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonAnimation, "Animation");
+
+            TMJsonObject statesCount = TMJsonObjectCreate();
+            TMJsonObjectSetName(&statesCount, "AnimationStatesCount");
+            TMJsonObjectSetValue(&statesCount, (float)entity->animation->statesCount);
+
+            TMJsonObjectAddChild(&jsonAnimation, &statesCount);
+
+            TMJsonObject animationIndex = TMJsonObjectCreate();
+            TMJsonObjectSetName(&animationIndex, "AnimationIndex");
+            TMJsonObjectSetValue(&animationIndex, (float)entity->animation->index);
+
+            TMJsonObjectAddChild(&jsonAnimation, &animationIndex);
+
+            for(int i = 0; i < entity->animation->statesCount; ++i) {
+                TMJsonObject jsonAnimState = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonAnimState, "AnimationState");
+
+                TMJsonObject frameCount = TMJsonObjectCreate();
+                TMJsonObjectSetName(&frameCount, "FrameCount");
+                TMJsonObjectSetValue(&frameCount, (float)entity->animation->states[i].frameCount);
+
+                TMJsonObject frames = TMJsonObjectCreate();
+                TMJsonObjectSetName(&frames, "Frames");
+                for(int j = 0; j < entity->animation->states[i].frameCount; ++j) {
+                    TMJsonObjectSetValue(&frames, (float)entity->animation->states[i].frames[j]);
+                }
+
+                TMJsonObject speed = TMJsonObjectCreate();
+                TMJsonObjectSetName(&speed, "Speed");
+                TMJsonObjectSetValue(&speed, (float)entity->animation->states[i].speed);
+
+                TMJsonObjectAddChild(&jsonAnimState, &frameCount);
+                TMJsonObjectAddChild(&jsonAnimState, &frames);
+                TMJsonObjectAddChild(&jsonAnimState, &speed);
+
+                TMJsonObjectAddChild(&jsonAnimation, &jsonAnimState);
+            } 
+
+            TMJsonObjectAddChild(&jsonEntity, &jsonAnimation);
+        }
+
         if(entity->collision) {
             TMJsonObject jsonCollision = TMJsonObjectCreate();
             TMJsonObjectSetName(&jsonCollision, "Collision");
