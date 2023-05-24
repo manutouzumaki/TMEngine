@@ -615,3 +615,319 @@ void GameShutdown(GameState *state) {
 
     EntitiesSerialize(state->entities, state->relUVs, state->relUVsCount);
 #endif
+
+bool EntitiesSerialize(Entity **entities, float *uvs, int uvsCount) {
+
+    TMJsonObject jsonRoot = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonRoot, "Root");
+
+    TMJsonObject jsonPlayerUvs = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonPlayerUvs, "PlayerUvs");
+    for(int i = 0; i < uvsCount*4; i++) {
+        TMJsonObjectSetValue(&jsonPlayerUvs, uvs[i]);
+    }
+
+    TMJsonObject jsonScene = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonScene, "Scene");
+
+
+    for(int i = 0; i < TMDarraySize(entities); ++i) {
+        Entity *entity = entities[i];
+        TMJsonObject jsonEntity = TMJsonObjectCreate();
+        TMJsonObjectSetName(&jsonEntity, "Entity");
+
+        if(entity->graphics) {
+            TMJsonObject jsonGraphic = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonGraphic, "Graphics");
+
+            // graphics type
+            TMJsonObject jsonType = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonType, "Type");
+            TMJsonObjectSetValue(&jsonType, (float)entity->graphics->type); 
+
+            // position
+            TMJsonObject jsonPosition = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonPosition, "Position");
+            TMJsonObject xPos = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xPos, "X");
+            TMJsonObjectSetValue(&xPos, entity->graphics->position.x);
+            TMJsonObject yPos = TMJsonObjectCreate();
+            TMJsonObjectSetName(&yPos, "Y");
+            TMJsonObjectSetValue(&yPos, entity->graphics->position.y);
+            TMJsonObjectAddChild(&jsonPosition, &xPos);
+            TMJsonObjectAddChild(&jsonPosition, &yPos);
+
+            // size
+            TMJsonObject jsonSize = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonSize, "Size");
+            TMJsonObject xSiz = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xSiz, "X");
+            TMJsonObjectSetValue(&xSiz, entity->graphics->size.x);
+            TMJsonObject ySiz = TMJsonObjectCreate();
+            TMJsonObjectSetName(&ySiz, "Y");
+            TMJsonObjectSetValue(&ySiz, entity->graphics->size.y);
+            TMJsonObjectAddChild(&jsonSize, &xSiz);
+            TMJsonObjectAddChild(&jsonSize, &ySiz);
+
+            TMJsonObjectAddChild(&jsonGraphic, &jsonType);
+            TMJsonObjectAddChild(&jsonGraphic, &jsonPosition);
+            TMJsonObjectAddChild(&jsonGraphic, &jsonSize);
+
+            switch(entity->graphics->type) {
+            
+                case GRAPHICS_TYPE_SOLID_COLOR: {
+                    // color
+                    TMJsonObject jsonColor = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&jsonColor, "Color");
+                    TMJsonObject r = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&r, "R");
+                    TMJsonObjectSetValue(&r, entity->graphics->color.x);
+                    TMJsonObject g = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&g, "G");
+                    TMJsonObjectSetValue(&g, entity->graphics->color.y);
+                    TMJsonObject b = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&b, "B");
+                    TMJsonObjectSetValue(&b, entity->graphics->color.z);
+                    TMJsonObject a = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&a, "A");
+                    TMJsonObjectSetValue(&a, entity->graphics->color.w);
+                    TMJsonObjectAddChild(&jsonColor, &r);
+                    TMJsonObjectAddChild(&jsonColor, &g);
+                    TMJsonObjectAddChild(&jsonColor, &b);
+                    TMJsonObjectAddChild(&jsonColor, &a);
+                    
+                    TMJsonObjectAddChild(&jsonGraphic, &jsonColor);
+
+
+                } break;
+                case GRAPHICS_TYPE_SPRITE: {
+                    // absUVs
+                    TMJsonObject jsonUVs = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&jsonUVs, "Uvs");
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->relUVs[0]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->relUVs[1]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->relUVs[2]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->relUVs[3]);
+
+                    // Index
+                    TMJsonObject jsonIndex = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&jsonIndex, "Index");
+                    TMJsonObjectSetValue(&jsonIndex, (float)entity->graphics->index);
+                    
+                    TMJsonObjectAddChild(&jsonGraphic, &jsonUVs);
+                    TMJsonObjectAddChild(&jsonGraphic, &jsonIndex);
+
+                } break;
+                case GRAPHICS_TYPE_SUBSPRITE: {
+                    TMJsonObject jsonUVs = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&jsonUVs, "Uvs");
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->absUVs.v[0]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->absUVs.v[1]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->absUVs.v[2]);
+                    TMJsonObjectSetValue(&jsonUVs, entity->graphics->absUVs.v[3]);
+
+                    // Index
+                    TMJsonObject jsonIndex = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&jsonIndex, "Index");
+                    TMJsonObjectSetValue(&jsonIndex, (float)entity->graphics->index);
+                    
+                    TMJsonObjectAddChild(&jsonGraphic, &jsonUVs);
+                    TMJsonObjectAddChild(&jsonGraphic, &jsonIndex);
+
+                } break;
+
+            }
+
+            TMJsonObjectAddChild(&jsonEntity, &jsonGraphic);
+
+        }
+
+        if(entity->physics) {
+            TMJsonObject jsonPhysics = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonPhysics, "Physics");
+
+            // position
+            TMJsonObject jsonPosition = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonPosition, "Position");
+            TMJsonObject xPos = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xPos, "X");
+            TMJsonObjectSetValue(&xPos, entity->physics->position.x);
+            TMJsonObject yPos = TMJsonObjectCreate();
+            TMJsonObjectSetName(&yPos, "Y");
+            TMJsonObjectSetValue(&yPos, entity->physics->position.y);
+            TMJsonObjectAddChild(&jsonPosition, &xPos);
+            TMJsonObjectAddChild(&jsonPosition, &yPos);
+
+            TMJsonObject jsonVelocity = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonVelocity, "Velocity");
+            TMJsonObject xVel = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xVel, "X");
+            TMJsonObjectSetValue(&xVel, entity->physics->velocity.x);
+            TMJsonObject yVel = TMJsonObjectCreate();
+            TMJsonObjectSetName(&yVel, "Y");
+            TMJsonObjectSetValue(&yVel, entity->physics->position.y);
+            TMJsonObjectAddChild(&jsonVelocity, &xVel);
+            TMJsonObjectAddChild(&jsonVelocity, &yVel);
+
+            TMJsonObject jsonAccel = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonAccel, "Acceleration");
+            TMJsonObject xAcc = TMJsonObjectCreate();
+            TMJsonObjectSetName(&xAcc, "X");
+            TMJsonObjectSetValue(&xAcc, entity->physics->acceleration.x);
+            TMJsonObject yAcc = TMJsonObjectCreate();
+            TMJsonObjectSetName(&yAcc, "Y");
+            TMJsonObjectSetValue(&yAcc, entity->physics->acceleration.y);
+            TMJsonObjectAddChild(&jsonAccel, &xAcc);
+            TMJsonObjectAddChild(&jsonAccel, &yAcc);
+
+            TMJsonObject jsonDamping = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonDamping, "Damping");
+            TMJsonObjectSetValue(&jsonDamping, entity->physics->damping);
+
+            TMJsonObjectAddChild(&jsonPhysics, &jsonPosition);
+            TMJsonObjectAddChild(&jsonPhysics, &jsonVelocity);
+            TMJsonObjectAddChild(&jsonPhysics, &jsonAccel);
+            TMJsonObjectAddChild(&jsonPhysics, &jsonDamping);
+
+            TMJsonObjectAddChild(&jsonEntity, &jsonPhysics);
+
+        }
+
+        if(entity->input) {
+            TMJsonObject jsonInput = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonInput, "Input");
+            TMJsonObjectSetValue(&jsonInput, 1.0f);
+            TMJsonObjectAddChild(&jsonEntity, &jsonInput);
+        }
+
+        if(entity->collision) {
+            TMJsonObject jsonCollision = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonCollision, "Collision");
+
+            TMJsonObject solid = TMJsonObjectCreate();
+            TMJsonObjectSetName(&solid, "Solid");
+            TMJsonObjectSetValue(&solid, (float)((int)entity->collision->solid));
+
+            TMJsonObjectAddChild(&jsonCollision, &solid);
+
+            switch(entity->collision->type) {
+            
+                case COLLISION_TYPE_AABB: {
+                    TMJsonObject aabb = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&aabb, "AABB");
+
+                    TMJsonObject min = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&min, "Min");
+                    TMJsonObjectSetValue(&min, entity->collision->aabb.min.x);
+                    TMJsonObjectSetValue(&min, entity->collision->aabb.min.y);
+
+                    TMJsonObject max = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&max, "Max");
+                    TMJsonObjectSetValue(&max, entity->collision->aabb.max.x);
+                    TMJsonObjectSetValue(&max, entity->collision->aabb.max.y);
+
+                    TMJsonObjectAddChild(&aabb, &min);
+                    TMJsonObjectAddChild(&aabb, &max);
+
+                    TMJsonObjectAddChild(&jsonCollision, &aabb);
+                    
+                } break;
+                case COLLISION_TYPE_CIRCLE: {
+                    // TODO: ...
+
+                } break;
+                case COLLISION_TYPE_CAPSULE: {
+                    TMJsonObject capsule = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&capsule, "Capsule");
+
+                    TMJsonObject a = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&a, "A");
+                    TMJsonObjectSetValue(&a, entity->collision->capsule.a.x);
+                    TMJsonObjectSetValue(&a, entity->collision->capsule.a.y);
+
+                    TMJsonObject b = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&b, "B");
+                    TMJsonObjectSetValue(&b, entity->collision->capsule.b.x);
+                    TMJsonObjectSetValue(&b, entity->collision->capsule.b.y);
+
+                    TMJsonObject r = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&r, "Radio");
+                    TMJsonObjectSetValue(&r, entity->collision->capsule.r);
+
+                    TMJsonObjectAddChild(&capsule, &a);
+                    TMJsonObjectAddChild(&capsule, &b);
+                    TMJsonObjectAddChild(&capsule, &r);
+
+                    TMJsonObjectAddChild(&jsonCollision, &capsule);
+
+                } break;
+
+            }
+
+
+            TMJsonObjectAddChild(&jsonEntity, &jsonCollision);
+        }
+
+        if(entity->animation) {
+
+            TMJsonObject jsonAnimation = TMJsonObjectCreate();
+            TMJsonObjectSetName(&jsonAnimation, "Animation");
+
+            TMJsonObject statesCount = TMJsonObjectCreate();
+            TMJsonObjectSetName(&statesCount, "AnimationStatesCount");
+            TMJsonObjectSetValue(&statesCount, (float)entity->animation->statesCount);
+
+            TMJsonObjectAddChild(&jsonAnimation, &statesCount);
+
+            for(int i = 0; i < entity->animation->statesCount; ++i) {
+                TMJsonObject jsonAnimState = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonAnimState, "AnimationState");
+
+                TMJsonObject frameCount = TMJsonObjectCreate();
+                TMJsonObjectSetName(&frameCount, "FrameCount");
+                TMJsonObjectSetValue(&frameCount, (float)entity->animation->states[i].frameCount);
+
+                TMJsonObject frames = TMJsonObjectCreate();
+                TMJsonObjectSetName(&frames, "Frames");
+                for(int j = 0; j < entity->animation->states[i].frameCount; ++j) {
+                    TMJsonObjectSetValue(&frames, (float)entity->animation->states[i].frames[j]);
+                }
+
+                TMJsonObject speed = TMJsonObjectCreate();
+                TMJsonObjectSetName(&speed, "Speed");
+                TMJsonObjectSetValue(&speed, (float)entity->animation->states[i].speed);
+
+                TMJsonObjectAddChild(&jsonAnimState, &frameCount);
+                TMJsonObjectAddChild(&jsonAnimState, &frames);
+                TMJsonObjectAddChild(&jsonAnimState, &speed);
+
+                TMJsonObjectAddChild(&jsonAnimation, &jsonAnimState);
+            } 
+
+            TMJsonObjectAddChild(&jsonEntity, &jsonAnimation);
+        }
+
+        TMJsonObjectAddChild(&jsonScene, &jsonEntity);
+
+    }
+    
+    TMJsonObjectAddChild(&jsonRoot, &jsonScene);
+    TMJsonObjectAddChild(&jsonRoot, &jsonPlayerUvs);
+
+    int bytesCount = 0;
+    TMJsonObjectStringify(&jsonRoot, NULL, &bytesCount);
+    
+    char *buffer = (char *)malloc(bytesCount + 1);
+    int bytesWriten = 0;
+    TMJsonObjectStringify(&jsonRoot, buffer, &bytesWriten);
+    printf("%s", buffer);
+    
+    TMFileWriteText("../../assets/json/scene.json", buffer, bytesWriten);
+    free(buffer);
+    
+    TMJsonObjectFree(&jsonRoot);
+
+    return false;
+}
+
+

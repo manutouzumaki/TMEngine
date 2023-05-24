@@ -13,10 +13,20 @@ struct ConstBuffer {
     TMVec4 relUVs;
 };
 
+struct Lights {
+    TMVec2 position;
+    TMVec2 range;
+};
+
 
 struct GraphycsSystemState {
     TMBuffer       *vertexBuffer;
     TMShaderBuffer *shaderBuffer;
+
+    Lights lights;
+    TMShaderBuffer *lightShaderBuffer;
+
+
 };
 
 // TODO: create a nice lit system for all this piace of shit code
@@ -66,6 +76,7 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
     // create the shader buffer to store the ConstBuffer on the GPU
     gGraphicsState.shaderBuffer = TMRendererShaderBufferCreate(renderer, &gConstBuffer,
                                                        sizeof(ConstBuffer), 0);
+
     // create the buffer to store the vertices on the GPU
     gGraphicsState.vertexBuffer = TMRendererBufferCreate(renderer,
                                                  gVertices, ARRAY_LENGTH(gVertices),
@@ -75,6 +86,17 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
     gPlayerTexture = TMRendererTextureCreate(renderer, "../../assets/images/player.png");
 
     gUVs[0] = TMGenerateUVs(gPlayerTexture, 16, 16, &gUVsCount[0]);
+
+
+
+    // TODO: lights test ...
+    // create the shader buffer to store the light information
+    
+    Lights *lights = &gGraphicsState.lights;
+    lights->position = {10, 5};
+    lights->range = {2, 4};
+
+    gGraphicsState.lightShaderBuffer = TMRendererShaderBufferCreate(renderer, &gGraphicsState.lights, sizeof(Lights), 1);
 
     
 }

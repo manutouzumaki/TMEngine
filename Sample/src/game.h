@@ -3,10 +3,8 @@
 
 #include <tm_renderer.h>
 #include <utils/tm_math.h>
-#include <utils/tm_hashmap.h>
 
-#include "entity.h"
-#include "collision.h"
+struct Entity;
 
 struct GameState {
     

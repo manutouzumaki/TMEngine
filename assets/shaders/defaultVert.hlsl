@@ -22,6 +22,7 @@ struct PS_Input
     float2 tex0 : TEXCOORD0;
     float3 norm : TEXCOORD1;
     float4 color : TEXCOORD2;
+    float3 fragPos : TEXCOORD3;
 };
 
 
@@ -51,6 +52,8 @@ PS_Input VS_Main(VS_Input vertex)
     float v = absUVs.y + vSize * relV;
 
     vsOut.tex0 = float2(u, v);
+
+    vsOut.fragPos = mul(float4(vertex.pos, 1.0f), world).xyz;
 
     return vsOut;
 }
