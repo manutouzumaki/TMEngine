@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "utils.h"
 #include <tm_window.h>
 
 struct ConstBuffer {
@@ -51,11 +52,6 @@ static void AddDefaultEntity(EditorState *state, float posX, float posY) {
         entity.shader = state->spriteShader;
     }
     TMDarrayPush(state->entities, entity, Entity);
-}
-
-static TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
-    TMVec4 result = *((TMVec4 *)TMHashmapGet(hashmap, filepath));
-    return result; 
 }
 
 static void AddPlayerEntity(EditorState *state, float posX, float posY) {
@@ -144,21 +140,6 @@ static void LastMouseToWorld(TMVec3 cameraP, float *mouseX, float *mouseY, float
 
 }
 
-static void InsertionSortEntities(Entity *entities, int length)
-{
-    for(int j = 1; j < length; ++j)
-    {
-        Entity key = entities[j];
-        int i = j - 1;
-        while(i > -1 && entities[i].zIndex < key.zIndex)
-        {
-            entities[i + 1] = entities[i];
-            --i;
-        }
-        entities[i + 1] = key;
-    }
-}
-
 static void UpdateCollision(Entity *entity) {
     Collision *collision = entity->collision;
     switch(collision->type) {
@@ -187,7 +168,6 @@ static void UpdateCollision(Entity *entity) {
         } break;
 
     }
-
 
 }
 
@@ -368,6 +348,21 @@ void EditorUpdate(EditorState *state) {
 }
 
 void EditorRender(EditorState *state) {
+
+
+    int clientWidth, clientHeight = 0;
+    if(TMRendererUpdateRenderArea(state->renderer, &clientWidth, &clientHeight)) {
+
+        TMUIUpdateProjMatrix(state->renderer, state->meterToPixel);
+
+        gConstBuffer.proj = TMMat4Ortho(0, clientWidth/state->meterToPixel, 0, clientHeight/state->meterToPixel, 0.1f, 100.0f);
+        TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &gConstBuffer);
+
+        // TODO: update editor ui position ...
+
+    }
+
+
     TMRendererClear(state->renderer, 0.2, 0.2, 0.4, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
 
     int width  = TMRendererGetWidth(state->renderer);
@@ -393,7 +388,6 @@ void EditorRender(EditorState *state) {
 
         }
     }
-
 
     TMRendererDepthTestDisable(state->renderer);
 

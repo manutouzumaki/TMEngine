@@ -65,9 +65,14 @@ struct TMFramebuffer {
     unsigned int id;
 };
 
+struct TMWindow;
+
 struct TMRenderer {
+
     int width;
     int height;
+    TMWindow *window;
+    
     TMMemoryPool* buffersMemory;
     TMMemoryPool* texturesMemory;
     TMMemoryPool* shadersMemory;

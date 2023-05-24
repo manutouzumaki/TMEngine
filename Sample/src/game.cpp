@@ -697,6 +697,14 @@ void GamePostUpdate(GameState *state, float t) {
 }
 
 void GameRender(GameState *state) {
+
+    int clientWidth, clientHeight = 0;
+    if(TMRendererUpdateRenderArea(state->renderer, &clientWidth, &clientHeight)) {
+        state->proj = TMMat4Ortho(0, clientWidth/MetersToPixel, 0, clientHeight/MetersToPixel, 0.1f, 100.0f);
+        GraphicsSystemSetProjMatrix(state->renderer, state->proj);
+        printf("Update Render Area\n");
+    }
+
     TMRendererClear(state->renderer, 0.6, 0.6, 0.9, 1, TM_COLOR_BUFFER_BIT|TM_DEPTH_BUFFER_BIT);
 
 

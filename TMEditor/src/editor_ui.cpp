@@ -1,33 +1,10 @@
 #include "editor_ui.h"
 #include "editor.h"
+#include "utils.h"
 
 #include <stdio.h>
-#include <tm_window.h>
-#include <utils/tm_darray.h>
 #include <memory.h>
 #include <assert.h>
-
-static TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
-    TMVec4 result = *((TMVec4 *)TMHashmapGet(hashmap, filepath));
-    return result; 
-}
-
-static int MinI32(int a, int b) {
-    if(a < b) return a;
-    return b;
-}
-
-static int MaxI32(int a, int b) {
-    if(a > b) return a;
-    return b;
-}
-
-static int StringLength(char *string) {
-    int counter = 0;
-    char *letter = string; 
-    while(*letter++ != L'\0') counter++;
-    return counter;
-}
 
 static void OptionSelected(TMUIElement *element) {
     printf("Option selected\n");
@@ -110,29 +87,6 @@ static void DecrementZ(TMUIElement *element) {
 
 }
 
-static void AddCollisionToEntity(Entity *entity) {
-
-    if(!entity->collision) {
-
-        entity->collision = (Collision *)malloc(sizeof(Collision));
-        Collision *collision = entity->collision;
-
-        collision->type = COLLISION_TYPE_AABB;
-        collision->solid = true;
-        AABB aabb;
-        aabb.min = entity->position - entity->size*0.5f;
-        aabb.max = entity->position + entity->size*0.5f;
-        collision->aabb = aabb;
-    }
-
-}
-
-static void RemoveCollisionToEntity(Entity *entity) {
-    if(entity->collision) free(entity->collision);
-    entity->collision = NULL;
-}
-
-
 static void AddCollision(TMUIElement *element) {
 
     EditorState *state = (EditorState *)element->userData;
@@ -140,7 +94,19 @@ static void AddCollision(TMUIElement *element) {
 
     if(state->selectedEntity) {
         Entity *entity = state->selectedEntity;
-        AddCollisionToEntity(entity);
+        if(!entity->collision) {
+
+            entity->collision = (Collision *)malloc(sizeof(Collision));
+            Collision *collision = entity->collision;
+
+            collision->type = COLLISION_TYPE_AABB;
+            collision->solid = true;
+            AABB aabb;
+            aabb.min = entity->position - entity->size*0.5f;
+            aabb.max = entity->position + entity->size*0.5f;
+            collision->aabb = aabb;
+        }
+
     }
 
 }
@@ -152,7 +118,8 @@ static void RemCollision(TMUIElement *element) {
 
     if(state->selectedEntity) {
         Entity *entity = state->selectedEntity;
-        RemoveCollisionToEntity(entity);
+        if(entity->collision) free(entity->collision);
+        entity->collision = NULL;
     }
 
 }
@@ -168,28 +135,6 @@ static void SolidCollision(TMUIElement *element) {
         }
     }
 
-}
-
-static void LoadFileNamesFromDirectory(char *path, char ***filesNames) {
-    TMGetFileNamesInDirectory(path, filesNames);
-    if(*filesNames) {
-        for (int i = 0; i < TMDarraySize(*filesNames); ++i) {
-            printf("%s\n", (*filesNames)[i]);
-        }
-    }
-}
-
-static void FreeFileNames(char ***filesNames) {
-    if(*filesNames) {
-        for (int i = 0; i < TMDarraySize(*filesNames); ++i) {
-            if((*filesNames)[i]) {
-                printf("deleted %s\n", (*filesNames)[i]);
-                free((void *)(*filesNames)[i]);
-            }
-        }
-        TMDarrayDestroy(*filesNames);
-        *filesNames  = NULL;
-    }
 }
 
 static void LoadTexture(TMUIElement *element) {
@@ -685,26 +630,6 @@ void EditorUIDraw(EditorState *state, EditorUI *ui, TMRenderer *renderer) {
     if(!state->element && state->selectedEntity) {
         TMUIElementDraw(renderer, ui->modify, 0.0f);
     }
-
-#if 0
-    if(state->element) {
-
-        TMUIElement *viewport = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL,
-                                                        {10.8, 0}, {2, 2},
-                                                        {0.1f, 0.1f, 0.1f, 1});
-        if(state->element->type == TM_UI_TYPE_IMAGE_BUTTON) {
-            TMUIElement *element = state->element;
-            TMUIElementAddChildImageButton(viewport, TM_UI_ORIENTATION_VERTICAL, gTexture, element->absUVs, element->relUVs);
-        }
-        else if (state->element->type == TM_UI_TYPE_BUTTON) {
-            TMUIElement *element = state->element;
-            TMUIElementAddChildButton(viewport, TM_UI_ORIENTATION_HORIZONTAL, element->oldColor);
-        }
-        TMUIElementDraw(renderer, viewport, 0.0f);
-        TMUIElementDestroy(viewport);
-    }
-#endif
-
 }
 
 void EditorUIShutdown(EditorUI *ui) {

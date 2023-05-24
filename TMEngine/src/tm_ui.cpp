@@ -73,6 +73,14 @@ void TMUIInitialize(TMRenderer *renderer, float MetersToPixel) {
     gFontUVs = TMGenerateUVs(128, 64, 7, 9, &gFontCount);
 }
 
+void TMUIUpdateProjMatrix(TMRenderer *renderer, float MetersToPixel) {
+    int width = TMRendererGetWidth(renderer);
+    int height = TMRendererGetHeight(renderer);
+    TMMat4 proj = TMMat4Ortho(0, width/MetersToPixel, 0, height/MetersToPixel, 0.1f, 100.0f);
+    gConstBuffer.proj = proj;
+    gShaderBuffer = TMRendererShaderBufferCreate(renderer, &gConstBuffer, sizeof(ConstBuffer), 13);
+}
+
 void TMUIShutdown(TMRenderer *renderer) {
     free(gFontUVs);
     TMRendererTextureDestroy(renderer, gFontTexture);

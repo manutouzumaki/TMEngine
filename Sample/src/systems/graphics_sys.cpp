@@ -17,12 +17,6 @@ struct ConstBuffer {
 struct GraphycsSystemState {
     TMBuffer       *vertexBuffer;
     TMShaderBuffer *shaderBuffer;
-
-    TMHashmap *texturesMap;
-    TMHashmap *shadersMap;
-
-    // TODO: this should be temporal
-    TMTexture *texture;
 };
 
 // TODO: create a nice lit system for all this piace of shit code
@@ -34,17 +28,7 @@ static TMVertex     gVertices[] = {
         TMVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec3{0, 0, 0}}, // 2
         TMVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec3{0, 0, 0}}  // 3
 };
-static TMHashmap   *gAbsUVs;
-static const char  *gImages[] = {
-    "../../assets/images/moon.png",
-    "../../assets/images/paddle_1.png",
-    "../../assets/images/characters_packed.png",
-    "../../assets/images/clone.png",
-    "../../assets/images/player.png",
-    "../../assets/images/paddle_2.png",
-    "../../assets/images/font.png"
-};
-
+static TMTexture *gPlayerTexture;
 
 static GraphycsSystemState gGraphicsState;
 
@@ -86,17 +70,16 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
                                                  gIndices, ARRAY_LENGTH(gIndices),
                                                  shader);
 
-    gAbsUVs = TMHashmapCreate(sizeof(TMVec4));
-    gGraphicsState.texture = TMRendererTextureCreateAtlas(renderer, gImages, ARRAY_LENGTH(gImages), 1024*2, 1024*2, gAbsUVs);
+    gPlayerTexture = TMRendererTextureCreate(renderer, "../../assets/images/player.png");
+
     
 }
 
 void GraphicsSystemShutdown(TMRenderer *renderer) {
 
+    TMRendererTextureDestroy(renderer, gPlayerTexture);
     TMRendererShaderBufferDestroy(renderer, gGraphicsState.shaderBuffer);
     TMRendererBufferDestroy(renderer, gGraphicsState.vertexBuffer);
-    TMRendererTextureDestroy(renderer, gGraphicsState.texture);
-    TMHashmapDestroy(gAbsUVs);
 
 }
 
@@ -130,7 +113,7 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
                 TMRendererTextureBind(renderer, graphics->texture, graphics->shader, "uTexture", 0);
             }
             else {
-                TMRendererTextureBind(renderer, gGraphicsState.texture, graphics->shader, "uTexture", 0);
+                TMRendererTextureBind(renderer, gPlayerTexture, graphics->shader, "uTexture", 0);
             }
 
         

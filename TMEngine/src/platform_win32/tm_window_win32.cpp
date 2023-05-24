@@ -12,6 +12,7 @@
 TMInput gCurrentInput;
 TMInput gLastInput;
 bool gRunning;
+TMWindow *gWindow;
 
 static WORD XInputButtons[] = {
     XINPUT_GAMEPAD_DPAD_UP,
@@ -32,6 +33,21 @@ LRESULT WindowProcA(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_CLOSE: {
         PostQuitMessage(0);
     }break;
+
+    case WM_SIZE: {
+        if( wParam == SIZE_MINIMIZED )
+        {
+        }
+        else
+        {
+            int clientWidth  = LOWORD(lParam);
+            int clientHeight = HIWORD(lParam);
+            gWindow->width = clientWidth;
+            gWindow->height = clientHeight;
+            gWindow->updateRenderArea = true;
+        }
+    } break;
+
     default: {
         result = DefWindowProcA(hwnd, msg, wParam, lParam);
     }
@@ -53,8 +69,9 @@ static float Win32ProcessXInputStick(SHORT value, int deadZoneValue)
     return result;
 }
 
-static void Win32PollEvents() {
+static void Win32PollEvents(TMWindow *window) {
     MSG msg = {};
+    window->updateRenderArea = false;
     while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         switch (msg.message) {
         case WM_QUIT: {
@@ -123,6 +140,7 @@ static void Win32PollEvents() {
 
  TMWindow* TMWindowCreate(int width, int height, const char* title){
     TMWindow* window = (TMWindow*)malloc(sizeof(TMWindow));
+    gWindow = window;
     HINSTANCE hInstance = GetModuleHandleA(0);
     WNDCLASS wndClass{};
     wndClass.style = CS_HREDRAW | CS_VREDRAW;
@@ -155,6 +173,7 @@ static void Win32PollEvents() {
     window->hwndWindow = hwnd;
     window->width = width;
     window->height = height;
+    window->updateRenderArea = false;
 
     gRunning = true;
 
@@ -174,7 +193,7 @@ static void Win32PollEvents() {
 }
 
 void TMWindowFlushEventQueue(TMWindow* window) {
-    Win32PollEvents();
+    Win32PollEvents(window);
     if(TMInputKeyboardKeyJustDown(TM_KEY_ESCAPE)){
         gRunning = false;
     }

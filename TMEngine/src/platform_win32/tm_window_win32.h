@@ -8,6 +8,7 @@ struct TMWindow {
     HWND hwndWindow;
     int width;
     int height;
+    bool updateRenderArea;
 };
 
 #endif

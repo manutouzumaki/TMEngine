@@ -53,9 +53,11 @@ struct TMUIElement {
 };
 
 TM_EXPORT void TMUIMouseIsHot(TMUIElement *element, bool *result);
+TM_EXPORT void TMUIUpdateProjMatrix(TMRenderer *renderer, float MetersToPixel);
 
 TM_EXPORT void TMUIInitialize(TMRenderer *renderer, float MetersToPixel);
 TM_EXPORT void TMUIShutdown(TMRenderer *renderer);
+
 
 TM_EXPORT TMUIElement *TMUIElementCreateButton(TMUIOrientation orientation, TMVec2 position, TMVec2 size, TMVec4 color,
                                                PFN_OnClick onCLick = NULL, void *userData = NULL);

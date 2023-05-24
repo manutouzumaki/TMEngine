@@ -174,6 +174,7 @@ void InitD3D11(TMRenderer* renderer, TMWindow *window) {
 TMRenderer* TMRendererCreate(TMWindow *window) {
     TMRenderer* renderer = (TMRenderer*)malloc(sizeof(TMRenderer));
 
+    renderer->window = window;
     renderer->width = window->width;
     renderer->height = window->height;
     InitD3D11(renderer, window);
@@ -254,9 +255,13 @@ int TMRendererGetHeight(TMRenderer* renderer) {
     return renderer->height;
 }
 
-bool TMRendererUpdateRenderArea(TMRenderer* renderer) {
-    // TODO: ...
-    return false;
+bool TMRendererUpdateRenderArea(TMRenderer* renderer, int *outWidth, int *outHeight) {
+    *outWidth = renderer->window->width;
+    *outHeight = renderer->window->height;
+    // TODO: finish this function ...
+    renderer->width = renderer->window->width;
+    renderer->height = renderer->window->height;
+    return renderer->window->updateRenderArea;
 }
 
 void TMRendererClear(TMRenderer *renderer, float r, float g, float b, float a, unsigned  int flags) {
