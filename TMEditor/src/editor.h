@@ -93,7 +93,6 @@ struct EditorState {
     BrushOption  option;
     LoadOption   loadOption;
     bool         mouseIsHot;
-
 };
 
 struct TMWindow;

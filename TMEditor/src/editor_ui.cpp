@@ -7,15 +7,6 @@
 #include <memory.h>
 #include <assert.h>
 
-extern EditorState *gState;
-extern const char  *gImages[7];
-extern TMHashmap   *gAbsUVs;
-extern TMTexture   *gTexture;
-
-
-static char **gTexturesNames;
-static char **gShadersNames;
-
 static TMVec4 Texture(TMHashmap *hashmap, const char *filepath) {
     TMVec4 result = *((TMVec4 *)TMHashmapGet(hashmap, filepath));
     return result; 
@@ -40,61 +31,65 @@ static int StringLength(char *string) {
 
 static void OptionSelected(TMUIElement *element) {
     printf("Option selected\n");
-    gState->option = (BrushOption)element->index;
-    gState->modifyOption = MODIFY_NONE;
-    gState->prefabType = PREFAB_TYPE_NONE;
-    gState->selectedEntity = NULL;
+    EditorState *state = (EditorState *)element->userData;
+    state->option = (BrushOption)element->index;
+    state->modifyOption = MODIFY_NONE;
+    state->prefabType = PREFAB_TYPE_NONE;
+    state->selectedEntity = NULL;
 }
 
 static void ClearSelected(TMUIElement *element) {
     printf("Clear selected\n");
-    gState->prefabType = PREFAB_TYPE_NONE;
-    gState->element = NULL;
+    EditorState *state = (EditorState *)element->userData;
+    state->prefabType = PREFAB_TYPE_NONE;
+    state->element = NULL;
 }
 
 static void ElementSelected(TMUIElement *element) {
     printf("Element selected\n");
-    gState->element = element;
-    gState->modifyOption = MODIFY_NONE;
-    gState->selectedEntity = NULL;
+    EditorState *state = (EditorState *)element->userData;
+    state->element = element;
+    state->modifyOption = MODIFY_NONE;
+    state->selectedEntity = NULL;
 }
 
 static void PlayerPrefabSelected(TMUIElement *element) {
     printf("Prefab player selected\n");
-    gState->element = element;
-    gState->modifyOption = MODIFY_NONE;
-    gState->prefabType = PREFAB_TYPE_PLAYER;
-    gState->selectedEntity = NULL;
+    EditorState *state = (EditorState *)element->userData;
+    state->element = element;
+    state->modifyOption = MODIFY_NONE;
+    state->prefabType = PREFAB_TYPE_PLAYER;
+    state->selectedEntity = NULL;
 
 }
 
 static void EnemyPrefabSelected(TMUIElement *element) {
     printf("Prefab enemy selected\n");
-    gState->element = element;
-    gState->modifyOption = MODIFY_NONE;
-    gState->prefabType = PREFAB_TYPE_ENEMY;
-    gState->selectedEntity = NULL;
+    EditorState *state = (EditorState *)element->userData;
+    state->element = element;
+    state->modifyOption = MODIFY_NONE;
+    state->prefabType = PREFAB_TYPE_ENEMY;
+    state->selectedEntity = NULL;
 }
 
-
-static void TranslateEntity(TMUIElement *element) { gState->modifyOption = MODIFY_TRANSLATE; }
-static void ScaleEntity(TMUIElement *element)     { gState->modifyOption = MODIFY_SCALE;     }
-static void IncrementAbsU(TMUIElement *element)   { gState->modifyOption = MODIFY_INC_ABS_U; }
-static void IncrementAbsV(TMUIElement *element)   { gState->modifyOption = MODIFY_INC_ABS_V; }
-static void OffsetAbsU(TMUIElement *element)      { gState->modifyOption = MODIFY_OFF_ABS_U; }
-static void OffsetAbsV(TMUIElement *element)      { gState->modifyOption = MODIFY_OFF_ABS_V; }
-static void IncrementRelU(TMUIElement *element)   { gState->modifyOption = MODIFY_INC_REL_U; }
-static void IncrementRelV(TMUIElement *element)   { gState->modifyOption = MODIFY_INC_REL_V; }
-static void OffsetRelU(TMUIElement *element)      { gState->modifyOption = MODIFY_OFF_REL_U; }
-static void OffsetRelV(TMUIElement *element)      { gState->modifyOption = MODIFY_OFF_REL_V; }
-
+static void TranslateEntity(TMUIElement *element) { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_TRANSLATE; }
+static void ScaleEntity(TMUIElement *element)     { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_SCALE;     }
+static void IncrementAbsU(TMUIElement *element)   { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_INC_ABS_U; }
+static void IncrementAbsV(TMUIElement *element)   { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_INC_ABS_V; }
+static void OffsetAbsU(TMUIElement *element)      { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_OFF_ABS_U; }
+static void OffsetAbsV(TMUIElement *element)      { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_OFF_ABS_V; }
+static void IncrementRelU(TMUIElement *element)   { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_INC_REL_U; }
+static void IncrementRelV(TMUIElement *element)   { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_INC_REL_V; }
+static void OffsetRelU(TMUIElement *element)      { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_OFF_REL_U; }
+static void OffsetRelV(TMUIElement *element)      { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_OFF_REL_V; }
 
 static void IncrementZ(TMUIElement *element) {
 
-    gState->modifyOption = MODIFY_NONE;
+    EditorState *state = (EditorState *)element->userData;
+    state->modifyOption = MODIFY_NONE;
 
-    if(gState->selectedEntity) {
-        Entity *entity = gState->selectedEntity;
+    if(state->selectedEntity) {
+        Entity *entity = state->selectedEntity;
         entity->zIndex++;
         printf("zIndex: %d\n", entity->zIndex);
     }
@@ -103,10 +98,11 @@ static void IncrementZ(TMUIElement *element) {
 
 static void DecrementZ(TMUIElement *element) {
 
-    gState->modifyOption = MODIFY_NONE;
+    EditorState *state = (EditorState *)element->userData;
+    state->modifyOption = MODIFY_NONE;
 
-    if(gState->selectedEntity) {
-        Entity *entity = gState->selectedEntity;
+    if(state->selectedEntity) {
+        Entity *entity = state->selectedEntity;
         entity->zIndex--;
         entity->zIndex = MaxI32(entity->zIndex, 1);
         printf("zIndex: %d\n", entity->zIndex);
@@ -139,10 +135,11 @@ static void RemoveCollisionToEntity(Entity *entity) {
 
 static void AddCollision(TMUIElement *element) {
 
-    gState->modifyOption = MODIFY_NONE;
+    EditorState *state = (EditorState *)element->userData;
+    state->modifyOption = MODIFY_NONE;
 
-    if(gState->selectedEntity) {
-        Entity *entity = gState->selectedEntity;
+    if(state->selectedEntity) {
+        Entity *entity = state->selectedEntity;
         AddCollisionToEntity(entity);
     }
 
@@ -150,10 +147,11 @@ static void AddCollision(TMUIElement *element) {
 
 static void RemCollision(TMUIElement *element) {
 
-    gState->modifyOption = MODIFY_NONE;
+    EditorState *state = (EditorState *)element->userData;
+    state->modifyOption = MODIFY_NONE;
 
-    if(gState->selectedEntity) {
-        Entity *entity = gState->selectedEntity;
+    if(state->selectedEntity) {
+        Entity *entity = state->selectedEntity;
         RemoveCollisionToEntity(entity);
     }
 
@@ -161,9 +159,10 @@ static void RemCollision(TMUIElement *element) {
 
 static void SolidCollision(TMUIElement *element) {
 
-    gState->modifyOption = MODIFY_NONE;
-    if(gState->selectedEntity) {
-        Entity *entity = gState->selectedEntity;
+    EditorState *state = (EditorState *)element->userData;
+    state->modifyOption = MODIFY_NONE;
+    if(state->selectedEntity) {
+        Entity *entity = state->selectedEntity;
         if(entity->collision) {
             entity->collision->solid = !entity->collision->solid;
         }
@@ -195,64 +194,68 @@ static void FreeFileNames(char ***filesNames) {
 
 static void LoadTexture(TMUIElement *element) {
 
-    if(gState->loadOption == LOAD_OPTION_NONE || gState->loadOption == LOAD_OPTION_SHADER) {
-        gState->loadOption = LOAD_OPTION_TEXTURE;
+    EditorState *state = (EditorState *)element->userData;
+    if(state->loadOption == LOAD_OPTION_NONE || state->loadOption == LOAD_OPTION_SHADER) {
+        state->loadOption = LOAD_OPTION_TEXTURE;
     }
     else {
-        gState->loadOption = LOAD_OPTION_NONE;
+        state->loadOption = LOAD_OPTION_NONE;
     }
 
 }
 
 static void LoadShader(TMUIElement *element) {
 
-    if(gState->loadOption == LOAD_OPTION_NONE || gState->loadOption == LOAD_OPTION_TEXTURE) {
-        gState->loadOption = LOAD_OPTION_SHADER;
+    EditorState *state = (EditorState *)element->userData;
+    if(state->loadOption == LOAD_OPTION_NONE || state->loadOption == LOAD_OPTION_TEXTURE) {
+        state->loadOption = LOAD_OPTION_SHADER;
     }
     else {
-        gState->loadOption = LOAD_OPTION_NONE;
+        state->loadOption = LOAD_OPTION_NONE;
     }
 }
 
 static void SelectTexture(TMUIElement *element) {
     
-    printf("Texture Selected: %s\n", gTexturesNames[element->index]);
+    EditorState *state = (EditorState *)element->userData;
+    printf("Texture Selected: %s\n", state->ui.texturesNames[element->index]);
 
     char filepath[10000] = "../../assets/images/";
     int headerSize = StringLength(filepath);
-    int nameSize = StringLength(gTexturesNames[element->index]);
+    int nameSize = StringLength(state->ui.texturesNames[element->index]);
     assert(headerSize + nameSize < 10000);
 
-    memcpy(filepath + headerSize, gTexturesNames[element->index], nameSize);
+    memcpy(filepath + headerSize, state->ui.texturesNames[element->index], nameSize);
 
     filepath[headerSize + nameSize] = '\0';
 
     printf("path created: %s\n", filepath);
 
-    TMTexture *texture = TMRendererTextureCreate(gState->renderer, filepath);
+    TMTexture *texture = TMRendererTextureCreate(state->renderer, filepath);
     
-    TMDarrayPush(gState->textures, texture, TMTexture *);
-    TMDarrayPush(gState->texturesAddedNames, gTexturesNames[element->index], char *);
+    TMDarrayPush(state->textures, texture, TMTexture *);
+    TMDarrayPush(state->texturesAddedNames, state->ui.texturesNames[element->index], char *);
 
-    long long textureIndex = (long long)TMDarraySize(gState->texturesAddedNames) - 1;
+    int textureIndex = TMDarraySize(state->texturesAddedNames) - 1;
 
 
-    int index = (TMDarraySize(gState->textures) - 1) / 8;
-    if(TMDarraySize(gState->textures) <= 3*8) {
+    int index = (TMDarraySize(state->textures) - 1) / 8;
+    if(TMDarraySize(state->textures) <= 3*8) {
 
         TMVec4 uvs = {0, 0, 1, 1};
-        TMUIElementAddChildImageButton(gState->ui.texturesChilds[index], TM_UI_ORIENTATION_HORIZONTAL,
-                                       texture, uvs, uvs, ElementSelected, (void *)textureIndex);
+        TMUIElementAddChildImageButton(state->ui.texturesChilds[index], TM_UI_ORIENTATION_HORIZONTAL,
+                                       texture, uvs, uvs, ElementSelected, state, textureIndex);
 
     }
 
 }
 
 static void SelectShader(TMUIElement *element) {
-    printf("Shader Selected: %s\n", gShadersNames[element->index]);
+    EditorState *state = (EditorState *)element->userData;
 }
 
 static void SaveScene(TMUIElement *element) {
+    EditorState *state = (EditorState *)element->userData;
     printf("Scene Saved\n");
 
     TMJsonObject jsonRoot = TMJsonObjectCreate();
@@ -261,8 +264,8 @@ static void SaveScene(TMUIElement *element) {
     TMJsonObject jsonLevelTextures = TMJsonObjectCreate();
     TMJsonObjectSetName(&jsonLevelTextures, "LevelTextures");
 
-    for(int i = 0; i < TMDarraySize(gState->texturesAddedNames); ++i) {
-        const char *textureName =  (const char *)gState->texturesAddedNames[i];
+    for(int i = 0; i < TMDarraySize(state->texturesAddedNames); ++i) {
+        const char *textureName =  (const char *)state->texturesAddedNames[i];
         TMJsonObjectSetValue(&jsonLevelTextures, textureName);
     
     }
@@ -271,8 +274,8 @@ static void SaveScene(TMUIElement *element) {
     TMJsonObject jsonScene = TMJsonObjectCreate();
     TMJsonObjectSetName(&jsonScene, "Scene");
 
-    for(int i = 0; i < TMDarraySize(gState->entities); ++i) {
-        Entity *entity = gState->entities + i;
+    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+        Entity *entity = state->entities + i;
 
         TMJsonObject jsonEntity = TMJsonObjectCreate();
         TMJsonObjectSetName(&jsonEntity, "Entity");
@@ -286,10 +289,10 @@ static void SaveScene(TMUIElement *element) {
             TMJsonObject jsonType = TMJsonObjectCreate();
 
             TMJsonObjectSetName(&jsonType, "Type");
-            if(entity->shader == gState->colorShader) {
+            if(entity->shader == state->colorShader) {
                 TMJsonObjectSetValue(&jsonType, 0.0f);
             }
-            else if(entity->shader == gState->spriteShader) {
+            else if(entity->shader == state->spriteShader) {
                 TMJsonObjectSetValue(&jsonType, 1.0f);
             }
 
@@ -520,16 +523,16 @@ static void SaveScene(TMUIElement *element) {
     TMJsonObjectFree(&jsonRoot);
 }
 
-void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPixel) {
+void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float height, float meterToPixel) {
 
-    LoadFileNamesFromDirectory("../../assets/images", &gTexturesNames);
-    LoadFileNamesFromDirectory("../../assets/shaders", &gShadersNames);
+    LoadFileNamesFromDirectory("../../assets/images", &ui->texturesNames);
+    LoadFileNamesFromDirectory("../../assets/shaders", &ui->shadersNames);
 
     ui->options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {6, 0.4}, {0.1, 0.1, 0.1, 1});
-    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, OptionSelected);
-    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Colors ",   {1, 1, 1, 1}, OptionSelected);
-    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Prefabs ",   {1, 1, 1, 1}, OptionSelected);
-    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Clear Brush ",   {1, 1, 1, 1}, ClearSelected);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, OptionSelected, state);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Colors ",   {1, 1, 1, 1}, OptionSelected, state);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Prefabs ",   {1, 1, 1, 1}, OptionSelected, state);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Clear Brush ",   {1, 1, 1, 1}, ClearSelected, state);
 
     ui->textures = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.4f, 0.1f, 1});
     TMUIElementAddChildButton(ui->textures, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
@@ -546,15 +549,15 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     TMUIElementAddChildButton(ui->colors, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
     child = TMUIElementGetChild(ui->colors, 0);
     for(int i = 0; i < 8; ++i) {
-        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0.1f + 0.1f*(float)i, 0, 0, 1}, ElementSelected);
+        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0.1f + 0.1f*(float)i, 0, 0, 1}, ElementSelected, state);
     }
     child = TMUIElementGetChild(ui->colors, 1);
     for(int i = 0; i < 8; ++i) {
-        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0.1f + 0.1f*(float)i, 0, 1}, ElementSelected);
+        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0.1f + 0.1f*(float)i, 0, 1}, ElementSelected, state);
     }
     child = TMUIElementGetChild(ui->colors, 2);
     for(int i = 0; i < 8; ++i) {
-        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0, 0.1f + 0.1f*(float)i, 1}, ElementSelected);
+        TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0, 0.1f + 0.1f*(float)i, 1}, ElementSelected, state);
     }
 
     ui->prefabs = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.4f, 0.1f, 0.1f, 1});
@@ -562,143 +565,145 @@ void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPi
     TMUIElementAddChildButton(ui->prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
     TMUIElementAddChildButton(ui->prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
     child = TMUIElementGetChild(ui->prefabs, 0);
-    TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0.5f, 0.5f, 1}, EnemyPrefabSelected);
+    TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0.5f, 0.5f, 1}, EnemyPrefabSelected, state);
     child = TMUIElementGetChild(ui->prefabs, 1);
-    TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0.5f, 0.5f, 0, 1}, PlayerPrefabSelected);
+    TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0.5f, 0.5f, 0, 1}, PlayerPrefabSelected, state);
 
     ui->modify = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {8.0, 0}, {4.8, 2}, {0.1f, 0.1f, 0.1f, 1});
-    TMUIElementAddChildLabel(ui->modify, TM_UI_ORIENTATION_VERTICAL,   " Scale ", {1, 1, 1, 1}, ScaleEntity);
-    TMUIElementAddChildLabel(ui->modify, TM_UI_ORIENTATION_VERTICAL,   " Translate ", {1, 1, 1, 1}, TranslateEntity);
-    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
-    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
-    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
-    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1}, TranslateEntity);
+    TMUIElementAddChildLabel(ui->modify, TM_UI_ORIENTATION_VERTICAL,   " Scale ", {1, 1, 1, 1}, ScaleEntity, state);
+    TMUIElementAddChildLabel(ui->modify, TM_UI_ORIENTATION_VERTICAL,   " Translate ", {1, 1, 1, 1}, TranslateEntity, state);
+    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
+    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
+    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
+    TMUIElementAddChildButton(ui->modify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
     child = TMUIElementGetChild(ui->modify, 2);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc absU ", {1, 1, 1, 1}, IncrementAbsU);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc absV ", {1, 1, 1, 1}, IncrementAbsV);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off absU ", {1, 1, 1, 1}, OffsetAbsU);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off absV ", {1, 1, 1, 1}, OffsetAbsV);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc absU ", {1, 1, 1, 1}, IncrementAbsU, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc absV ", {1, 1, 1, 1}, IncrementAbsV, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off absU ", {1, 1, 1, 1}, OffsetAbsU, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off absV ", {1, 1, 1, 1}, OffsetAbsV, state);
     child = TMUIElementGetChild(ui->modify, 3);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc relU ", {1, 1, 1, 1}, IncrementRelU);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc relV ", {1, 1, 1, 1}, IncrementRelV);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off relU ", {1, 1, 1, 1}, OffsetRelU);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off relV ", {1, 1, 1, 1}, OffsetRelV);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc relU ", {1, 1, 1, 1}, IncrementRelU, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc relV ", {1, 1, 1, 1}, IncrementRelV, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off relU ", {1, 1, 1, 1}, OffsetRelU, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " off relV ", {1, 1, 1, 1}, OffsetRelV, state);
     child = TMUIElementGetChild(ui->modify, 4);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc z ", {1, 1, 1, 1}, IncrementZ);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " dec z ", {1, 1, 1, 1}, DecrementZ);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " inc z ", {1, 1, 1, 1}, IncrementZ, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " dec z ", {1, 1, 1, 1}, DecrementZ, state);
     child = TMUIElementGetChild(ui->modify, 5);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " add Collider ", {1, 1, 1, 1}, AddCollision);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " rem Collider ", {1, 1, 1, 1}, RemCollision);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Solid ",        {1, 1, 1, 1}, SolidCollision);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " add Collider ", {1, 1, 1, 1}, AddCollision, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " rem Collider ", {1, 1, 1, 1}, RemCollision, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Solid ",        {1, 1, 1, 1}, SolidCollision, state);
     
     ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {7.5, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
-    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene);
-    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture ", {1, 1, 1, 1}, LoadTexture);
-    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader ", {1, 1, 1, 1}, LoadShader);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene, state);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture ", {1, 1, 1, 1}, LoadTexture, state);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader ", {1, 1, 1, 1}, LoadShader, state);
 
     ui->loadTexture = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {2.5f, height/meterToPixel - 0.25f - 4.0f}, {2.5, 4}, {0.02f, 0.02f, 0.02f, 1.0f});
-    if(gTexturesNames) {
-        for(int i = 0; i < TMDarraySize(gTexturesNames); ++i) {
-            TMUIElementAddChildLabel(ui->loadTexture, TM_UI_ORIENTATION_VERTICAL, gTexturesNames[i], {1, 1, 1, 1}, SelectTexture);
+    if(ui->texturesNames) {
+        for(int i = 0; i < TMDarraySize(ui->texturesNames); ++i) {
+            TMUIElementAddChildLabel(ui->loadTexture, TM_UI_ORIENTATION_VERTICAL, ui->texturesNames[i], {1, 1, 1, 1}, SelectTexture, state);
         }
     }
 
     ui->loadShader = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {5.0f, height/meterToPixel - 0.25f - 4.5f}, {2.5, 4.5}, {0.02f, 0.02f, 0.02f, 1.0f});
-    if(gShadersNames) {
-        for(int i = 0; i < TMDarraySize(gShadersNames); ++i) {
-            TMUIElementAddChildLabel(ui->loadShader, TM_UI_ORIENTATION_VERTICAL, gShadersNames[i], {1, 1, 1, 1}, SelectShader);
+    if(ui->shadersNames) {
+        for(int i = 0; i < TMDarraySize(ui->shadersNames); ++i) {
+            TMUIElementAddChildLabel(ui->loadShader, TM_UI_ORIENTATION_VERTICAL, ui->shadersNames[i], {1, 1, 1, 1}, SelectShader, state);
         }
     }
 
 }
 
-void EditorUIUpdate(EditorUI *ui, float width, float height, float meterToPixel) {
+void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height, float meterToPixel) {
 
-    TMVec3 pos = gState->cameraP;
+    TMVec3 pos = state->cameraP;
     TMUIElementProcessInput(ui->save, pos.x, pos.y, width, height, meterToPixel);
     TMUIElementProcessInput(ui->options, pos.x, pos.y, width, height, meterToPixel);
-    if(gState->option == OPTION_TEXTURE) {
+    if(state->option == OPTION_TEXTURE) {
         TMUIElementProcessInput(ui->textures, pos.x, pos.y, width, height, meterToPixel);
     }
-    else if (gState->option == OPTION_COLOR) {
+    else if (state->option == OPTION_COLOR) {
         TMUIElementProcessInput(ui->colors, pos.x, pos.y, width, height, meterToPixel);
     }
-    else if (gState->option == OPTION_PREFABS) {
+    else if (state->option == OPTION_PREFABS) {
         TMUIElementProcessInput(ui->prefabs, pos.x, pos.y, width, height, meterToPixel);
     }
 
-    if(!gState->element && gState->selectedEntity) {
+    if(!state->element && state->selectedEntity) {
         TMUIElementProcessInput(ui->modify, pos.x, pos.y, width, height, meterToPixel);
     }
 
-    if(gState->loadOption == LOAD_OPTION_TEXTURE) {
+    if(state->loadOption == LOAD_OPTION_TEXTURE) {
         TMUIElementProcessInput(ui->loadTexture, pos.x, pos.y, width, height, meterToPixel);
     }
 
-    if(gState->loadOption == LOAD_OPTION_SHADER) {
+    if(state->loadOption == LOAD_OPTION_SHADER) {
         TMUIElementProcessInput(ui->loadShader, pos.x, pos.y, width, height, meterToPixel);
     }
 
-    gState->mouseIsHot = false;
-    TMUIMouseIsHot(ui->options,  &gState->mouseIsHot);
-    TMUIMouseIsHot(ui->textures, &gState->mouseIsHot);
-    TMUIMouseIsHot(ui->colors,   &gState->mouseIsHot);
-    TMUIMouseIsHot(ui->prefabs,   &gState->mouseIsHot);
-    TMUIMouseIsHot(ui->save,     &gState->mouseIsHot);
-    if(!gState->element && gState->selectedEntity) {
-        TMUIMouseIsHot(ui->modify, &gState->mouseIsHot);
+    state->mouseIsHot = false;
+    TMUIMouseIsHot(ui->options,  &state->mouseIsHot);
+    TMUIMouseIsHot(ui->textures, &state->mouseIsHot);
+    TMUIMouseIsHot(ui->colors,   &state->mouseIsHot);
+    TMUIMouseIsHot(ui->prefabs,   &state->mouseIsHot);
+    TMUIMouseIsHot(ui->save,     &state->mouseIsHot);
+    if(!state->element && state->selectedEntity) {
+        TMUIMouseIsHot(ui->modify, &state->mouseIsHot);
     }
-    if(gState->loadOption == LOAD_OPTION_TEXTURE) {
-        TMUIMouseIsHot(ui->loadTexture, &gState->mouseIsHot);
+    if(state->loadOption == LOAD_OPTION_TEXTURE) {
+        TMUIMouseIsHot(ui->loadTexture, &state->mouseIsHot);
     }
-    if(gState->loadOption == LOAD_OPTION_SHADER) {
-        TMUIMouseIsHot(ui->loadShader, &gState->mouseIsHot);
+    if(state->loadOption == LOAD_OPTION_SHADER) {
+        TMUIMouseIsHot(ui->loadShader, &state->mouseIsHot);
     }
 
 }
 
-void EditorUIDraw(EditorUI *ui, TMRenderer *renderer) {
+void EditorUIDraw(EditorState *state, EditorUI *ui, TMRenderer *renderer) {
 
     TMUIElementDraw(renderer, ui->options, 0.0f);
     TMUIElementDraw(renderer, ui->save, 0.0f);
 
-    if(gState->option == OPTION_TEXTURE) {
+    if(state->option == OPTION_TEXTURE) {
         TMUIElementDraw(renderer, ui->textures, 0.0f);
     }
-    else if (gState->option == OPTION_COLOR) {
+    else if (state->option == OPTION_COLOR) {
         TMUIElementDraw(renderer, ui->colors, 0.0f);
     }
-    else if(gState->option == OPTION_PREFABS) {
+    else if(state->option == OPTION_PREFABS) {
         TMUIElementDraw(renderer, ui->prefabs, 0.0f);
     }
 
-    if(gState->loadOption == LOAD_OPTION_TEXTURE) {
+    if(state->loadOption == LOAD_OPTION_TEXTURE) {
         TMUIElementDraw(renderer, ui->loadTexture, 0.0f);
     }
-    if(gState->loadOption == LOAD_OPTION_SHADER) {
+    if(state->loadOption == LOAD_OPTION_SHADER) {
         TMUIElementDraw(renderer, ui->loadShader, 0.0f);
     }
 
-    if(!gState->element && gState->selectedEntity) {
+    if(!state->element && state->selectedEntity) {
         TMUIElementDraw(renderer, ui->modify, 0.0f);
     }
 
-    if(gState->element) {
+#if 0
+    if(state->element) {
 
         TMUIElement *viewport = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL,
                                                         {10.8, 0}, {2, 2},
                                                         {0.1f, 0.1f, 0.1f, 1});
-        if(gState->element->type == TM_UI_TYPE_IMAGE_BUTTON) {
-            TMUIElement *element = gState->element;
+        if(state->element->type == TM_UI_TYPE_IMAGE_BUTTON) {
+            TMUIElement *element = state->element;
             TMUIElementAddChildImageButton(viewport, TM_UI_ORIENTATION_VERTICAL, gTexture, element->absUVs, element->relUVs);
         }
-        else if (gState->element->type == TM_UI_TYPE_BUTTON) {
-            TMUIElement *element = gState->element;
+        else if (state->element->type == TM_UI_TYPE_BUTTON) {
+            TMUIElement *element = state->element;
             TMUIElementAddChildButton(viewport, TM_UI_ORIENTATION_HORIZONTAL, element->oldColor);
         }
         TMUIElementDraw(renderer, viewport, 0.0f);
         TMUIElementDestroy(viewport);
     }
+#endif
 
 }
 
@@ -711,7 +716,7 @@ void EditorUIShutdown(EditorUI *ui) {
     TMUIElementDestroy(ui->options);
     TMUIElementDestroy(ui->loadTexture);
     TMUIElementDestroy(ui->loadShader);
-    FreeFileNames(&gShadersNames);
-    FreeFileNames(&gTexturesNames);
+    FreeFileNames(&ui->shadersNames);
+    FreeFileNames(&ui->texturesNames);
 
 }

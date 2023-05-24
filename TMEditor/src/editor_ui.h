@@ -31,6 +31,7 @@ enum LoadOption {
 };
 
 struct EditorUI {
+
     TMUIElement *options;
     TMUIElement *textures;
     TMUIElement *texturesChilds[3];
@@ -41,11 +42,16 @@ struct EditorUI {
     TMUIElement *save;
     TMUIElement *loadTexture;
     TMUIElement *loadShader;
+
+    char **texturesNames;
+    char **shadersNames;
 };
 
-void EditorUIInitialize(EditorUI *ui, float width, float height, float meterToPixel);
-void EditorUIUpdate(EditorUI *ui, float width, float height, float meterToPixel);
-void EditorUIDraw(EditorUI *ui, TMRenderer *renderer);
+struct EditorState;
+
+void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float height, float meterToPixel);
+void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height, float meterToPixel);
+void EditorUIDraw(EditorState *state, EditorUI *ui, TMRenderer *renderer);
 void EditorUIShutdown(EditorUI *ui);
 
 #endif

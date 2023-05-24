@@ -10,27 +10,9 @@ struct ConstBuffer {
     TMVec4 relUVs;
 };
 
-// globals
-///////////////////////////////////////////////////
-EditorState *gState;
-TMHashmap   *gAbsUVs;
-TMTexture   *gTexture;
-const char  *gImages[] = {
-    "../../assets/images/moon.png",
-    "../../assets/images/paddle_1.png",
-    "../../assets/images/characters_packed.png",
-    "../../assets/images/clone.png",
-    "../../assets/images/player.png",
-    "../../assets/images/paddle_2.png",
-    "../../assets/images/font.png"
-};
-///////////////////////////////////////////////////
-
-
 // local to the obj file
 ///////////////////////////////////////////////////
-static float       *gFontUVs;
-static int          gFontCount;
+
 static int          gEntityCount;
 static ConstBuffer  gConstBuffer;
 static unsigned int gIndices[] = { 1, 0, 2, 2, 0, 3 };
@@ -40,10 +22,10 @@ static TMVertex     gVertices[] = {
         TMVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec3{0, 0, 0}}, // 2
         TMVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec3{0, 0, 0}}  // 3
 };
+
+static TMTexture   *gPlayerTexture;
+
 ///////////////////////////////////////////////////
-
-
-// TODO: add collision geometry ...
 
 static void AddDefaultEntity(EditorState *state, float posX, float posY) {
     printf("Entity added\n");
@@ -58,7 +40,7 @@ static void AddDefaultEntity(EditorState *state, float posX, float posY) {
     entity.size = {1, 1};
     entity.texture = element->texture;
     entity.zIndex = 2;
-    entity.textureIndex = (int)((long long)element->userData);
+    entity.textureIndex = element->textureIndex;
     entity.id = gEntityCount++;
     entity.prefabType = PREFAB_TYPE_NONE;
 
@@ -82,11 +64,11 @@ static void AddPlayerEntity(EditorState *state, float posX, float posY) {
 
     Entity entity = {};
     entity.color = {1, 1, 1, 1};
-    entity.absUVs = Texture(gAbsUVs, gImages[ARRAY_LENGTH(gImages) - 1]);
+    entity.absUVs = {0, 0, 1, 1};
     entity.relUVs = {0, 0, 0.25, 0.5};
     entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
     entity.size = {1.2, 1.2};
-    entity.texture = gTexture;
+    entity.texture = gPlayerTexture;
     entity.textureIndex = -1;
     entity.shader = state->spriteShader;
     entity.zIndex = 2;
@@ -136,7 +118,7 @@ static void AddEntity(EditorState *state, float posX, float posY) {
 
 }
 
-static void MouseToWorld(float *mouseX, float *mouseY, float width, float height, float meterToPixel) {
+static void MouseToWorld(TMVec3 cameraP, float *mouseX, float *mouseY, float width, float height, float meterToPixel) {
 
     float x = (float)TMInputMousePositionX();
     float y = height - (float)TMInputMousePositionY();
@@ -144,12 +126,12 @@ static void MouseToWorld(float *mouseX, float *mouseY, float width, float height
     float worldMouseX = (x / width)  * (width/meterToPixel);
     float worldMouseY = (y / height) * (height/meterToPixel);
 
-    *mouseX = worldMouseX + gState->cameraP.x;
-    *mouseY = worldMouseY + gState->cameraP.y;
+    *mouseX = worldMouseX + cameraP.x;
+    *mouseY = worldMouseY + cameraP.y;
 
 }
 
-static void LastMouseToWorld(float *mouseX, float *mouseY, float width, float height, float meterToPixel) {
+static void LastMouseToWorld(TMVec3 cameraP, float *mouseX, float *mouseY, float width, float height, float meterToPixel) {
 
     float x = (float)TMInputMouseLastPositionX();
     float y = height - (float)TMInputMouseLastPositionY();
@@ -157,8 +139,8 @@ static void LastMouseToWorld(float *mouseX, float *mouseY, float width, float he
     float worldMouseX = (x / width)  * (width/meterToPixel);
     float worldMouseY = (y / height) * (height/meterToPixel);
 
-    *mouseX = worldMouseX + gState->cameraP.x;
-    *mouseY = worldMouseY + gState->cameraP.y;
+    *mouseX = worldMouseX + cameraP.x;
+    *mouseY = worldMouseY + cameraP.y;
 
 }
 
@@ -211,7 +193,6 @@ static void UpdateCollision(Entity *entity) {
 
 void EditorInitialize(EditorState *state, TMWindow *window) {
     // TODO: remove this ...
-    gState = state;
     
     state->window = window;
     state->meterToPixel = 100.0f;
@@ -250,19 +231,16 @@ void EditorInitialize(EditorState *state, TMWindow *window) {
 
     // Initialize texture atlas
     // TODO: make a system to add and remove textures on the fly
-    gFontUVs = TMGenerateUVs(128, 64, 7, 9, &gFontCount);
-    gAbsUVs = TMHashmapCreate(sizeof(TMVec4));
+    gPlayerTexture = TMRendererTextureCreate(state->renderer, "../../assets/images/player.png");
 
-    gTexture = TMRendererTextureCreateAtlas(state->renderer, gImages, ARRAY_LENGTH(gImages), 1024*2, 1024*2, gAbsUVs);
-
-    EditorUIInitialize(&state->ui, (float)clientWidth, (float)clientHeight, state->meterToPixel);
+    EditorUIInitialize(state, &state->ui, (float)clientWidth, (float)clientHeight, state->meterToPixel);
 
 }
 
 void EditorUpdate(EditorState *state) {
     float clientWidth  = (float)TMRendererGetWidth(state->renderer);
     float clientHeight = (float)TMRendererGetHeight(state->renderer);
-    EditorUIUpdate(&state->ui, clientWidth, clientHeight, state->meterToPixel);
+    EditorUIUpdate(state, &state->ui, clientWidth, clientHeight, state->meterToPixel);
 
 
     if(!state->mouseIsHot) {
@@ -291,7 +269,7 @@ void EditorUpdate(EditorState *state) {
     if(!state->mouseIsHot && TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT) && state->element) {
         float mouseX;
         float mouseY;
-        MouseToWorld(&mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
+        MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
         AddEntity(state, mouseX, mouseY);
     }
 
@@ -307,7 +285,7 @@ void EditorUpdate(EditorState *state) {
 
                 float mouseX;
                 float mouseY;
-                MouseToWorld(&mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
+                MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
 
                 if(mouseX > minX && mouseX <= maxX &&
                    mouseY > minY && mouseY <= maxY) {
@@ -321,8 +299,8 @@ void EditorUpdate(EditorState *state) {
     if(!state->mouseIsHot && state->selectedEntity && TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
         float mouseX, mouseY;
         float lastMouseX, lastMouseY;
-        MouseToWorld(&mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
-        LastMouseToWorld(&lastMouseX, &lastMouseY, clientWidth, clientHeight, state->meterToPixel);
+        MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
+        LastMouseToWorld(state->cameraP, &lastMouseX, &lastMouseY, clientWidth, clientHeight, state->meterToPixel);
         float offsetX = mouseX - lastMouseX;
         float offsetY = mouseY - lastMouseY;
 
@@ -478,13 +456,12 @@ void EditorRender(EditorState *state) {
 
     TMDebugRenderDraw();
 
-    EditorUIDraw(&state->ui, state->renderer);
+    EditorUIDraw(state, &state->ui, state->renderer);
 
     TMRendererPresent(state->renderer, 1);
 }
 
 void EditorShutdown(EditorState *state) {
-
 
     if(state->entities) TMDarrayDestroy(state->entities);
 
@@ -507,10 +484,8 @@ void EditorShutdown(EditorState *state) {
     if(state->shadersAddedNames) TMDarrayDestroy(state->shadersAddedNames);
 
     EditorUIShutdown(&state->ui);
-    TMRendererTextureDestroy(state->renderer, gTexture);
-    TMHashmapDestroy(gAbsUVs);
+    TMRendererTextureDestroy(state->renderer, gPlayerTexture);
 
-    free(gFontUVs);
     TMRendererBufferDestroy(state->renderer, state->vertexBuffer);
     TMRendererShaderBufferDestroy(state->renderer, state->shaderBuffer);
     TMUIShutdown(state->renderer);

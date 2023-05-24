@@ -40,6 +40,7 @@ struct TMUIElement {
     TMVec4 oldColor;
     TMVec4 absUVs;
     TMVec4 relUVs;
+    int textureIndex;
 
     const char *text;
     int index;
@@ -69,7 +70,7 @@ TM_EXPORT void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation or
                                          PFN_OnClick onCLick = NULL, void *userData = NULL);
 TM_EXPORT void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation,
                                               TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
-                                              PFN_OnClick onCLick = NULL, void *userData = NULL);
+                                              PFN_OnClick onCLick = NULL, void *userData = NULL, int textureIndex = 0);
 TM_EXPORT void TMUIElementAddChildLabel(TMUIElement *parent, TMUIOrientation orientation,
                                         const char *text, TMVec4 color,
                                         PFN_OnClick onCLick = NULL, void *userData = NULL);

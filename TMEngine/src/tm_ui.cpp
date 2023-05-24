@@ -217,7 +217,7 @@ void TMUIElementAddChildButton(TMUIElement *parent, TMUIOrientation orientation,
 
 void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orientation,
                                     TMTexture *texture, TMVec4 absUVs, TMVec4 relUVs,
-                                    PFN_OnClick onCLick, void *userData) {
+                                    PFN_OnClick onCLick, void *userData, int textureIndex) {
     TMUIElement element{};
     element.type = TM_UI_TYPE_IMAGE_BUTTON;
     element.orientation = orientation;
@@ -229,6 +229,7 @@ void TMUIElementAddChildImageButton(TMUIElement *parent, TMUIOrientation orienta
     element.oldColor = {1, 1, 1, 1};
     element.onCLick = onCLick;
     element.userData = userData;
+    element.textureIndex = textureIndex;
 
 
     TMDarrayPush(parent->childs, element, TMUIElement);

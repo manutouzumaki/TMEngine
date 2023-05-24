@@ -5,7 +5,8 @@
 #include <math.h>
 
 int main() {
-    TMWindow *window = TMWindowCreate(800, 600, "Platformer Demo");
+    //TMWindow *window = TMWindowCreate(800, 600, "Platformer Demo");
+    TMWindow *window = TMWindowCreate(1280, 720, "Platformer Demo");
     GameState gameState{};
 
     TMTimer timer{};
