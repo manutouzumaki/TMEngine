@@ -4,6 +4,8 @@
 #include <tm_debug_renderer.h>
 #include "../message.h"
 
+#include <math.h>
+
 struct ConstBuffer {
     TMMat4 proj;
     TMMat4 view;
@@ -14,8 +16,10 @@ struct ConstBuffer {
 };
 
 struct Lights {
-    TMVec2 position;
-    TMVec2 range;
+    TMVec4 parameters[100];
+    TMVec4 colors[100];
+    TMVec3 ambient;
+    int count;
 };
 
 
@@ -25,8 +29,6 @@ struct GraphycsSystemState {
 
     Lights lights;
     TMShaderBuffer *lightShaderBuffer;
-
-
 };
 
 // TODO: create a nice lit system for all this piace of shit code
@@ -93,8 +95,27 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
     // create the shader buffer to store the light information
     
     Lights *lights = &gGraphicsState.lights;
-    lights->position = {10, 5};
-    lights->range = {2, 4};
+    
+    lights->parameters[0] = {5, 5, 0.7, 1.8};
+    lights->colors[0] = {1, 0, 0, 0};
+
+    lights->parameters[1] = {10, 5, 0.7, 1.8};
+    lights->colors[1] = {0, 1, 0, 3};
+
+    lights->parameters[2] = {10, 10, 0.7, 1.8};
+    lights->colors[2] = {1, 0, 1, 0};
+
+    lights->parameters[3] = {6, 10, 0.7, 1.8};
+    lights->colors[3] = {0, 1, 1, 0};
+
+    lights->parameters[4] = {8, 4, 0.7, 1.8};
+    lights->colors[4] = {1, 0, 1, 0};
+
+    lights->parameters[5] = {4, 7, 0.7, 1.8};
+    lights->colors[5] = {0, 0.4, 0.8, 0};
+    
+    lights->count = 6;
+    lights->ambient = {0.2, 0.2, 0.2};
 
     gGraphicsState.lightShaderBuffer = TMRendererShaderBufferCreate(renderer, &gGraphicsState.lights, sizeof(Lights), 1);
 
@@ -105,6 +126,7 @@ void GraphicsSystemShutdown(TMRenderer *renderer) {
 
     free(gUVs[0]);
     TMRendererTextureDestroy(renderer, gPlayerTexture);
+    TMRendererShaderBufferDestroy(renderer, gGraphicsState.lightShaderBuffer);
     TMRendererShaderBufferDestroy(renderer, gGraphicsState.shaderBuffer);
     TMRendererBufferDestroy(renderer, gGraphicsState.vertexBuffer);
 

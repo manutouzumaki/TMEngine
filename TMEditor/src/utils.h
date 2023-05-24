@@ -3,6 +3,9 @@
 
 struct Entity;
 
+float MinF32(float a, float b);
+float MaxF32(float a, float b);
+
 int MinI32(int a, int b);
 int MaxI32(int a, int b);
 int StringLength(char *string);

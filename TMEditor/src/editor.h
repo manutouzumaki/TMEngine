@@ -65,6 +65,12 @@ struct Animation {
     float timer;
 };
 
+struct Lights {
+    TMVec4 parameters[100];
+    TMVec4 colors[100];
+    TMVec3 ambient;
+    int count;
+};
 
 struct Entity {
     // ids
@@ -91,6 +97,7 @@ struct EditorState {
     TMRenderer     *renderer;
     TMBuffer       *vertexBuffer;
     TMShaderBuffer *shaderBuffer;
+    TMShaderBuffer *lightShaderBuffer;
     TMShader       *colorShader;
     TMShader       *spriteShader;
 
@@ -99,6 +106,9 @@ struct EditorState {
     Entity     *entities;
     char      **texturesAddedNames;
     char      **shadersAddedNames;
+
+    Lights lights;
+    int lightSelected;
 
     TMUIElement *element;
     Entity      *selectedEntity;

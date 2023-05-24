@@ -15,12 +15,21 @@ enum ModifyOption {
     MODIFY_INC_REL_V,
     MODIFY_OFF_REL_U,
     MODIFY_OFF_REL_V,
+
+    MODIFY_TRANSLATE_LIGHT,
+    MODIFY_QUADRA_LIGHT,
+    MODIFY_LINEAR_LIGHT,
+
+    MODIFY_R_LIGHT,
+    MODIFY_G_LIGHT,
+    MODIFY_B_LIGHT,
 };
 
 enum BrushOption {
     OPTION_TEXTURE,
     OPTION_COLOR,
     OPTION_PREFABS,
+    OPTION_LIGHT,
     OPTION_CLEAR
 };
 
@@ -38,10 +47,14 @@ struct EditorUI {
     TMUIElement *colors;
     TMUIElement *shaders;
     TMUIElement *prefabs;
+    TMUIElement *lights;
+    TMUIElement *clear;
     TMUIElement *modify;
     TMUIElement *save;
     TMUIElement *loadTexture;
     TMUIElement *loadShader;
+
+    TMUIElement *lightModify;
 
     char **texturesNames;
     char **shadersNames;

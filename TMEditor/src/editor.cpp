@@ -207,6 +207,23 @@ static void UpdateCollision(Entity *entity) {
 
 }
 
+void AddLight(EditorState *state, TMVec2 position, TMVec2 parameters, TMVec3 color) {
+    Lights *lights = &state->lights;
+    if(lights->count < 100) {
+        int index = lights->count;
+        lights->parameters[index] = {position.x, position.y, parameters.x, parameters.y};
+        lights->colors[index] = {color.x, color.y, color.z, 0};
+        lights->count++;
+        TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+    }
+}
+
+void SetAmbientLight(EditorState *state, TMVec3 ambient) {
+    Lights *lights = &state->lights;
+    lights->ambient = ambient;
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+}
+
 void EditorInitialize(EditorState *state, TMWindow *window) {
     // TODO: remove this ...
     
@@ -251,6 +268,11 @@ void EditorInitialize(EditorState *state, TMWindow *window) {
 
     EditorUIInitialize(state, &state->ui, (float)clientWidth, (float)clientHeight, state->meterToPixel);
 
+    state->lightShaderBuffer = TMRendererShaderBufferCreate(state->renderer, &state->lights, sizeof(Lights), 1);
+    state->lightSelected = -1;
+    
+    SetAmbientLight(state, {0.2, 0.2, 0.2});
+
 }
 
 void EditorUpdate(EditorState *state) {
@@ -280,15 +302,7 @@ void EditorUpdate(EditorState *state) {
         }
 
     }
-
-
-    if(!state->mouseIsHot && TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT) && state->element) {
-        float mouseX;
-        float mouseY;
-        MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
-        AddEntity(state, mouseX, mouseY);
-    }
-
+    
     if(!state->mouseIsHot && !state->element && state->entities) {
         if(TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT)) {
             for(int i = 0; i < TMDarraySize(state->entities); ++i) {
@@ -306,10 +320,45 @@ void EditorUpdate(EditorState *state) {
                 if(mouseX > minX && mouseX <= maxX &&
                    mouseY > minY && mouseY <= maxY) {
                     state->selectedEntity = entity;
+                    state->lightSelected = -1;
                 }
 
             }
+
+            for(int i = 0; i < state->lights.count; ++i) {
+
+                float minX = state->lights.parameters[i].x - 0.5f;
+                float maxX = state->lights.parameters[i].x + 0.5f;
+                float minY = state->lights.parameters[i].y - 0.5f;
+                float maxY = state->lights.parameters[i].y + 0.5f;
+
+                float mouseX;
+                float mouseY;
+                MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
+
+                if(mouseX > minX && mouseX <= maxX &&
+                   mouseY > minY && mouseY <= maxY) {
+
+                    state->selectedEntity = NULL;
+                    state->lightSelected = i;
+                }
+            }
         }
+    }
+
+    if(!state->mouseIsHot && TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT) && state->element) {
+        float mouseX;
+        float mouseY;
+        MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
+        AddEntity(state, mouseX, mouseY);
+    }
+    
+    if(!state->mouseIsHot && TMInputMousButtonJustDown(TM_MOUSE_BUTTON_LEFT) && state->option == OPTION_LIGHT && state->lightSelected < 0) {
+        float mouseX;
+        float mouseY;
+        MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
+        AddLight(state, {mouseX, mouseY}, {0.7, 1.8}, {1, 1, 1});
+        
     }
 
     if(!state->mouseIsHot && state->selectedEntity && TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
@@ -364,6 +413,67 @@ void EditorUpdate(EditorState *state) {
         }
     }
 
+    if(!state->mouseIsHot && state->lightSelected >= 0 && TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
+
+        float mouseX, mouseY;
+        float lastMouseX, lastMouseY;
+        MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
+        LastMouseToWorld(state->cameraP, &lastMouseX, &lastMouseY, clientWidth, clientHeight, state->meterToPixel);
+        float offsetX = mouseX - lastMouseX;
+        float offsetY = mouseY - lastMouseY;
+
+        TMVec4 *position =  &state->lights.parameters[state->lightSelected];
+        TMVec4 *colors =  &state->lights.colors[state->lightSelected];
+        if(state->modifyOption == MODIFY_TRANSLATE_LIGHT) {
+
+            position->x += offsetX;
+            position->y += offsetY;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+
+        }
+        else if(state->modifyOption == MODIFY_QUADRA_LIGHT){
+            float quadratic = position->z;
+            quadratic -= offsetX;
+            quadratic = MinF32(quadratic, 5.0f);
+            quadratic = MaxF32(quadratic, 0.0f);
+            position->z = quadratic;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+        }
+        else if(state->modifyOption == MODIFY_LINEAR_LIGHT){
+            float linear = position->w;
+            linear -= offsetX;
+            linear = MinF32(linear, 1.0f);
+            linear = MaxF32(linear, 0.0f);
+            position->w = linear;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+        }
+        else if(state->modifyOption == MODIFY_R_LIGHT){
+            float color = colors->x;
+            color -= offsetX;
+            color = MinF32(color, 1.0f);
+            color = MaxF32(color, 0.0f);
+            colors->x = color;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+        }
+        else if(state->modifyOption == MODIFY_G_LIGHT){
+            float color = colors->y;
+            color -= offsetX;
+            color = MinF32(color, 1.0f);
+            color = MaxF32(color, 0.0f);
+            colors->y = color;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+        }
+        else if(state->modifyOption == MODIFY_B_LIGHT){
+            float color = colors->z;
+            color -= offsetX;
+            color = MinF32(color, 1.0f);
+            color = MaxF32(color, 0.0f);
+            colors->z = color;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+        }
+
+    }
+
     // TODO: clean this up ...
     if(state->entities) {
         int id = 0;
@@ -394,11 +504,13 @@ void EditorRender(EditorState *state) {
         TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &gConstBuffer);
 
         state->ui.modify->position      = {clientWidth/state->meterToPixel - 4.8f, 0.0f};  
+        state->ui.lightModify->position      = {clientWidth/state->meterToPixel - 4.8f, 0.0f};  
         state->ui.save->position        = {0.0f, clientHeight/state->meterToPixel - 0.25f};
         state->ui.loadTexture->position = {2.5f, clientHeight/state->meterToPixel - 0.25f - 4.0f};
         state->ui.loadShader->position  = {5.0f, clientHeight/state->meterToPixel - 0.25f - 4.5f};
 
         TMUIElementRecalculateChilds(state->ui.modify);
+        TMUIElementRecalculateChilds(state->ui.lightModify);
         TMUIElementRecalculateChilds(state->ui.save);
         TMUIElementRecalculateChilds(state->ui.loadTexture);
         TMUIElementRecalculateChilds(state->ui.loadShader);
@@ -447,6 +559,10 @@ void EditorRender(EditorState *state) {
     if(state->selectedEntity) {
         Entity *entity = state->selectedEntity;
         TMDebugRendererDrawQuad(entity->position.x, entity->position.y, entity->size.x, entity->size.y, 0, 0xFF00FF00);
+    }
+    if(state->lightSelected >= 0) {
+        TMVec4 position = state->lights.parameters[state->lightSelected];
+        TMDebugRendererDrawQuad(position.x, position.y, 1, 1, 0, 0xFF00FF00);
     }
 
     TMDebugRenderDraw();
@@ -531,6 +647,7 @@ void EditorShutdown(EditorState *state) {
     TMRendererTextureDestroy(state->renderer, gPlayerTexture);
 
     TMRendererBufferDestroy(state->renderer, state->vertexBuffer);
+    TMRendererShaderBufferDestroy(state->renderer, state->lightShaderBuffer);
     TMRendererShaderBufferDestroy(state->renderer, state->shaderBuffer);
     TMUIShutdown(state->renderer);
     TMDebugRendererShutdown();

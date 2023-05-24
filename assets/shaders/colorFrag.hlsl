@@ -1,3 +1,11 @@
+cbuffer CLightBuffer : register(b1)
+{
+    float4 parameters[100];
+    float4 colors[100];
+    float3 srcAmbient;
+    int count;
+}
+
 struct PS_Input
 {
     float4 pos : SV_POSITION;
@@ -9,5 +17,43 @@ struct PS_Input
 
 float4 PS_Main(PS_Input frag) : SV_TARGET
 {
-    return frag.color;
+
+    float4 color = frag.color;
+
+    float3 ambient = srcAmbient * color.rgb;
+
+
+    float constant = 1.0f;
+
+    if(count > 0) {
+        float3 output = ambient;
+
+        for(int i = 0; i < count; ++i)
+        {
+            float2 position = parameters[i].xy;
+            float2 lightVar = parameters[i].zw;
+
+            float3 diffuse = colors[i].rgb * color.rgb;
+            
+            float linear0 = lightVar.x;
+            float quadratic = lightVar.y;
+
+            float3 lightPos = float3(position.x, position.y, 1);
+            float3 fragPos = frag.fragPos;
+            fragPos.z = 1;
+
+            float distance0 = length(lightPos - fragPos);
+            float attenuation = 1.0 / (constant + linear0 * distance0 + quadratic * (distance0 * distance0));  
+            
+            diffuse  *= attenuation;
+
+            output += diffuse;
+        }
+
+        color.rgb = output;
+    }
+
+    return color;
+
+
 }

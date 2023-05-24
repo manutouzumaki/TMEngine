@@ -629,6 +629,7 @@ TMShaderBuffer* TMRendererShaderBufferCreate(TMRenderer* renderer, void *bufferD
     }
     renderer->deviceContext->UpdateSubresource(shaderBuffer->buffer, 0, 0, bufferData, 0, 0);
     renderer->deviceContext->VSSetConstantBuffers(index, 1, &shaderBuffer->buffer);
+    renderer->deviceContext->PSSetConstantBuffers(index, 1, &shaderBuffer->buffer);
     shaderBuffer->index = index;
     return shaderBuffer;
 
@@ -642,6 +643,7 @@ void TMRendererShaderBufferDestroy(TMRenderer* renderer, TMShaderBuffer* shaderB
 void TMRendererShaderBufferUpdate(TMRenderer* renderer, TMShaderBuffer* shaderBuffer, void* bufferData) {
     renderer->deviceContext->UpdateSubresource(shaderBuffer->buffer, 0, 0, bufferData, 0, 0);
     renderer->deviceContext->VSSetConstantBuffers(shaderBuffer->index, 1, &shaderBuffer->buffer);
+    renderer->deviceContext->PSSetConstantBuffers(shaderBuffer->index, 1, &shaderBuffer->buffer);
 }
 
 

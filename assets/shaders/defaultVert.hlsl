@@ -10,7 +10,6 @@ cbuffer CDefaultBuffer : register(b0)
 
 struct VS_Input
 {
-
     float3 pos : POSITION;
     float2 tex0 : TEXCOORD0;
     float3 norm : NORMAL;

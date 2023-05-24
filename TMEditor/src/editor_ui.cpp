@@ -13,6 +13,7 @@ static void OptionSelected(TMUIElement *element) {
     state->modifyOption = MODIFY_NONE;
     state->prefabType = PREFAB_TYPE_NONE;
     state->selectedEntity = NULL;
+    state->lightSelected = -1;
 }
 
 static void ClearSelected(TMUIElement *element) {
@@ -20,6 +21,8 @@ static void ClearSelected(TMUIElement *element) {
     EditorState *state = (EditorState *)element->userData;
     state->prefabType = PREFAB_TYPE_NONE;
     state->element = NULL;
+    state->lightSelected = -1;
+    state->option = OPTION_CLEAR;
 }
 
 static void ElementSelected(TMUIElement *element) {
@@ -28,6 +31,7 @@ static void ElementSelected(TMUIElement *element) {
     state->element = element;
     state->modifyOption = MODIFY_NONE;
     state->selectedEntity = NULL;
+    state->lightSelected = -1;
 }
 
 static void PlayerPrefabSelected(TMUIElement *element) {
@@ -59,6 +63,16 @@ static void IncrementRelU(TMUIElement *element)   { EditorState *state = (Editor
 static void IncrementRelV(TMUIElement *element)   { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_INC_REL_V; }
 static void OffsetRelU(TMUIElement *element)      { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_OFF_REL_U; }
 static void OffsetRelV(TMUIElement *element)      { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_OFF_REL_V; }
+
+
+static void TranslateLight(TMUIElement *element) { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_TRANSLATE_LIGHT; }
+
+static void Quadratic(TMUIElement *element) { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_QUADRA_LIGHT; }
+static void Linear(TMUIElement *element)    { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_LINEAR_LIGHT; }
+
+static void Red(TMUIElement *element) { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_R_LIGHT; }
+static void Green(TMUIElement *element) { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_G_LIGHT; }
+static void Blue(TMUIElement *element) { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_B_LIGHT; }
 
 static void IncrementZ(TMUIElement *element) {
 
@@ -523,6 +537,7 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, OptionSelected, state);
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Colors ",   {1, 1, 1, 1}, OptionSelected, state);
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Prefabs ",   {1, 1, 1, 1}, OptionSelected, state);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Lights ",   {1, 1, 1, 1}, OptionSelected, state);
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Clear Brush ",   {1, 1, 1, 1}, ClearSelected, state);
 
     ui->textures = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.4f, 0.1f, 1});
@@ -604,6 +619,25 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
         }
     }
 
+
+
+    ui->lights = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.1f, 0.1f, 1});
+
+    ui->clear = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.1f, 0.1f, 1});
+
+    ui->lightModify = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {8.0, 0}, {4.8, 2}, {0.1f, 0.1f, 0.1f, 1});
+    TMUIElementAddChildLabel(ui->lightModify, TM_UI_ORIENTATION_VERTICAL,   " Translate ", {1, 1, 1, 1}, TranslateLight, state);
+    TMUIElementAddChildButton(ui->lightModify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
+    TMUIElementAddChildButton(ui->lightModify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
+
+    child = TMUIElementGetChild(ui->lightModify, 1);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " linear ",    {1, 1, 1, 1}, Linear, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " quadratic ", {1, 1, 1, 1}, Quadratic, state);
+
+    child = TMUIElementGetChild(ui->lightModify, 2);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Red ",      {1, 1, 1, 1}, Red, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Green ",    {1, 1, 1, 1}, Green, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Blue ",     {1, 1, 1, 1}, Blue, state);
 }
 
 void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height, float meterToPixel) {
@@ -620,9 +654,19 @@ void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height,
     else if (state->option == OPTION_PREFABS) {
         TMUIElementProcessInput(ui->prefabs, pos.x, pos.y, width, height, meterToPixel);
     }
+    else if(state->option == OPTION_LIGHT) {
+        TMUIElementProcessInput(ui->lights, pos.x, pos.y, width, height, meterToPixel);
+    }
+    else if(state->option == OPTION_CLEAR) {
+        TMUIElementProcessInput(ui->clear, pos.x, pos.y, width, height, meterToPixel);
+    }
 
     if(!state->element && state->selectedEntity) {
         TMUIElementProcessInput(ui->modify, pos.x, pos.y, width, height, meterToPixel);
+    }
+
+    if(!state->element && state->lightSelected >= 0) {
+        TMUIElementProcessInput(ui->lightModify, pos.x, pos.y, width, height, meterToPixel);
     }
 
     if(state->loadOption == LOAD_OPTION_TEXTURE) {
@@ -638,9 +682,14 @@ void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height,
     TMUIMouseIsHot(ui->textures, &state->mouseIsHot);
     TMUIMouseIsHot(ui->colors,   &state->mouseIsHot);
     TMUIMouseIsHot(ui->prefabs,   &state->mouseIsHot);
+    TMUIMouseIsHot(ui->lights,   &state->mouseIsHot);
+    TMUIMouseIsHot(ui->clear,   &state->mouseIsHot);
     TMUIMouseIsHot(ui->save,     &state->mouseIsHot);
     if(!state->element && state->selectedEntity) {
         TMUIMouseIsHot(ui->modify, &state->mouseIsHot);
+    }
+    if(!state->element && state->lightSelected >= 0) {
+        TMUIMouseIsHot(ui->lightModify, &state->mouseIsHot);
     }
     if(state->loadOption == LOAD_OPTION_TEXTURE) {
         TMUIMouseIsHot(ui->loadTexture, &state->mouseIsHot);
@@ -665,6 +714,12 @@ void EditorUIDraw(EditorState *state, EditorUI *ui, TMRenderer *renderer) {
     else if(state->option == OPTION_PREFABS) {
         TMUIElementDraw(renderer, ui->prefabs, 0.0f);
     }
+    else if(state->option == OPTION_LIGHT) {
+        TMUIElementDraw(renderer, ui->lights, 0.0f);
+    }
+    else if(state->option == OPTION_CLEAR) {
+        TMUIElementDraw(renderer, ui->lights, 0.0f);
+    }
 
     if(state->loadOption == LOAD_OPTION_TEXTURE) {
         TMUIElementDraw(renderer, ui->loadTexture, 0.0f);
@@ -676,12 +731,18 @@ void EditorUIDraw(EditorState *state, EditorUI *ui, TMRenderer *renderer) {
     if(!state->element && state->selectedEntity) {
         TMUIElementDraw(renderer, ui->modify, 0.0f);
     }
+    if(!state->element && state->lightSelected >= 0) {
+        TMUIElementDraw(renderer, ui->lightModify, 0.0f);
+    }
 }
 
 void EditorUIShutdown(EditorUI *ui) {
 
     TMUIElementDestroy(ui->save);
     TMUIElementDestroy(ui->modify);
+    TMUIElementDestroy(ui->clear);
+    TMUIElementDestroy(ui->lights);
+    TMUIElementDestroy(ui->prefabs);
     TMUIElementDestroy(ui->colors);
     TMUIElementDestroy(ui->textures);
     TMUIElementDestroy(ui->options);

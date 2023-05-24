@@ -42,16 +42,16 @@ void TMUIInitialize(TMRenderer *renderer, float MetersToPixel) {
 
     gSpriteShader = TMRendererShaderCreate(renderer,
                                            "../../assets/shaders/uiVert.hlsl",
-                                           "../../assets/shaders/spriteFrag.hlsl");
+                                           "../../assets/shaders/uiSpriteFrag.hlsl");
 
     gColorShader = TMRendererShaderCreate(renderer,
                                           "../../assets/shaders/uiVert.hlsl",
-                                          "../../assets/shaders/colorFrag.hlsl");
+                                          "../../assets/shaders/uiColorFrag.hlsl");
 
     gVertexBuffer = TMRendererBufferCreate(renderer,
-                                          vertices, ARRAY_LENGTH(vertices),
-                                          indices, ARRAY_LENGTH(indices),
-                                          gColorShader);
+                                           vertices, ARRAY_LENGTH(vertices),
+                                           indices, ARRAY_LENGTH(indices),
+                                           gColorShader);
 
 
     int width = TMRendererGetWidth(renderer);

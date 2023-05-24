@@ -13,6 +13,16 @@ int MaxI32(int a, int b) {
     return b;
 }
 
+float MinF32(float a, float b) {
+    if(a < b) return a;
+    return b;
+}
+
+float MaxF32(float a, float b) {
+    if(a > b) return a;
+    return b;
+}
+
 int StringLength(char *string) {
     int counter = 0;
     char *letter = string; 
