@@ -207,21 +207,27 @@ static void UpdateCollision(Entity *entity) {
 
 }
 
-void AddLight(EditorState *state, TMVec2 position, TMVec2 parameters, TMVec3 color) {
-    Lights *lights = &state->lights;
-    if(lights->count < 100) {
-        int index = lights->count;
-        lights->parameters[index] = {position.x, position.y, parameters.x, parameters.y};
-        lights->colors[index] = {color.x, color.y, color.z, 0};
-        lights->count++;
-        TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+void AddLight(EditorState *state, TMVec2 position, TMVec3 attributes, TMVec3 color, float range) {
+    LightsConstBuffer *lightsConstBuffer = &state->lightsConstBuffer;
+    if(lightsConstBuffer->count < 100) {
+        int index = lightsConstBuffer->count;
+        
+        PointLight *light = lightsConstBuffer->lights + index;
+        light->position = position;
+        light->attributes = attributes;
+        light->color = color;
+        light->range = range;
+        
+        lightsConstBuffer->count++;
+
+        TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
     }
 }
 
 void SetAmbientLight(EditorState *state, TMVec3 ambient) {
-    Lights *lights = &state->lights;
-    lights->ambient = ambient;
-    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+    LightsConstBuffer *lightsConstBuffer = &state->lightsConstBuffer;
+    lightsConstBuffer->ambient = ambient;
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
 }
 
 void EditorInitialize(EditorState *state, TMWindow *window) {
@@ -268,7 +274,7 @@ void EditorInitialize(EditorState *state, TMWindow *window) {
 
     EditorUIInitialize(state, &state->ui, (float)clientWidth, (float)clientHeight, state->meterToPixel);
 
-    state->lightShaderBuffer = TMRendererShaderBufferCreate(state->renderer, &state->lights, sizeof(Lights), 1);
+    state->lightShaderBuffer = TMRendererShaderBufferCreate(state->renderer, &state->lightsConstBuffer, sizeof(LightsConstBuffer), 1);
     state->lightSelected = -1;
     
     SetAmbientLight(state, {0.2, 0.2, 0.2});
@@ -325,12 +331,14 @@ void EditorUpdate(EditorState *state) {
 
             }
 
-            for(int i = 0; i < state->lights.count; ++i) {
+            for(int i = 0; i < state->lightsConstBuffer.count; ++i) {
 
-                float minX = state->lights.parameters[i].x - 0.5f;
-                float maxX = state->lights.parameters[i].x + 0.5f;
-                float minY = state->lights.parameters[i].y - 0.5f;
-                float maxY = state->lights.parameters[i].y + 0.5f;
+                PointLight *light = state->lightsConstBuffer.lights + i;
+
+                float minX = light->position.x - 0.5f;
+                float maxX = light->position.x + 0.5f;
+                float minY = light->position.y - 0.5f;
+                float maxY = light->position.y + 0.5f;
 
                 float mouseX;
                 float mouseY;
@@ -357,7 +365,7 @@ void EditorUpdate(EditorState *state) {
         float mouseX;
         float mouseY;
         MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
-        AddLight(state, {mouseX, mouseY}, {0.7, 1.8}, {1, 1, 1});
+        AddLight(state, {mouseX, mouseY}, {1.0, 0.7, 1.8}, {1, 1, 1}, 2);
         
     }
 
@@ -422,30 +430,44 @@ void EditorUpdate(EditorState *state) {
         float offsetX = mouseX - lastMouseX;
         float offsetY = mouseY - lastMouseY;
 
-        TMVec4 *position =  &state->lights.parameters[state->lightSelected];
-        TMVec4 *colors =  &state->lights.colors[state->lightSelected];
+        PointLight *light = state->lightsConstBuffer.lights + state->lightSelected;
+
+        TMVec2 *position =  &light->position;
+        TMVec3 *colors =  &light->color;
         if(state->modifyOption == MODIFY_TRANSLATE_LIGHT) {
 
             position->x += offsetX;
             position->y += offsetY;
-            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
 
         }
         else if(state->modifyOption == MODIFY_QUADRA_LIGHT){
-            float quadratic = position->z;
+            float quadratic = light->attributes.z;
             quadratic -= offsetX;
-            quadratic = MinF32(quadratic, 5.0f);
             quadratic = MaxF32(quadratic, 0.0f);
-            position->z = quadratic;
-            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+            light->attributes.z = quadratic;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
         }
         else if(state->modifyOption == MODIFY_LINEAR_LIGHT){
-            float linear = position->w;
+            float linear = light->attributes.y;
             linear -= offsetX;
-            linear = MinF32(linear, 1.0f);
             linear = MaxF32(linear, 0.0f);
-            position->w = linear;
-            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+            light->attributes.y = linear;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+        }
+        else if(state->modifyOption == MODIFY_CONSTA_LIGHT){
+            float constant = light->attributes.x;
+            constant -= offsetX;
+            constant = MaxF32(constant, 0.0f);
+            light->attributes.x = constant;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+        }
+        else if(state->modifyOption == MODIFY_RANGE_LIGHT){
+            float range = light->range;
+            range += offsetX;
+            range = MaxF32(range, 0.0f);
+            light->range = range;
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
         }
         else if(state->modifyOption == MODIFY_R_LIGHT){
             float color = colors->x;
@@ -453,7 +475,7 @@ void EditorUpdate(EditorState *state) {
             color = MinF32(color, 1.0f);
             color = MaxF32(color, 0.0f);
             colors->x = color;
-            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
         }
         else if(state->modifyOption == MODIFY_G_LIGHT){
             float color = colors->y;
@@ -461,7 +483,7 @@ void EditorUpdate(EditorState *state) {
             color = MinF32(color, 1.0f);
             color = MaxF32(color, 0.0f);
             colors->y = color;
-            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
         }
         else if(state->modifyOption == MODIFY_B_LIGHT){
             float color = colors->z;
@@ -469,7 +491,7 @@ void EditorUpdate(EditorState *state) {
             color = MinF32(color, 1.0f);
             color = MaxF32(color, 0.0f);
             colors->z = color;
-            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lights);
+            TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
         }
 
     }
@@ -561,7 +583,9 @@ void EditorRender(EditorState *state) {
         TMDebugRendererDrawQuad(entity->position.x, entity->position.y, entity->size.x, entity->size.y, 0, 0xFF00FF00);
     }
     if(state->lightSelected >= 0) {
-        TMVec4 position = state->lights.parameters[state->lightSelected];
+
+        PointLight *light = state->lightsConstBuffer.lights + state->lightSelected;
+        TMVec2 position = light->position;
         TMDebugRendererDrawQuad(position.x, position.y, 1, 1, 0, 0xFF00FF00);
     }
 

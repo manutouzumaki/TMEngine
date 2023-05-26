@@ -15,11 +15,20 @@ struct ConstBuffer {
     TMVec4 relUVs;
 };
 
-struct Lights {
-    TMVec4 parameters[100];
-    TMVec4 colors[100];
+struct PointLight {
+    TMVec3 attributes;
+    float range;
+    TMVec3 color;
+    float pad0;
+    TMVec2 position;
+    float pad1;
+    float pad2;
+};
+
+struct LightsConstBuffer {
     TMVec3 ambient;
     int count;
+    PointLight lights[100];
 };
 
 
@@ -27,7 +36,7 @@ struct GraphycsSystemState {
     TMBuffer       *vertexBuffer;
     TMShaderBuffer *shaderBuffer;
 
-    Lights lights;
+    LightsConstBuffer lightsConstBuffer;
     TMShaderBuffer *lightShaderBuffer;
 };
 
@@ -70,6 +79,29 @@ void GraphicsSystemOnMessage(MessageType type, void *sender, void * listener, Me
 
 }
 
+void GraphicsSystemAddLight(TMRenderer *renderer, TMVec2 position, TMVec3 attributes, TMVec3 color, float range) {
+    LightsConstBuffer *lightsConstBuffer = &gGraphicsState.lightsConstBuffer;
+    if(lightsConstBuffer->count < 100) {
+        int index = lightsConstBuffer->count;
+        
+        PointLight *light = lightsConstBuffer->lights + index;
+        light->position = position;
+        light->attributes = attributes;
+        light->color = color;
+        light->range = range;
+        
+        lightsConstBuffer->count++;
+
+        TMRendererShaderBufferUpdate(renderer, gGraphicsState.lightShaderBuffer, &gGraphicsState.lightsConstBuffer);
+    }
+}
+
+void GraphicsSystemSetAmbientLight(TMRenderer *renderer, TMVec3 ambient) {
+    LightsConstBuffer *lightsConstBuffer = &gGraphicsState.lightsConstBuffer;
+    lightsConstBuffer->ambient = ambient;
+    TMRendererShaderBufferUpdate(renderer, gGraphicsState.lightShaderBuffer, &gGraphicsState.lightsConstBuffer);
+}
+
 void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
 
     MessageRegister(MESSAGE_TYPE_GRAPHICS_UPDATE_POSITIONS, NULL, GraphicsSystemOnMessage);
@@ -93,31 +125,7 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
 
     // TODO: lights test ...
     // create the shader buffer to store the light information
-    
-    Lights *lights = &gGraphicsState.lights;
-    
-    lights->parameters[0] = {5, 5, 0.7, 1.8};
-    lights->colors[0] = {1, 0, 0, 0};
-
-    lights->parameters[1] = {10, 5, 0.7, 1.8};
-    lights->colors[1] = {0, 1, 0, 3};
-
-    lights->parameters[2] = {10, 10, 0.7, 1.8};
-    lights->colors[2] = {1, 0, 1, 0};
-
-    lights->parameters[3] = {6, 10, 0.7, 1.8};
-    lights->colors[3] = {0, 1, 1, 0};
-
-    lights->parameters[4] = {8, 4, 0.7, 1.8};
-    lights->colors[4] = {1, 0, 1, 0};
-
-    lights->parameters[5] = {4, 7, 0.7, 1.8};
-    lights->colors[5] = {0, 0.4, 0.8, 0};
-    
-    lights->count = 6;
-    lights->ambient = {0.2, 0.2, 0.2};
-
-    gGraphicsState.lightShaderBuffer = TMRendererShaderBufferCreate(renderer, &gGraphicsState.lights, sizeof(Lights), 1);
+    gGraphicsState.lightShaderBuffer = TMRendererShaderBufferCreate(renderer, &gGraphicsState.lightsConstBuffer, sizeof(LightsConstBuffer), 1);
 
     
 }

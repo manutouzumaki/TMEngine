@@ -69,6 +69,8 @@ static void TranslateLight(TMUIElement *element) { EditorState *state = (EditorS
 
 static void Quadratic(TMUIElement *element) { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_QUADRA_LIGHT; }
 static void Linear(TMUIElement *element)    { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_LINEAR_LIGHT; }
+static void Constant(TMUIElement *element)    { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_CONSTA_LIGHT; }
+static void Range(TMUIElement *element)    { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_RANGE_LIGHT; }
 
 static void Red(TMUIElement *element) { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_R_LIGHT; }
 static void Green(TMUIElement *element) { EditorState *state = (EditorState *)element->userData; state->modifyOption = MODIFY_G_LIGHT; }
@@ -229,6 +231,52 @@ static void SaveScene(TMUIElement *element) {
     
     }
     TMJsonObjectAddChild(&jsonRoot, &jsonLevelTextures);
+
+    TMJsonObject jsonLevelAmbient = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonLevelAmbient, "LevelAmbient");
+    TMJsonObjectSetValue(&jsonLevelAmbient, state->lightsConstBuffer.ambient.x);
+    TMJsonObjectSetValue(&jsonLevelAmbient, state->lightsConstBuffer.ambient.y);
+    TMJsonObjectSetValue(&jsonLevelAmbient, state->lightsConstBuffer.ambient.z);
+    TMJsonObjectAddChild(&jsonRoot, &jsonLevelAmbient);
+
+    TMJsonObject jsonLevelLights = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonLevelLights, "LevelLights");
+    for(int i = 0; i < state->lightsConstBuffer.count; ++i) {
+
+        PointLight *light = state->lightsConstBuffer.lights + i;
+
+        TMJsonObject jsonPosition = TMJsonObjectCreate();
+        TMJsonObjectSetName(&jsonPosition, "Position");
+        TMJsonObjectSetValue(&jsonPosition, light->position.x);
+        TMJsonObjectSetValue(&jsonPosition, light->position.y);
+
+        TMJsonObject jsonColor = TMJsonObjectCreate();
+        TMJsonObjectSetName(&jsonColor, "Color");
+        TMJsonObjectSetValue(&jsonColor, light->color.x);
+        TMJsonObjectSetValue(&jsonColor, light->color.y);
+        TMJsonObjectSetValue(&jsonColor, light->color.z);
+
+        TMJsonObject jsonAttrib = TMJsonObjectCreate();
+        TMJsonObjectSetName(&jsonAttrib, "Attributes");
+        TMJsonObjectSetValue(&jsonAttrib, light->attributes.x);
+        TMJsonObjectSetValue(&jsonAttrib, light->attributes.y);
+        TMJsonObjectSetValue(&jsonAttrib, light->attributes.z);
+
+        TMJsonObject jsonRange = TMJsonObjectCreate();
+        TMJsonObjectSetName(&jsonRange, "Range");
+        TMJsonObjectSetValue(&jsonRange, light->range);
+
+        TMJsonObject jsonLight = TMJsonObjectCreate();
+        TMJsonObjectSetName(&jsonLight, "Light");
+        TMJsonObjectAddChild(&jsonLight, &jsonPosition);
+        TMJsonObjectAddChild(&jsonLight, &jsonColor);
+        TMJsonObjectAddChild(&jsonLight, &jsonAttrib);
+        TMJsonObjectAddChild(&jsonLight, &jsonRange); 
+
+        TMJsonObjectAddChild(&jsonLevelLights, &jsonLight); 
+    }
+    TMJsonObjectAddChild(&jsonRoot, &jsonLevelLights);
+
 
     TMJsonObject jsonScene = TMJsonObjectCreate();
     TMJsonObjectSetName(&jsonScene, "Scene");
@@ -631,6 +679,7 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     TMUIElementAddChildButton(ui->lightModify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
 
     child = TMUIElementGetChild(ui->lightModify, 1);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " constant ", {1, 1, 1, 1}, Constant, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " linear ",    {1, 1, 1, 1}, Linear, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " quadratic ", {1, 1, 1, 1}, Quadratic, state);
 
@@ -638,6 +687,7 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Red ",      {1, 1, 1, 1}, Red, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Green ",    {1, 1, 1, 1}, Green, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Blue ",     {1, 1, 1, 1}, Blue, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Range ",     {1, 1, 1, 1}, Range, state);
 }
 
 void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height, float meterToPixel) {

@@ -3,6 +3,7 @@
 #include "game.h"
 #include "entity.h"
 #include "systems/animation_sys.h"
+#include "systems/graphics_sys.h"
 
 #include <utils/tm_json.h>
 #include <utils/tm_darray.h>
@@ -247,6 +248,8 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
     TMJsonObject *jsonRoot = &jsonFile->root.childs[0];
     
     TMJsonObject *jsonLevelTextures = TMJsonFindChildByName(jsonRoot, "LevelTextures");
+    TMJsonObject *jsonLevelAmbient = TMJsonFindChildByName(jsonRoot, "LevelAmbient");
+    TMJsonObject *jsonLevelLights = TMJsonFindChildByName(jsonRoot, "LevelLights");
     TMJsonObject *jsonScene = TMJsonFindChildByName(jsonRoot, "Scene");
 
     for(int i = 0; i < jsonLevelTextures->valuesCount; ++i) {
@@ -267,8 +270,40 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
         
         TMDarrayPush(state->levelTextures, texture, TMTexture *);
     }
-    
-    int texturesCount = TMDarraySize(state->levelTextures);
+
+    TMVec3 ambient  = {};
+    ambient.x = StringToFloat(jsonLevelAmbient->values[0].value, jsonLevelAmbient->values[0].size);
+    ambient.y = StringToFloat(jsonLevelAmbient->values[1].value, jsonLevelAmbient->values[1].size);
+    ambient.z = StringToFloat(jsonLevelAmbient->values[2].value, jsonLevelAmbient->values[2].size);
+
+    GraphicsSystemSetAmbientLight(state->renderer, ambient);
+
+    for(int i = 0; i < jsonLevelLights->childsCount; ++i) {
+
+        TMJsonObject *jsonLight = jsonLevelLights->childs + i;
+        TMJsonObject *jsonPosition = TMJsonFindChildByName(jsonLight, "Position");
+        TMJsonObject *jsonColor    = TMJsonFindChildByName(jsonLight, "Color");
+        TMJsonObject *jsonAttrib   = TMJsonFindChildByName(jsonLight, "Attributes");
+        TMJsonObject *jsonRange    = TMJsonFindChildByName(jsonLight, "Range");
+
+        TMVec2 position  = {};
+        position.x = StringToFloat(jsonPosition->values[0].value, jsonPosition->values[0].size);
+        position.y = StringToFloat(jsonPosition->values[1].value, jsonPosition->values[1].size);
+
+        TMVec3 color  = {};
+        color.x = StringToFloat(jsonColor->values[0].value, jsonColor->values[0].size);
+        color.y = StringToFloat(jsonColor->values[1].value, jsonColor->values[1].size);
+        color.z = StringToFloat(jsonColor->values[2].value, jsonColor->values[2].size);
+
+        TMVec3  attributes = {};
+        attributes.x = StringToFloat(jsonAttrib->values[0].value, jsonAttrib->values[0].size);
+        attributes.y = StringToFloat(jsonAttrib->values[1].value, jsonAttrib->values[1].size);
+        attributes.z = StringToFloat(jsonAttrib->values[2].value, jsonAttrib->values[2].size);
+
+        float range = StringToFloat(jsonRange->values[0].value, jsonRange->values[0].size);
+
+        GraphicsSystemAddLight(state->renderer, position, attributes, color, range);
+    }
     
     for(int i = 0; i < jsonScene->childsCount; ++i) {
 

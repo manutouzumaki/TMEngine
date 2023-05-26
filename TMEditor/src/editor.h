@@ -65,11 +65,20 @@ struct Animation {
     float timer;
 };
 
-struct Lights {
-    TMVec4 parameters[100];
-    TMVec4 colors[100];
+struct PointLight {
+    TMVec3 attributes;
+    float range;
+    TMVec3 color;
+    float pad0;
+    TMVec2 position;
+    float pad1;
+    float pad2;
+};
+
+struct LightsConstBuffer {
     TMVec3 ambient;
     int count;
+    PointLight lights[100];
 };
 
 struct Entity {
@@ -107,7 +116,7 @@ struct EditorState {
     char      **texturesAddedNames;
     char      **shadersAddedNames;
 
-    Lights lights;
+    LightsConstBuffer lightsConstBuffer;
     int lightSelected;
 
     TMUIElement *element;
