@@ -168,19 +168,20 @@ TMUIElement *TMUIElementCreateLabel(TMUIOrientation orientation, TMVec2 position
 }
 
 
-static void Freechilds(TMUIElement *element) {
+void TMUIElementFreechilds(TMUIElement *element) {
     if(element->childs) {
         int childCount = TMDarraySize(element->childs);
         for(int i = 0; i < childCount; ++i) {
             TMUIElement *child = element->childs + i;
-            Freechilds(child);
+            TMUIElementFreechilds(child);
         }
         TMDarrayDestroy(element->childs);
+        element->childs = NULL;
     }
 }
 
 void TMUIElementDestroy(TMUIElement *element) {
-    Freechilds(element);
+    TMUIElementFreechilds(element);
     free(element);
 }
 
@@ -357,6 +358,9 @@ static void MouseToWorld(float *mouseX, float *mouseY, float width, float height
 void TMUIElementRecalculateChilds(TMUIElement *element) {
 
     TMUIElement *parent = element;
+
+    if(!parent->childs) return; 
+
     int childCount = TMDarraySize(parent->childs);
 
     if(parent->orientation == TM_UI_ORIENTATION_HORIZONTAL) {

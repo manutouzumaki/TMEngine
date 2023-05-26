@@ -38,7 +38,8 @@ enum BrushOption {
 enum LoadOption {
     LOAD_OPTION_NONE,
     LOAD_OPTION_TEXTURE,
-    LOAD_OPTION_SHADER
+    LOAD_OPTION_SHADER,
+    LOAD_OPTION_SCENE
 };
 
 struct EditorUI {
@@ -55,11 +56,13 @@ struct EditorUI {
     TMUIElement *save;
     TMUIElement *loadTexture;
     TMUIElement *loadShader;
+    TMUIElement *loadScene;
 
     TMUIElement *lightModify;
 
     char **texturesNames;
     char **shadersNames;
+    char **scenesNames;
 };
 
 struct EditorState;
@@ -68,5 +71,8 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
 void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height, float meterToPixel);
 void EditorUIDraw(EditorState *state, EditorUI *ui, TMRenderer *renderer);
 void EditorUIShutdown(EditorUI *ui);
+
+
+void ElementSelected(TMUIElement *element);
 
 #endif

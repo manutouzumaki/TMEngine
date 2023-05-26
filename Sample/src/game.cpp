@@ -70,7 +70,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntitySystemInitialize(100);
 
 
-    LoadSceneFromFile(state, "../../assets/json/testScene.json");
+    LoadSceneFromFile(state, "../../assets/json/level1.json");
 
 }
 

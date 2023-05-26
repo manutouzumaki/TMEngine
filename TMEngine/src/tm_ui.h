@@ -85,4 +85,7 @@ TM_EXPORT void TMUIElementDestroy(TMUIElement *element);
 TM_EXPORT void TMUIElementProcessInput(TMUIElement *element, float offsetX, float offsetY, float width, float height, float scale);
 TM_EXPORT void TMUIElementDraw(TMRenderer *renderer, TMUIElement *element, float increment);
 
+
+TM_EXPORT void TMUIElementFreechilds(TMUIElement *element);
+
 #endif

@@ -115,6 +115,7 @@ struct EditorState {
     Entity     *entities;
     char      **texturesAddedNames;
     char      **shadersAddedNames;
+    char       *currentSceneName;
 
     LightsConstBuffer lightsConstBuffer;
     int lightSelected;
@@ -135,9 +136,14 @@ struct EditorState {
 struct TMWindow;
 
 void EditorInitialize(EditorState *state, TMWindow *window);
-void EditorUpdate(EditorState *state);
-void EditorRender(EditorState *state);
-void EditorShutdown(EditorState *state);
+void EditorUpdate(EditorState     *state);
+void EditorRender(EditorState     *state);
+void EditorShutdown(EditorState   *state);
+
+
+void ClearLights(EditorState *state);
+void AddLight(EditorState *state, TMVec2 position, TMVec3 attributes, TMVec3 color, float range);
+void SetAmbientLight(EditorState *state, TMVec3 ambient);
 
 
 #endif

@@ -14,7 +14,6 @@ struct ConstBuffer {
 // local to the obj file
 ///////////////////////////////////////////////////
 
-static int          gEntityCount;
 static ConstBuffer  gConstBuffer;
 static unsigned int gIndices[] = { 1, 0, 2, 2, 0, 3 };
 static TMVertex     gVertices[] = {
@@ -24,7 +23,7 @@ static TMVertex     gVertices[] = {
         TMVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec3{0, 0, 0}}  // 3
 };
 
-static TMTexture   *gPlayerTexture;
+TMTexture   *gPlayerTexture;
 
 ///////////////////////////////////////////////////
 
@@ -42,8 +41,10 @@ static void AddDefaultEntity(EditorState *state, float posX, float posY) {
     entity.texture = element->texture;
     entity.zIndex = 2;
     entity.textureIndex = element->textureIndex;
-    entity.id = gEntityCount++;
+    entity.id = state->entities ? TMDarraySize(state->entities) : 0;
     entity.prefabType = PREFAB_TYPE_NONE;
+
+
 
     if(element->type == TM_UI_TYPE_BUTTON) {
         entity.shader = state->colorShader;
@@ -68,7 +69,7 @@ static void AddPlayerEntity(EditorState *state, float posX, float posY) {
     entity.textureIndex = -1;
     entity.shader = state->spriteShader;
     entity.zIndex = 2;
-    entity.id = gEntityCount++;
+    entity.id = state->entities ? TMDarraySize(state->entities) : 0;
     entity.prefabType = PREFAB_TYPE_PLAYER;
 
     entity.collision = (Collision *)malloc(sizeof(Collision));
@@ -130,6 +131,7 @@ static void AddEnemyEntity(EditorState *state, float posX, float posY) {
 }
 
 static void AddEntity(EditorState *state, float posX, float posY) {
+
     switch(state->prefabType) {
 
         case PREFAB_TYPE_NONE:
@@ -146,7 +148,6 @@ static void AddEntity(EditorState *state, float posX, float posY) {
         } break;
 
     }
-
 
 }
 
@@ -205,6 +206,12 @@ static void UpdateCollision(Entity *entity) {
 
     }
 
+}
+
+void ClearLights(EditorState *state) {
+    LightsConstBuffer *lightsConstBuffer = &state->lightsConstBuffer;
+    lightsConstBuffer->count = 0;
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
 }
 
 void AddLight(EditorState *state, TMVec2 position, TMVec3 attributes, TMVec3 color, float range) {
@@ -528,12 +535,15 @@ void EditorRender(EditorState *state) {
         state->ui.modify->position      = {clientWidth/state->meterToPixel - 4.8f, 0.0f};  
         state->ui.lightModify->position      = {clientWidth/state->meterToPixel - 4.8f, 0.0f};  
         state->ui.save->position        = {0.0f, clientHeight/state->meterToPixel - 0.25f};
-        state->ui.loadTexture->position = {2.5f, clientHeight/state->meterToPixel - 0.25f - 4.0f};
-        state->ui.loadShader->position  = {5.0f, clientHeight/state->meterToPixel - 0.25f - 4.5f};
 
+        state->ui.loadScene->position   = {2.0f, clientHeight/state->meterToPixel - 0.25f - 3.5f};
+        state->ui.loadTexture->position = {4.0f, clientHeight/state->meterToPixel - 0.25f - 4.0f};
+        state->ui.loadShader->position  = {6.0f, clientHeight/state->meterToPixel - 0.25f - 4.5f};
+    
         TMUIElementRecalculateChilds(state->ui.modify);
         TMUIElementRecalculateChilds(state->ui.lightModify);
         TMUIElementRecalculateChilds(state->ui.save);
+        TMUIElementRecalculateChilds(state->ui.loadScene);
         TMUIElementRecalculateChilds(state->ui.loadTexture);
         TMUIElementRecalculateChilds(state->ui.loadShader);
 

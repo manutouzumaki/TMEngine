@@ -1,6 +1,7 @@
 #include "editor_ui.h"
 #include "editor.h"
 #include "utils.h"
+#include "scene.h"
 
 #include <stdio.h>
 #include <memory.h>
@@ -25,7 +26,7 @@ static void ClearSelected(TMUIElement *element) {
     state->option = OPTION_CLEAR;
 }
 
-static void ElementSelected(TMUIElement *element) {
+void ElementSelected(TMUIElement *element) {
     printf("Element selected\n");
     EditorState *state = (EditorState *)element->userData;
     state->element = element;
@@ -156,7 +157,7 @@ static void SolidCollision(TMUIElement *element) {
 static void LoadTexture(TMUIElement *element) {
 
     EditorState *state = (EditorState *)element->userData;
-    if(state->loadOption == LOAD_OPTION_NONE || state->loadOption == LOAD_OPTION_SHADER) {
+    if(state->loadOption != LOAD_OPTION_TEXTURE) {
         state->loadOption = LOAD_OPTION_TEXTURE;
     }
     else {
@@ -168,7 +169,7 @@ static void LoadTexture(TMUIElement *element) {
 static void LoadShader(TMUIElement *element) {
 
     EditorState *state = (EditorState *)element->userData;
-    if(state->loadOption == LOAD_OPTION_NONE || state->loadOption == LOAD_OPTION_TEXTURE) {
+    if(state->loadOption != LOAD_OPTION_SHADER) {
         state->loadOption = LOAD_OPTION_SHADER;
     }
     else {
@@ -208,11 +209,44 @@ static void SelectTexture(TMUIElement *element) {
                                        texture, uvs, uvs, ElementSelected, state, textureIndex);
 
     }
+    state->loadOption = LOAD_OPTION_NONE;
 
 }
 
 static void SelectShader(TMUIElement *element) {
     EditorState *state = (EditorState *)element->userData;
+    state->loadOption = LOAD_OPTION_NONE;
+}
+
+
+static void LoadScene(TMUIElement *element) {
+    EditorState *state = (EditorState *)element->userData;
+    if(state->loadOption != LOAD_OPTION_SCENE) {
+        state->loadOption = LOAD_OPTION_SCENE;
+    }
+    else {
+        state->loadOption = LOAD_OPTION_NONE;
+    }
+}
+
+static void SelectScene(TMUIElement *element) {
+    EditorState *state = (EditorState *)element->userData;
+    
+    state->currentSceneName = state->ui.scenesNames[element->index];
+
+    char filepath[10000] = "../../assets/json/";
+    int headerSize = StringLength(filepath);
+    int nameSize = StringLength(state->currentSceneName);
+    assert(headerSize + nameSize < 10000);
+    memcpy(filepath + headerSize, state->currentSceneName, nameSize);
+    filepath[headerSize + nameSize] = '\0';
+
+
+    LoadSceneFromFile(state, filepath);
+    
+    state->loadOption = LOAD_OPTION_NONE;
+
+
 }
 
 static void SaveScene(TMUIElement *element) {
@@ -286,6 +320,11 @@ static void SaveScene(TMUIElement *element) {
 
         TMJsonObject jsonEntity = TMJsonObjectCreate();
         TMJsonObjectSetName(&jsonEntity, "Entity");
+
+        TMJsonObject jsonType = TMJsonObjectCreate();
+        TMJsonObjectSetName(&jsonType, "PrefabType");
+        TMJsonObjectSetValue(&jsonType, (float)entity->prefabType);
+        TMJsonObjectAddChild(&jsonEntity, &jsonType);
         
         // Save Graphic Component
         {
@@ -440,7 +479,6 @@ static void SaveScene(TMUIElement *element) {
                 TMJsonObjectSetValue(&jsonInput, 1.0f);
                 TMJsonObjectAddChild(&jsonEntity, &jsonInput);
             }
-
         }
 
         if(entity->animation) {
@@ -569,8 +607,23 @@ static void SaveScene(TMUIElement *element) {
     int bytesWriten = 0;
     TMJsonObjectStringify(&jsonRoot, buffer, &bytesWriten);
     printf("%s", buffer);
+
+
+    if(state->currentSceneName) {
+
+        char filepath[10000] = "../../assets/json/";
+        int headerSize = StringLength(filepath);
+        int nameSize = StringLength(state->currentSceneName);
+        assert(headerSize + nameSize < 10000);
+        memcpy(filepath + headerSize, state->currentSceneName, nameSize);
+        filepath[headerSize + nameSize] = '\0';
+        TMFileWriteText(filepath, buffer, bytesWriten);
+
+    }
+    else {
+        TMFileWriteText("../../assets/json/testScene.json", buffer, bytesWriten);
+    }
     
-    TMFileWriteText("../../assets/json/testScene.json", buffer, bytesWriten);
     free(buffer);
 
     TMJsonObjectFree(&jsonRoot);
@@ -578,6 +631,7 @@ static void SaveScene(TMUIElement *element) {
 
 void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float height, float meterToPixel) {
 
+    LoadFileNamesFromDirectory("../../assets/json", &ui->scenesNames);
     LoadFileNamesFromDirectory("../../assets/images", &ui->texturesNames);
     LoadFileNamesFromDirectory("../../assets/shaders", &ui->shadersNames);
 
@@ -648,19 +702,27 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " rem Collider ", {1, 1, 1, 1}, RemCollision, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Solid ",        {1, 1, 1, 1}, SolidCollision, state);
     
-    ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {7.5, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
+    ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {8.0, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene, state);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Scene ", {1, 1, 1, 1}, LoadScene, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture ", {1, 1, 1, 1}, LoadTexture, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader ", {1, 1, 1, 1}, LoadShader, state);
 
-    ui->loadTexture = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {2.5f, height/meterToPixel - 0.25f - 4.0f}, {2.5, 4}, {0.02f, 0.02f, 0.02f, 1.0f});
+    ui->loadScene = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {2.0f, height/meterToPixel - 0.25f - 3.5f}, {2.5, 3.5}, {0.02f, 0.02f, 0.02f, 1.0f});
+    if(ui->scenesNames) {
+        for(int i = 0; i < TMDarraySize(ui->scenesNames); ++i) {
+            TMUIElementAddChildLabel(ui->loadScene, TM_UI_ORIENTATION_VERTICAL, ui->scenesNames[i], {1, 1, 1, 1}, SelectScene, state);
+        }
+    }
+
+    ui->loadTexture = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {4.0f, height/meterToPixel - 0.25f - 4.0f}, {2.5, 4}, {0.02f, 0.02f, 0.02f, 1.0f});
     if(ui->texturesNames) {
         for(int i = 0; i < TMDarraySize(ui->texturesNames); ++i) {
             TMUIElementAddChildLabel(ui->loadTexture, TM_UI_ORIENTATION_VERTICAL, ui->texturesNames[i], {1, 1, 1, 1}, SelectTexture, state);
         }
     }
 
-    ui->loadShader = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {5.0f, height/meterToPixel - 0.25f - 4.5f}, {2.5, 4.5}, {0.02f, 0.02f, 0.02f, 1.0f});
+    ui->loadShader = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {6.0f, height/meterToPixel - 0.25f - 4.5f}, {2.5, 4.5}, {0.02f, 0.02f, 0.02f, 1.0f});
     if(ui->shadersNames) {
         for(int i = 0; i < TMDarraySize(ui->shadersNames); ++i) {
             TMUIElementAddChildLabel(ui->loadShader, TM_UI_ORIENTATION_VERTICAL, ui->shadersNames[i], {1, 1, 1, 1}, SelectShader, state);
@@ -726,6 +788,9 @@ void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height,
     if(state->loadOption == LOAD_OPTION_SHADER) {
         TMUIElementProcessInput(ui->loadShader, pos.x, pos.y, width, height, meterToPixel);
     }
+    if(state->loadOption == LOAD_OPTION_SCENE) {
+        TMUIElementProcessInput(ui->loadScene, pos.x, pos.y, width, height, meterToPixel);
+    }
 
     state->mouseIsHot = false;
     TMUIMouseIsHot(ui->options,  &state->mouseIsHot);
@@ -746,6 +811,9 @@ void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height,
     }
     if(state->loadOption == LOAD_OPTION_SHADER) {
         TMUIMouseIsHot(ui->loadShader, &state->mouseIsHot);
+    }
+    if(state->loadOption == LOAD_OPTION_SCENE) {
+        TMUIMouseIsHot(ui->loadScene, &state->mouseIsHot);
     }
 
 }
@@ -777,6 +845,9 @@ void EditorUIDraw(EditorState *state, EditorUI *ui, TMRenderer *renderer) {
     if(state->loadOption == LOAD_OPTION_SHADER) {
         TMUIElementDraw(renderer, ui->loadShader, 0.0f);
     }
+    if(state->loadOption == LOAD_OPTION_SCENE) {
+        TMUIElementDraw(renderer, ui->loadScene, 0.0f);
+    }
 
     if(!state->element && state->selectedEntity) {
         TMUIElementDraw(renderer, ui->modify, 0.0f);
@@ -798,7 +869,9 @@ void EditorUIShutdown(EditorUI *ui) {
     TMUIElementDestroy(ui->options);
     TMUIElementDestroy(ui->loadTexture);
     TMUIElementDestroy(ui->loadShader);
+    TMUIElementDestroy(ui->loadScene);
     FreeFileNames(&ui->shadersNames);
     FreeFileNames(&ui->texturesNames);
+    FreeFileNames(&ui->scenesNames);
 
 }
