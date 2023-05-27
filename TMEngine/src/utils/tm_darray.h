@@ -19,6 +19,9 @@ TM_EXPORT unsigned int TMDarraySize_(void *array);
 TM_EXPORT unsigned int TMDarrayCapacity_(void *array);
 
 
+TM_EXPORT void TMDarrayModifySize(void *array, unsigned int size);
+
+
 
 
 #endif

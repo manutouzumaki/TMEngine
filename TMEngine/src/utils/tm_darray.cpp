@@ -35,6 +35,11 @@ void *TMDarrayCreate_(void *array, unsigned int elementSize, unsigned int elemen
     }
 }
 
+void TMDarrayModifySize(void *array, unsigned int size) {
+    unsigned int *base = TM_DARRAY_RAW_DATA(array);
+    base[1] = size;
+}
+
 void TMDarrayDestroy_(void *array) {
     assert(array != NULL);
     void *rawData = TM_DARRAY_RAW_DATA(array);

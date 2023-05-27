@@ -249,384 +249,60 @@ static void SelectScene(TMUIElement *element) {
 
 }
 
-static void SaveScene(TMUIElement *element) {
+static void RecalculateEntitiesIds(Entity *entities) {
+
+    for(int i = 0; i < TMDarraySize(entities); ++i) {
+        Entity *entity = entities + i;
+        entity->id = i;
+    }
+
+}
+
+static void DeleteEntity(EditorState *state, Entity *entity) {
+
+    if(state->entities) {
+        int index = -1;
+        for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+            Entity *other = state->entities + i;
+            if(other->id = entity->id) {
+                index = i;
+            }
+        }
+        if(index >= 0) {
+            state->entities[index] = state->entities[TMDarraySize(state->entities)];
+            TMDarrayModifySize(state->entities, TMDarraySize(state->entities) - 1);
+        }
+        RecalculateEntitiesIds(state->entities);
+    }
+    
+}
+
+static void DeleteLight(EditorState *state, int light) {
+
+    LightsConstBuffer *lightsConstBuffer = &state->lightsConstBuffer;
+
+    lightsConstBuffer->lights[light] = lightsConstBuffer->lights[lightsConstBuffer->count];
+    lightsConstBuffer->count--;
+
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+
+}
+
+static void DeleteSelectedEntity(TMUIElement *element) {
     EditorState *state = (EditorState *)element->userData;
-    printf("Scene Saved\n");
 
-    TMJsonObject jsonRoot = TMJsonObjectCreate();
-    TMJsonObjectSetName(&jsonRoot, "Root");
-
-    TMJsonObject jsonLevelTextures = TMJsonObjectCreate();
-    TMJsonObjectSetName(&jsonLevelTextures, "LevelTextures");
-
-    for(int i = 0; i < TMDarraySize(state->texturesAddedNames); ++i) {
-        const char *textureName =  (const char *)state->texturesAddedNames[i];
-        TMJsonObjectSetValue(&jsonLevelTextures, textureName);
-    
-    }
-    TMJsonObjectAddChild(&jsonRoot, &jsonLevelTextures);
-
-    TMJsonObject jsonLevelAmbient = TMJsonObjectCreate();
-    TMJsonObjectSetName(&jsonLevelAmbient, "LevelAmbient");
-    TMJsonObjectSetValue(&jsonLevelAmbient, state->lightsConstBuffer.ambient.x);
-    TMJsonObjectSetValue(&jsonLevelAmbient, state->lightsConstBuffer.ambient.y);
-    TMJsonObjectSetValue(&jsonLevelAmbient, state->lightsConstBuffer.ambient.z);
-    TMJsonObjectAddChild(&jsonRoot, &jsonLevelAmbient);
-
-    TMJsonObject jsonLevelLights = TMJsonObjectCreate();
-    TMJsonObjectSetName(&jsonLevelLights, "LevelLights");
-    for(int i = 0; i < state->lightsConstBuffer.count; ++i) {
-
-        PointLight *light = state->lightsConstBuffer.lights + i;
-
-        TMJsonObject jsonPosition = TMJsonObjectCreate();
-        TMJsonObjectSetName(&jsonPosition, "Position");
-        TMJsonObjectSetValue(&jsonPosition, light->position.x);
-        TMJsonObjectSetValue(&jsonPosition, light->position.y);
-
-        TMJsonObject jsonColor = TMJsonObjectCreate();
-        TMJsonObjectSetName(&jsonColor, "Color");
-        TMJsonObjectSetValue(&jsonColor, light->color.x);
-        TMJsonObjectSetValue(&jsonColor, light->color.y);
-        TMJsonObjectSetValue(&jsonColor, light->color.z);
-
-        TMJsonObject jsonAttrib = TMJsonObjectCreate();
-        TMJsonObjectSetName(&jsonAttrib, "Attributes");
-        TMJsonObjectSetValue(&jsonAttrib, light->attributes.x);
-        TMJsonObjectSetValue(&jsonAttrib, light->attributes.y);
-        TMJsonObjectSetValue(&jsonAttrib, light->attributes.z);
-
-        TMJsonObject jsonRange = TMJsonObjectCreate();
-        TMJsonObjectSetName(&jsonRange, "Range");
-        TMJsonObjectSetValue(&jsonRange, light->range);
-
-        TMJsonObject jsonLight = TMJsonObjectCreate();
-        TMJsonObjectSetName(&jsonLight, "Light");
-        TMJsonObjectAddChild(&jsonLight, &jsonPosition);
-        TMJsonObjectAddChild(&jsonLight, &jsonColor);
-        TMJsonObjectAddChild(&jsonLight, &jsonAttrib);
-        TMJsonObjectAddChild(&jsonLight, &jsonRange); 
-
-        TMJsonObjectAddChild(&jsonLevelLights, &jsonLight); 
-    }
-    TMJsonObjectAddChild(&jsonRoot, &jsonLevelLights);
-
-
-    TMJsonObject jsonScene = TMJsonObjectCreate();
-    TMJsonObjectSetName(&jsonScene, "Scene");
-
-    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
-        Entity *entity = state->entities + i;
-
-        TMJsonObject jsonEntity = TMJsonObjectCreate();
-        TMJsonObjectSetName(&jsonEntity, "Entity");
-
-        TMJsonObject jsonType = TMJsonObjectCreate();
-        TMJsonObjectSetName(&jsonType, "PrefabType");
-        TMJsonObjectSetValue(&jsonType, (float)entity->prefabType);
-        TMJsonObjectAddChild(&jsonEntity, &jsonType);
-        
-        // Save Graphic Component
-        {
-            TMJsonObject jsonGraphic = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonGraphic, "Graphics");
-
-            // graphics type
-            TMJsonObject jsonType = TMJsonObjectCreate();
-
-            TMJsonObjectSetName(&jsonType, "Type");
-            if(entity->shader == state->colorShader) {
-                TMJsonObjectSetValue(&jsonType, 0.0f);
-            }
-            else if(entity->shader == state->spriteShader) {
-                TMJsonObjectSetValue(&jsonType, 1.0f);
-            }
-
-            // position
-            TMJsonObject jsonPosition = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonPosition, "Position");
-            TMJsonObject xPos = TMJsonObjectCreate();
-            TMJsonObjectSetName(&xPos, "X");
-            TMJsonObjectSetValue(&xPos, entity->position.x);
-            TMJsonObject yPos = TMJsonObjectCreate();
-            TMJsonObjectSetName(&yPos, "Y");
-            TMJsonObjectSetValue(&yPos, entity->position.y);
-            TMJsonObjectAddChild(&jsonPosition, &xPos);
-            TMJsonObjectAddChild(&jsonPosition, &yPos);
-
-            // size
-            TMJsonObject jsonSize = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonSize, "Size");
-            TMJsonObject xSiz = TMJsonObjectCreate();
-            TMJsonObjectSetName(&xSiz, "X");
-            TMJsonObjectSetValue(&xSiz, entity->size.x);
-            TMJsonObject ySiz = TMJsonObjectCreate();
-            TMJsonObjectSetName(&ySiz, "Y");
-            TMJsonObjectSetValue(&ySiz, entity->size.y);
-            TMJsonObjectAddChild(&jsonSize, &xSiz);
-            TMJsonObjectAddChild(&jsonSize, &ySiz);
-
-            // color
-            TMJsonObject jsonColor = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonColor, "Color");
-            TMJsonObject r = TMJsonObjectCreate();
-            TMJsonObjectSetName(&r, "R");
-            TMJsonObjectSetValue(&r, entity->color.x);
-            TMJsonObject g = TMJsonObjectCreate();
-            TMJsonObjectSetName(&g, "G");
-            TMJsonObjectSetValue(&g, entity->color.y);
-            TMJsonObject b = TMJsonObjectCreate();
-            TMJsonObjectSetName(&b, "B");
-            TMJsonObjectSetValue(&b, entity->color.z);
-            TMJsonObject a = TMJsonObjectCreate();
-            TMJsonObjectSetName(&a, "A");
-            TMJsonObjectSetValue(&a, entity->color.w);
-            TMJsonObjectAddChild(&jsonColor, &r);
-            TMJsonObjectAddChild(&jsonColor, &g);
-            TMJsonObjectAddChild(&jsonColor, &b);
-            TMJsonObjectAddChild(&jsonColor, &a);
-            
-            // Texture
-            TMJsonObject jsonAbsUVs = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonAbsUVs, "AbsUvs");
-            TMJsonObjectSetValue(&jsonAbsUVs, entity->absUVs[0]);
-            TMJsonObjectSetValue(&jsonAbsUVs, entity->absUVs[1]);
-            TMJsonObjectSetValue(&jsonAbsUVs, entity->absUVs[2]);
-            TMJsonObjectSetValue(&jsonAbsUVs, entity->absUVs[3]);
-            TMJsonObject jsonRelUVs = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonRelUVs, "RelUvs");
-            TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[0]);
-            TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[1]);
-            TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[2]);
-            TMJsonObjectSetValue(&jsonRelUVs, entity->relUVs[3]);
-
-            TMJsonObject jsonZIndex = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonZIndex, "ZIndex");
-            TMJsonObjectSetValue(&jsonZIndex, entity->zIndex);
-
-            TMJsonObject jsonTextureIndex = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonTextureIndex, "TextureIndex");
-            TMJsonObjectSetValue(&jsonTextureIndex, entity->textureIndex);
-
-            TMJsonObjectAddChild(&jsonGraphic, &jsonType);
-            TMJsonObjectAddChild(&jsonGraphic, &jsonPosition);
-            TMJsonObjectAddChild(&jsonGraphic, &jsonSize);
-            TMJsonObjectAddChild(&jsonGraphic, &jsonColor);
-            TMJsonObjectAddChild(&jsonGraphic, &jsonAbsUVs);
-            TMJsonObjectAddChild(&jsonGraphic, &jsonRelUVs);
-            TMJsonObjectAddChild(&jsonGraphic, &jsonZIndex);
-            TMJsonObjectAddChild(&jsonGraphic, &jsonTextureIndex);
-        
-            TMJsonObjectAddChild(&jsonEntity, &jsonGraphic);
-
-        }
-        if(entity->prefabType != PREFAB_TYPE_NONE) {
-        
-            // add Physics Component
-            {
-                TMJsonObject jsonPhysics = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonPhysics, "Physics");
-
-                // position
-                TMJsonObject jsonPosition = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonPosition, "Position");
-                TMJsonObject xPos = TMJsonObjectCreate();
-                TMJsonObjectSetName(&xPos, "X");
-                TMJsonObjectSetValue(&xPos, entity->position.x);
-                TMJsonObject yPos = TMJsonObjectCreate();
-                TMJsonObjectSetName(&yPos, "Y");
-                TMJsonObjectSetValue(&yPos, entity->position.y);
-                TMJsonObjectAddChild(&jsonPosition, &xPos);
-                TMJsonObjectAddChild(&jsonPosition, &yPos);
-
-                TMJsonObject jsonVelocity = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonVelocity, "Velocity");
-                TMJsonObject xVel = TMJsonObjectCreate();
-                TMJsonObjectSetName(&xVel, "X");
-                TMJsonObjectSetValue(&xVel, 0.0f);
-                TMJsonObject yVel = TMJsonObjectCreate();
-                TMJsonObjectSetName(&yVel, "Y");
-                TMJsonObjectSetValue(&yVel, 0.0f);
-                TMJsonObjectAddChild(&jsonVelocity, &xVel);
-                TMJsonObjectAddChild(&jsonVelocity, &yVel);
-
-                TMJsonObject jsonAccel = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonAccel, "Acceleration");
-                TMJsonObject xAcc = TMJsonObjectCreate();
-                TMJsonObjectSetName(&xAcc, "X");
-                TMJsonObjectSetValue(&xAcc, 0.0f);
-                TMJsonObject yAcc = TMJsonObjectCreate();
-                TMJsonObjectSetName(&yAcc, "Y");
-                TMJsonObjectSetValue(&yAcc, 0.0f);
-                TMJsonObjectAddChild(&jsonAccel, &xAcc);
-                TMJsonObjectAddChild(&jsonAccel, &yAcc);
-
-                TMJsonObject jsonDamping = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonDamping, "Damping");
-                TMJsonObjectSetValue(&jsonDamping, 0.01f);
-
-                TMJsonObjectAddChild(&jsonPhysics, &jsonPosition);
-                TMJsonObjectAddChild(&jsonPhysics, &jsonVelocity);
-                TMJsonObjectAddChild(&jsonPhysics, &jsonAccel);
-                TMJsonObjectAddChild(&jsonPhysics, &jsonDamping);
-
-                TMJsonObjectAddChild(&jsonEntity, &jsonPhysics);
-            }
-
-            if(entity->prefabType == PREFAB_TYPE_PLAYER) {
-                TMJsonObject jsonInput = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonInput, "Input");
-                TMJsonObjectSetValue(&jsonInput, 1.0f);
-                TMJsonObjectAddChild(&jsonEntity, &jsonInput);
-            }
-        }
-
-        if(entity->animation) {
-
-            TMJsonObject jsonAnimation = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonAnimation, "Animation");
-
-            TMJsonObject statesCount = TMJsonObjectCreate();
-            TMJsonObjectSetName(&statesCount, "AnimationStatesCount");
-            TMJsonObjectSetValue(&statesCount, (float)entity->animation->statesCount);
-
-            TMJsonObjectAddChild(&jsonAnimation, &statesCount);
-
-            TMJsonObject animationIndex = TMJsonObjectCreate();
-            TMJsonObjectSetName(&animationIndex, "AnimationIndex");
-            TMJsonObjectSetValue(&animationIndex, (float)entity->animation->index);
-
-            TMJsonObjectAddChild(&jsonAnimation, &animationIndex);
-
-            for(int i = 0; i < entity->animation->statesCount; ++i) {
-                TMJsonObject jsonAnimState = TMJsonObjectCreate();
-                TMJsonObjectSetName(&jsonAnimState, "AnimationState");
-
-                TMJsonObject frameCount = TMJsonObjectCreate();
-                TMJsonObjectSetName(&frameCount, "FrameCount");
-                TMJsonObjectSetValue(&frameCount, (float)entity->animation->states[i].frameCount);
-
-                TMJsonObject frames = TMJsonObjectCreate();
-                TMJsonObjectSetName(&frames, "Frames");
-                for(int j = 0; j < entity->animation->states[i].frameCount; ++j) {
-                    TMJsonObjectSetValue(&frames, (float)entity->animation->states[i].frames[j]);
-                }
-
-                TMJsonObject speed = TMJsonObjectCreate();
-                TMJsonObjectSetName(&speed, "Speed");
-                TMJsonObjectSetValue(&speed, (float)entity->animation->states[i].speed);
-
-                TMJsonObjectAddChild(&jsonAnimState, &frameCount);
-                TMJsonObjectAddChild(&jsonAnimState, &frames);
-                TMJsonObjectAddChild(&jsonAnimState, &speed);
-
-                TMJsonObjectAddChild(&jsonAnimation, &jsonAnimState);
-            } 
-
-            TMJsonObjectAddChild(&jsonEntity, &jsonAnimation);
-        }
-
-        if(entity->collision) {
-            TMJsonObject jsonCollision = TMJsonObjectCreate();
-            TMJsonObjectSetName(&jsonCollision, "Collision");
-
-            TMJsonObject solid = TMJsonObjectCreate();
-            TMJsonObjectSetName(&solid, "Solid");
-            TMJsonObjectSetValue(&solid, (float)((int)entity->collision->solid));
-
-            TMJsonObjectAddChild(&jsonCollision, &solid);
-
-            switch(entity->collision->type) {
-            
-                case COLLISION_TYPE_AABB: {
-                    TMJsonObject aabb = TMJsonObjectCreate();
-                    TMJsonObjectSetName(&aabb, "AABB");
-
-                    TMJsonObject min = TMJsonObjectCreate();
-                    TMJsonObjectSetName(&min, "Min");
-                    TMJsonObjectSetValue(&min, entity->collision->aabb.min.x);
-                    TMJsonObjectSetValue(&min, entity->collision->aabb.min.y);
-
-                    TMJsonObject max = TMJsonObjectCreate();
-                    TMJsonObjectSetName(&max, "Max");
-                    TMJsonObjectSetValue(&max, entity->collision->aabb.max.x);
-                    TMJsonObjectSetValue(&max, entity->collision->aabb.max.y);
-
-                    TMJsonObjectAddChild(&aabb, &min);
-                    TMJsonObjectAddChild(&aabb, &max);
-
-                    TMJsonObjectAddChild(&jsonCollision, &aabb);
-                    
-                } break;
-                case COLLISION_TYPE_CIRCLE: {
-                    // TODO: ...
-
-                } break;
-                case COLLISION_TYPE_CAPSULE: {
-                    TMJsonObject capsule = TMJsonObjectCreate();
-                    TMJsonObjectSetName(&capsule, "Capsule");
-
-                    TMJsonObject a = TMJsonObjectCreate();
-                    TMJsonObjectSetName(&a, "A");
-                    TMJsonObjectSetValue(&a, entity->collision->capsule.a.x);
-                    TMJsonObjectSetValue(&a, entity->collision->capsule.a.y);
-
-                    TMJsonObject b = TMJsonObjectCreate();
-                    TMJsonObjectSetName(&b, "B");
-                    TMJsonObjectSetValue(&b, entity->collision->capsule.b.x);
-                    TMJsonObjectSetValue(&b, entity->collision->capsule.b.y);
-
-                    TMJsonObject r = TMJsonObjectCreate();
-                    TMJsonObjectSetName(&r, "Radio");
-                    TMJsonObjectSetValue(&r, entity->collision->capsule.r);
-
-                    TMJsonObjectAddChild(&capsule, &a);
-                    TMJsonObjectAddChild(&capsule, &b);
-                    TMJsonObjectAddChild(&capsule, &r);
-
-                    TMJsonObjectAddChild(&jsonCollision, &capsule);
-
-                } break;
-
-            }
- 
-            TMJsonObjectAddChild(&jsonEntity, &jsonCollision);
-
-        }
-
-        TMJsonObjectAddChild(&jsonScene, &jsonEntity);
-
+    // Delete entity
+    if(state->selectedEntity) {
+        DeleteEntity(state, state->selectedEntity);
+        state->selectedEntity = NULL;
     }
 
-    TMJsonObjectAddChild(&jsonRoot, &jsonScene);
-
-    int bytesCount = 0;
-    TMJsonObjectStringify(&jsonRoot, NULL, &bytesCount);
-    
-    char *buffer = (char *)malloc(bytesCount + 1);
-    int bytesWriten = 0;
-    TMJsonObjectStringify(&jsonRoot, buffer, &bytesWriten);
-    printf("%s", buffer);
-
-
-    if(state->currentSceneName) {
-
-        char filepath[10000] = "../../assets/json/";
-        int headerSize = StringLength(filepath);
-        int nameSize = StringLength(state->currentSceneName);
-        assert(headerSize + nameSize < 10000);
-        memcpy(filepath + headerSize, state->currentSceneName, nameSize);
-        filepath[headerSize + nameSize] = '\0';
-        TMFileWriteText(filepath, buffer, bytesWriten);
-
+    // Delete light
+    if(state->lightSelected >= 0) {
+        DeleteLight(state, state->lightSelected);
+        state->lightSelected = -1;
     }
-    else {
-        TMFileWriteText("../../assets/json/testScene.json", buffer, bytesWriten);
-    }
-    
-    free(buffer);
 
-    TMJsonObjectFree(&jsonRoot);
 }
 
 void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float height, float meterToPixel) {
@@ -702,11 +378,12 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " rem Collider ", {1, 1, 1, 1}, RemCollision, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Solid ",        {1, 1, 1, 1}, SolidCollision, state);
     
-    ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {8.0, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
+    ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {10.0, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Scene ", {1, 1, 1, 1}, LoadScene, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture ", {1, 1, 1, 1}, LoadTexture, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader ", {1, 1, 1, 1}, LoadShader, state);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Delete Entity ", {1, 1, 1, 1}, DeleteSelectedEntity, state);
 
     ui->loadScene = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {2.0f, height/meterToPixel - 0.25f - 3.5f}, {2.5, 3.5}, {0.02f, 0.02f, 0.02f, 1.0f});
     if(ui->scenesNames) {
