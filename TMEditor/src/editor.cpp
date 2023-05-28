@@ -128,6 +128,34 @@ static void AddPlayerEntity(EditorState *state, float posX, float posY) {
 static void AddEnemyEntity(EditorState *state, float posX, float posY) {
     printf("Enemy added\n");
 
+    Entity entity = {};
+    entity.color = {1, 1, 1, 1};
+    entity.absUVs = {0, 0, 1, 1};
+    entity.relUVs = {0, 0, 0.25, 0.5};
+    entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
+    entity.size = {1.2, 1.2};
+    entity.texture = gPlayerTexture;
+    entity.textureIndex = -1;
+    entity.shader = state->spriteShader;
+    entity.zIndex = 2;
+    entity.id = state->entities ? TMDarraySize(state->entities) : 0;
+    entity.prefabType = PREFAB_TYPE_ENEMY;
+
+    entity.collision = (Collision *)malloc(sizeof(Collision));
+
+    TMVec2 offset = {0, entity.size.y * 0.15f};
+
+    Capsule capsule;
+    capsule.r = entity.size.x*0.35f;
+    capsule.a = entity.position + offset;
+    capsule.b = entity.position - offset;
+
+    entity.collision->capsule = capsule;
+    entity.collision->type = COLLISION_TYPE_CAPSULE;
+    entity.collision->solid = true;
+
+    TMDarrayPush(state->entities, entity, Entity);
+
 }
 
 static void AddEntity(EditorState *state, float posX, float posY) {
@@ -559,7 +587,8 @@ void EditorRender(EditorState *state) {
     TMRendererDepthTestEnable(state->renderer);
 
     if(state->entities) {
-        for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+        int entityCount = TMDarraySize(state->entities);
+        for(int i = 0; i < entityCount; ++i) {
             Entity *entity = state->entities + i;
             TMRendererBindShader(state->renderer, entity->shader);
             if(entity->texture) TMRendererTextureBind(state->renderer, entity->texture, entity->shader, "uTexture", 0);

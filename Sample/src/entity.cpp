@@ -14,6 +14,7 @@ static TMMemoryPool *physicsComponentMem;
 static TMMemoryPool *inputComponentMem;
 static TMMemoryPool *collisionComponentMem;
 static TMMemoryPool *animationComponentMem;
+static TMMemoryPool *enemyMovementComponentMem;
 
 
 void EntitySystemInitialize(int maxEntityCount) {
@@ -24,6 +25,7 @@ void EntitySystemInitialize(int maxEntityCount) {
     inputComponentMem = TMMemoryPoolCreate(sizeof(InputComponent), maxEntityCount);
     collisionComponentMem = TMMemoryPoolCreate(sizeof(CollisionComponent), maxEntityCount);
     animationComponentMem = TMMemoryPoolCreate(sizeof(AnimationComponet), maxEntityCount);
+    enemyMovementComponentMem = TMMemoryPoolCreate(sizeof(EnemyMovementComponent), maxEntityCount);
 }
 
 void EntitySystemShutdown() {
@@ -33,6 +35,7 @@ void EntitySystemShutdown() {
     TMMemoryPoolDestroy(inputComponentMem);
     TMMemoryPoolDestroy(collisionComponentMem);
     TMMemoryPoolDestroy(animationComponentMem);
+    TMMemoryPoolDestroy(enemyMovementComponentMem);
 
 }
 
@@ -43,15 +46,13 @@ Entity *EntityCreate() {
     return entity;
 }
 
-void EntityAddGraphicsComponent(Entity *entity, GraphicsComponentType type,
-                                TMVec2 position, TMVec2 size, TMVec4 color,
+void EntityAddGraphicsComponent(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color,
                                 TMVec4 absUVs, TMVec4 relUVs, int zIndex, TMShader *shader, TMTexture *texture) {
 
     assert(entity->graphics == NULL);
     entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
     memset(entity->graphics, 0, sizeof(GraphicsComponent));
 
-    entity->graphics->type = type;
     entity->graphics->shader = shader;
     entity->graphics->relUVs = relUVs;
     entity->graphics->absUVs = absUVs;
@@ -63,48 +64,6 @@ void EntityAddGraphicsComponent(Entity *entity, GraphicsComponentType type,
     entity->graphics->texture = texture;
 
 }
-
-void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color, TMShader *shader) {
-    assert(entity->graphics == NULL);
-    entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
-    memset(entity->graphics, 0, sizeof(GraphicsComponent));
-    entity->graphics->type = GRAPHICS_TYPE_SOLID_COLOR;
-    entity->graphics->position = position;
-    entity->graphics->size = size;
-    entity->graphics->color = color;
-    entity->graphics->shader = shader;
-    entity->graphics->texture = 0;
-}
-
-#if 0
-void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, float *uvs, TMShader *shader) {
-    assert(entity->graphics == NULL);
-    entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
-    memset(entity->graphics, 0, sizeof(GraphicsComponent));
-    entity->graphics->type = GRAPHICS_TYPE_SPRITE;
-    entity->graphics->position = position;
-    entity->graphics->size = size;
-    entity->graphics->absUVs = {0, 0, 1, 1};
-    entity->graphics->relUVs = uvs;
-    entity->graphics->shader = shader;
-    entity->graphics->color = {1, 1, 1, 1};
-}
-
-void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size,
-                                         TMVec4 absUVs, int index, float *uvs, TMShader *shader) {
-    assert(entity->graphics == NULL);
-    entity->graphics = (GraphicsComponent *)TMMemoryPoolAlloc(graphicsComponenMem);
-    memset(entity->graphics, 0, sizeof(GraphicsComponent));
-    entity->graphics->type = GRAPHICS_TYPE_SUBSPRITE;
-    entity->graphics->position = position;
-    entity->graphics->size = size;
-    entity->graphics->absUVs = absUVs;
-    entity->graphics->relUVs = uvs;
-    entity->graphics->index = index;
-    entity->graphics->shader = shader;
-    entity->graphics->color = {1, 1, 1, 1};
-}
-#endif
 
 void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity, TMVec2 acceleration, float damping) {
     assert(entity->physics == NULL);
@@ -162,11 +121,44 @@ void EntityAddAnimationComponet(Entity *entity) {
     
 }
 
+void EntityAddEnemyMovementComponent(Entity *entity,
+                                     CollisionComponent *collision, PhysicsComponent *physics) {
+    assert(entity->enemyMovement == NULL);
+    entity->enemyMovement = (EnemyMovementComponent *)TMMemoryPoolAlloc(enemyMovementComponentMem);
+
+    float width = 0;
+
+    switch(collision->type) {
+        case COLLISION_TYPE_AABB: {
+            width = collision->aabb.max.x - collision->aabb.min.x;
+        } break;
+        case COLLISION_TYPE_CAPSULE: {
+            width = collision->capsule.r*2.0f;
+        } break;
+        case COLLISION_TYPE_CIRCLE: {
+            width = collision->circle.r*2.0f;
+        } break;
+
+    }
+    entity->enemyMovement->facingLeft = false;
+    entity->enemyMovement->downLeft  = physics->down;
+    entity->enemyMovement->downLeft.o.x -= width * 0.5f;
+
+    entity->enemyMovement->downRight = physics->down;
+    entity->enemyMovement->downRight.o.x += width * 0.5f;
+
+    entity->enemyMovement->left  = {physics->down.o, {(-width*0.5f)-0.08f, 0}}; 
+    entity->enemyMovement->right = {physics->down.o, { (width*0.5f)+0.08f, 0}};
+}
+
 void EntityDestroy(Entity *entity) {
     if(entity->graphics) TMMemoryPoolFree(graphicsComponenMem, (void *)entity->graphics);
     if(entity->physics) TMMemoryPoolFree(physicsComponentMem, (void *)entity->physics);
     if(entity->input) TMMemoryPoolFree(inputComponentMem, (void *)entity->input);
     if(entity->collision) TMMemoryPoolFree(collisionComponentMem, (void *)entity->collision);
+    if(entity->animation) TMMemoryPoolFree(animationComponentMem, (void *)entity->animation);
+    if(entity->enemyMovement) TMMemoryPoolFree(enemyMovementComponentMem, (void *)entity->enemyMovement);
+
     TMMemoryPoolFree(entityMem, (void *)entity);
     memset(entity, 0, sizeof(Entity));
 }

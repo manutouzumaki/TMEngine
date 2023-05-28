@@ -12,18 +12,14 @@
 ###################################################################################################################################
 ### GAME: 
 ###################################################################################################################################
-### - try to use the batch renderer to render a complex scene with diferent textures shaders and lights
 ### - NOTE: change component storage to slotmaps for linear processing
 ### - implemet a minimal level base platformer (design the game loop for levels and menus from the start)
 ### -
 ### -
 ### -
-### - HANDLE FOR NOW BUT NEED TO BE REVISITED: change the scale to not be using pixel units, use customs units instead
-### - HANDLE FOR NOW BUT NEED TO BE REVISITED: fix proj matrix to have top-down instead of center projection !!!
 ###################################################################################################################################
 ### tmLibs: 
 ###################################################################################################################################
-### - IMPORTANT: add Texture Atlas to Macos engine
 ### - IMPORTANT: update macos engine, to be featured complete
 ### - Add Joystick handle to macos engine implementation
 ### - add sound system

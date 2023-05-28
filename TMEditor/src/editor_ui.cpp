@@ -258,21 +258,33 @@ static void RecalculateEntitiesIds(Entity *entities) {
 
 }
 
+// TODO: fix this
 static void DeleteEntity(EditorState *state, Entity *entity) {
 
     if(state->entities) {
-        int index = -1;
-        for(int i = 0; i < TMDarraySize(state->entities); ++i) {
-            Entity *other = state->entities + i;
-            if(other->id = entity->id) {
-                index = i;
+        if(TMDarraySize(state->entities) > 0) {
+            int index = -1;
+            for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+                Entity *other = state->entities + i;
+                if(other->id == entity->id) {
+                    index = i;
+                }
+            }
+            if(index >= 0) {
+                Entity *entityToDelete = &state->entities[index];
+                if(entityToDelete->collision) free(entityToDelete->collision);
+                if(entityToDelete->animation) free(entityToDelete->animation);
+                state->entities[index] = state->entities[TMDarraySize(state->entities) - 1];
+                TMDarrayModifySize(state->entities, TMDarraySize(state->entities) - 1);
+                printf("entities count: %d\n", TMDarraySize(state->entities));
+                if(TMDarraySize(state->entities) > 0) {
+                    RecalculateEntitiesIds(state->entities);
+                }
+                else {
+                    state->entities = NULL;
+                }
             }
         }
-        if(index >= 0) {
-            state->entities[index] = state->entities[TMDarraySize(state->entities)];
-            TMDarrayModifySize(state->entities, TMDarraySize(state->entities) - 1);
-        }
-        RecalculateEntitiesIds(state->entities);
     }
     
 }
@@ -281,10 +293,11 @@ static void DeleteLight(EditorState *state, int light) {
 
     LightsConstBuffer *lightsConstBuffer = &state->lightsConstBuffer;
 
-    lightsConstBuffer->lights[light] = lightsConstBuffer->lights[lightsConstBuffer->count];
-    lightsConstBuffer->count--;
-
-    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+    if(lightsConstBuffer->count > 0) {
+        lightsConstBuffer->lights[light] = lightsConstBuffer->lights[lightsConstBuffer->count - 1];
+        lightsConstBuffer->count--;
+        TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+    }
 
 }
 
@@ -344,14 +357,9 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
         TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0, 0.1f + 0.1f*(float)i, 1}, ElementSelected, state);
     }
 
-    ui->prefabs = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.4f, 0.1f, 0.1f, 1});
-    TMUIElementAddChildButton(ui->prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
-    TMUIElementAddChildButton(ui->prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
-    TMUIElementAddChildButton(ui->prefabs, TM_UI_ORIENTATION_HORIZONTAL, {0.2, 0.2, 0.2, 1});
-    child = TMUIElementGetChild(ui->prefabs, 0);
-    TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0, 0.5f, 0.5f, 1}, EnemyPrefabSelected, state);
-    child = TMUIElementGetChild(ui->prefabs, 1);
-    TMUIElementAddChildButton(child, TM_UI_ORIENTATION_VERTICAL, {0.5f, 0.5f, 0, 1}, PlayerPrefabSelected, state);
+    ui->prefabs = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.1f, 0.1f, 1});
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Enemy Prefab ", {1, 1, 1, 1}, EnemyPrefabSelected, state);
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL, " Player Prefab ", {1, 1, 1, 1}, PlayerPrefabSelected, state);
 
     ui->modify = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {8.0, 0}, {4.8, 2}, {0.1f, 0.1f, 0.1f, 1});
     TMUIElementAddChildLabel(ui->modify, TM_UI_ORIENTATION_VERTICAL,   " Scale ", {1, 1, 1, 1}, ScaleEntity, state);

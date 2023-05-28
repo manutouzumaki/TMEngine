@@ -8,6 +8,7 @@
 #include "systems/collision_sys.h"
 #include "systems/graphics_sys.h"
 #include "systems/animation_sys.h"
+#include "systems/enemy_sys.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -71,7 +72,6 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
 
     LoadSceneFromFile(state, "../../assets/json/level1.json");
-
 }
 
 void GameUpdate(GameState *state, float dt) {
@@ -79,6 +79,7 @@ void GameUpdate(GameState *state, float dt) {
     MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_CLEAR_FORCES, (void *)state->entities, {});
     InputSystemUpdate(state->entities, dt); 
     AnimationSystemUpdate(state->entities, dt);
+    EnemySystemUpdate(state->entities);
     PhysicSystemUpdate(state->entities, dt);
 }
 

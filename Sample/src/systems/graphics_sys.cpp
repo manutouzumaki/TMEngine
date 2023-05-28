@@ -263,6 +263,29 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
                                     physics->down.o.y + physics->down.d.y,
                                     0xFF00FF00);
         }
+
+
+        if(entity->enemyMovement) {
+            EnemyMovementComponent *enemyMovement = entity->enemyMovement;
+            TMDebugRendererDrawLine(enemyMovement->downLeft.o.x,  enemyMovement->downLeft.o.y,
+                                    enemyMovement->downLeft.o.x + enemyMovement->downLeft.d.x,
+                                    enemyMovement->downLeft.o.y + enemyMovement->downLeft.d.y,
+                                    0xFFFF00FF);
+            TMDebugRendererDrawLine(enemyMovement->downRight.o.x,  enemyMovement->downRight.o.y,
+                                    enemyMovement->downRight.o.x + enemyMovement->downRight.d.x,
+                                    enemyMovement->downRight.o.y + enemyMovement->downRight.d.y,
+                                    0xFFFF00FF);
+
+            TMDebugRendererDrawLine(enemyMovement->left.o.x,   enemyMovement->left.o.y,
+                                    enemyMovement->left.o.x +  enemyMovement->left.d.x,
+                                    enemyMovement->left.o.y +  enemyMovement->left.d.y,
+                                    0xFFFF00FF);
+            TMDebugRendererDrawLine(enemyMovement->right.o.x,  enemyMovement->right.o.y,
+                                    enemyMovement->right.o.x + enemyMovement->right.d.x,
+                                    enemyMovement->right.o.y + enemyMovement->right.d.y,
+                                    0xFFFF00FF);
+        }
+
     }
     TMDebugRenderDraw();
 #endif

@@ -73,10 +73,6 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameS
     TMVec2 size = {xSiz, ySiz};
 
     int zIndex = StringToInt(jsonZIndex->values[0].value, jsonZIndex->values[0].size); 
-    int textureIndex = StringToInt(jsonTextureIndex->values[0].value, jsonTextureIndex->values[0].size); 
-
-    GraphicsComponentType type = (GraphicsComponentType)StringToInt(jsonType->values[0].value,
-                                                                    jsonType->values[0].size);
 
     float r = StringToFloat(jsonColor->childs[0].values[0].value, jsonColor->childs[0].values[0].size);
     float g = StringToFloat(jsonColor->childs[1].values[0].value, jsonColor->childs[1].values[0].size);
@@ -96,14 +92,16 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameS
     float relW = StringToFloat(jsonRelUVs->values[3].value, jsonRelUVs->values[3].size);
     TMVec4 relUvs = {relX, relY, relZ, relW};
 
-    TMShader *shader = (type == GRAPHICS_TYPE_SOLID_COLOR) ? state->colorShader : state->spriteShader;
+    int type = StringToInt(jsonType->values[0].value, jsonType->values[0].size);
+    TMShader *shader = (type == 0) ? state->colorShader : state->spriteShader;
 
     TMTexture *texture = NULL;
+    int textureIndex = StringToInt(jsonTextureIndex->values[0].value, jsonTextureIndex->values[0].size); 
     if(textureIndex >= 0) {
         texture = state->levelTextures[textureIndex];
     }
 
-    EntityAddGraphicsComponent(entity, type, position, size, color,
+    EntityAddGraphicsComponent(entity, position, size, color,
                                absUvs, relUvs, zIndex, shader, texture);
 }
 
@@ -241,6 +239,12 @@ void EntityAddInputCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameSta
 
 }
 
+void EntityAddEnemyMovementComponent(Entity *entity, TMJsonObject *jsonObject) {
+
+    EntityAddEnemyMovementComponent(entity, entity->collision, entity->physics);
+
+}
+
 void LoadSceneFromFile(GameState *state, const char *filepath) {
 
     TMJson *jsonFile = TMJsonOpen(filepath);
@@ -309,11 +313,12 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
 
         TMJsonObject *jsonEntity = jsonScene->childs + i;
 
-        TMJsonObject *jsonGraphic   = TMJsonFindChildByName(jsonEntity, "Graphics");
-        TMJsonObject *jsonPhysics   = TMJsonFindChildByName(jsonEntity, "Physics");
-        TMJsonObject *jsonCollision = TMJsonFindChildByName(jsonEntity, "Collision");
-        TMJsonObject *jsonAnimation = TMJsonFindChildByName(jsonEntity, "Animation");
-        TMJsonObject *jsonInput     = TMJsonFindChildByName(jsonEntity, "Input");
+        TMJsonObject *jsonGraphic       = TMJsonFindChildByName(jsonEntity, "Graphics");
+        TMJsonObject *jsonPhysics       = TMJsonFindChildByName(jsonEntity, "Physics");
+        TMJsonObject *jsonCollision     = TMJsonFindChildByName(jsonEntity, "Collision");
+        TMJsonObject *jsonAnimation     = TMJsonFindChildByName(jsonEntity, "Animation");
+        TMJsonObject *jsonInput         = TMJsonFindChildByName(jsonEntity, "Input");
+        TMJsonObject *jsonEnemyMovement = TMJsonFindChildByName(jsonEntity, "EnemyMovement");
 
         Entity *entity = EntityCreate();
 
@@ -322,6 +327,7 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
         if(jsonCollision) EntityAddCollisionCmpFromJson(entity, jsonCollision);
         if(jsonAnimation) EntityAddAnimationCmpFromJson(entity, jsonAnimation);
         if(jsonInput) EntityAddInputCmpFromJson(entity, jsonInput, state);
+        if(jsonEnemyMovement) EntityAddEnemyMovementComponent(entity, jsonEnemyMovement);
 
         TMDarrayPush(state->entities, entity, Entity *);
 

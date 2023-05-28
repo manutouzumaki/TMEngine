@@ -6,13 +6,6 @@
 #include <stdlib.h>
 #include "collision.h"
 
-
-enum GraphicsComponentType {
-    GRAPHICS_TYPE_SOLID_COLOR = 0,
-    GRAPHICS_TYPE_SPRITE = 1,
-    GRAPHICS_TYPE_SUBSPRITE = 2
-};
-
 struct GraphicsComponent {
 
     TMShader *shader;
@@ -28,7 +21,6 @@ struct GraphicsComponent {
     int index;
     int zIndex;  // TODO: this probably should be a float
     
-    GraphicsComponentType type;
 };
 
 struct AnimationState {
@@ -79,6 +71,14 @@ struct CollisionComponent {
     bool solid;
 };
 
+struct EnemyMovementComponent {
+    bool facingLeft;
+    Ray left;
+    Ray right;
+    Ray downLeft;
+    Ray downRight;
+};
+
 struct Entity {
     unsigned int id;
     TMVec4 uvs;
@@ -87,6 +87,7 @@ struct Entity {
     InputComponent *input;
     CollisionComponent *collision;
     AnimationComponet *animation;
+    EnemyMovementComponent *enemyMovement;
 };
 
 
@@ -97,16 +98,8 @@ Entity *EntityCreate();
 void EntityDestroy(Entity *entity);
 
 
-void EntityAddGraphicsComponent(Entity *entity, GraphicsComponentType type,
-                                TMVec2 position, TMVec2 size, TMVec4 color,
+void EntityAddGraphicsComponent(Entity *entity,TMVec2 position, TMVec2 size, TMVec4 color,
                                 TMVec4 absUVs, TMVec4 relUVs, int zIndex, TMShader *shader, TMTexture *texture);
-
-#if 0
-void EntityAddGraphicsComponentSolidColor(Entity *entity, TMVec2 position, TMVec2 size, TMVec4 color, TMShader *shader, TMTexture *texture = NULL);
-void EntityAddGraphicsComponentSprite(Entity *entity, TMVec2 position, TMVec2 size, float *uvs, TMShader *shader);
-void EntityAddGraphicsComponentSubSprite(Entity *entity, TMVec2 position, TMVec2 size,
-                                         TMVec4 absUVs, int index, float *uvs, TMShader *shader);
-#endif
 
 void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity, TMVec2 acceleration, float damping);
 void EntityAddInputComponent(Entity *entity);
@@ -117,6 +110,9 @@ void EntityAddCollisionComponent(Entity *entity, CollisionType type, Circle circ
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, Capsule capsule, bool solid = true);
 
 void EntityAddAnimationComponet(Entity *entity);
+
+
+void EntityAddEnemyMovementComponent(Entity *entity, CollisionComponent *collision, PhysicsComponent *physics);
 
 
 void InputSystemUpdate(Entity **entities, float dt);
