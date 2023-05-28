@@ -12,6 +12,9 @@
 #include <memory.h>
 #include <stdio.h>
 
+extern TMTexture *gPlayerTexture;
+extern TMTexture *gEnemyTexture;
+
 static float StringToFloat(const char *c, size_t size) {
     assert(size < 32);
     static char buffer[32];
@@ -50,7 +53,7 @@ static int StringLength(char *string) {
     return counter;
 }
 
-void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state) {
+void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state, int prefabType) {
     TMJsonObject *jsonType     = TMJsonFindChildByName(jsonObject, "Type");
     TMJsonObject *jsonPosition = TMJsonFindChildByName(jsonObject, "Position"); 
     TMJsonObject *jsonSize     = TMJsonFindChildByName(jsonObject, "Size");
@@ -96,9 +99,17 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameS
     TMShader *shader = (type == 0) ? state->colorShader : state->spriteShader;
 
     TMTexture *texture = NULL;
-    int textureIndex = StringToInt(jsonTextureIndex->values[0].value, jsonTextureIndex->values[0].size); 
-    if(textureIndex >= 0) {
-        texture = state->levelTextures[textureIndex];
+    if(prefabType == 0) {
+        int textureIndex = StringToInt(jsonTextureIndex->values[0].value, jsonTextureIndex->values[0].size); 
+        if(textureIndex >= 0) {
+            texture = state->levelTextures[textureIndex];
+        }
+    }
+    else if(prefabType == 1) {
+        texture = gPlayerTexture;
+    }
+    else if(prefabType == 2) {
+        texture = gEnemyTexture;
     }
 
     EntityAddGraphicsComponent(entity, position, size, color,
@@ -188,10 +199,6 @@ void EntityAddCollisionCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
     else if(jsonCircle) {
         // TODO: ...
     }
-    else if(jsonOBB) {
-        // TODO: ...
-    }
-
 }
 
 void EntityAddAnimationCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
@@ -313,16 +320,19 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
 
         TMJsonObject *jsonEntity = jsonScene->childs + i;
 
+        TMJsonObject *jsonPrefabType    = TMJsonFindChildByName(jsonEntity, "PrefabType");
         TMJsonObject *jsonGraphic       = TMJsonFindChildByName(jsonEntity, "Graphics");
         TMJsonObject *jsonPhysics       = TMJsonFindChildByName(jsonEntity, "Physics");
         TMJsonObject *jsonCollision     = TMJsonFindChildByName(jsonEntity, "Collision");
         TMJsonObject *jsonAnimation     = TMJsonFindChildByName(jsonEntity, "Animation");
         TMJsonObject *jsonInput         = TMJsonFindChildByName(jsonEntity, "Input");
         TMJsonObject *jsonEnemyMovement = TMJsonFindChildByName(jsonEntity, "EnemyMovement");
+ 
+        int prefabType = StringToInt(jsonPrefabType->values[0].value, jsonPrefabType->values[0].size);
 
         Entity *entity = EntityCreate();
 
-        if(jsonGraphic) EntityAddGraphicCmpFromJson(entity, jsonGraphic, state);
+        if(jsonGraphic) EntityAddGraphicCmpFromJson(entity, jsonGraphic, state, prefabType);
         if(jsonPhysics) EntityAddPhysicsCmpFromJson(entity, jsonPhysics);
         if(jsonCollision) EntityAddCollisionCmpFromJson(entity, jsonCollision);
         if(jsonAnimation) EntityAddAnimationCmpFromJson(entity, jsonAnimation);

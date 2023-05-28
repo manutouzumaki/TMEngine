@@ -24,6 +24,7 @@ static TMVertex     gVertices[] = {
 };
 
 TMTexture   *gPlayerTexture;
+TMTexture   *gEnemyTexture;
 
 ///////////////////////////////////////////////////
 
@@ -134,7 +135,7 @@ static void AddEnemyEntity(EditorState *state, float posX, float posY) {
     entity.relUVs = {0, 0, 0.25, 0.5};
     entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
     entity.size = {1.2, 1.2};
-    entity.texture = gPlayerTexture;
+    entity.texture = gEnemyTexture;
     entity.textureIndex = -1;
     entity.shader = state->spriteShader;
     entity.zIndex = 2;
@@ -306,6 +307,7 @@ void EditorInitialize(EditorState *state, TMWindow *window) {
     // Initialize texture atlas
     // TODO: make a system to add and remove textures on the fly
     gPlayerTexture = TMRendererTextureCreate(state->renderer, "../../assets/images/player.png");
+    gEnemyTexture = TMRendererTextureCreate(state->renderer, "../../assets/images/player2.png");
 
     EditorUIInitialize(state, &state->ui, (float)clientWidth, (float)clientHeight, state->meterToPixel);
 
@@ -708,6 +710,7 @@ void EditorShutdown(EditorState *state) {
 
     EditorUIShutdown(&state->ui);
     TMRendererTextureDestroy(state->renderer, gPlayerTexture);
+    TMRendererTextureDestroy(state->renderer, gEnemyTexture);
 
     TMRendererBufferDestroy(state->renderer, state->vertexBuffer);
     TMRendererShaderBufferDestroy(state->renderer, state->lightShaderBuffer);

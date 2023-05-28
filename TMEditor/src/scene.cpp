@@ -9,6 +9,9 @@
 #include <stdio.h>
 #include <string.h>
 
+extern TMTexture   *gPlayerTexture;
+extern TMTexture   *gEnemyTexture;
+
 static float StringToFloat(const char *c, size_t size) {
     assert(size < 32);
     static char buffer[32];
@@ -155,8 +158,6 @@ void LoadLights(EditorState *state, TMJsonObject *jsonLevelAmbient, TMJsonObject
 
 }
 
-extern TMTexture   *gPlayerTexture;
-
 static void EntityAddGraphic(Entity *entity, TMJsonObject *jsonObject, EditorState *state) {
 
     TMJsonObject *jsonType     = TMJsonFindChildByName(jsonObject, "Type");
@@ -183,8 +184,6 @@ static void EntityAddGraphic(Entity *entity, TMJsonObject *jsonObject, EditorSta
     int zIndex = StringToInt(jsonZIndex->values[0].value, jsonZIndex->values[0].size); 
     int textureIndex = StringToInt(jsonTextureIndex->values[0].value, jsonTextureIndex->values[0].size); 
 
-    int type = StringToInt(jsonType->values[0].value, jsonType->values[0].size);
-
     float r = StringToFloat(jsonColor->childs[0].values[0].value, jsonColor->childs[0].values[0].size);
     float g = StringToFloat(jsonColor->childs[1].values[0].value, jsonColor->childs[1].values[0].size);
     float b = StringToFloat(jsonColor->childs[2].values[0].value, jsonColor->childs[2].values[0].size);
@@ -203,6 +202,7 @@ static void EntityAddGraphic(Entity *entity, TMJsonObject *jsonObject, EditorSta
     float relW = StringToFloat(jsonRelUVs->values[3].value, jsonRelUVs->values[3].size);
     TMVec4 relUvs = {relX, relY, relZ, relW};
 
+    int type = StringToInt(jsonType->values[0].value, jsonType->values[0].size);
     TMShader *shader = type ? state->spriteShader : state->colorShader;
 
     TMTexture *texture = NULL;
@@ -210,6 +210,9 @@ static void EntityAddGraphic(Entity *entity, TMJsonObject *jsonObject, EditorSta
         texture = state->textures[textureIndex];
     }else if(entity->prefabType == PREFAB_TYPE_PLAYER) {
         texture = gPlayerTexture;
+    }
+    else if(entity->prefabType == PREFAB_TYPE_ENEMY) {
+        texture = gEnemyTexture;
     }
 
     entity->color = color;

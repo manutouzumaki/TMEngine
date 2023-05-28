@@ -49,7 +49,8 @@ static TMVertex     gVertices[] = {
         TMVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec3{0, 0, 0}}, // 2
         TMVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec3{0, 0, 0}}  // 3
 };
-static TMTexture *gPlayerTexture;
+TMTexture *gPlayerTexture;
+TMTexture *gEnemyTexture;
 static float     *gUVs[32];
 static int        gUVsCount[32];
 
@@ -118,6 +119,7 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
                                                  shader);
 
     gPlayerTexture = TMRendererTextureCreate(renderer, "../../assets/images/player.png");
+    gEnemyTexture = TMRendererTextureCreate(renderer, "../../assets/images/player2.png");
 
     gUVs[0] = TMGenerateUVs(gPlayerTexture, 16, 16, &gUVsCount[0]);
 
@@ -133,6 +135,7 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
 void GraphicsSystemShutdown(TMRenderer *renderer) {
 
     free(gUVs[0]);
+    TMRendererTextureDestroy(renderer, gEnemyTexture);
     TMRendererTextureDestroy(renderer, gPlayerTexture);
     TMRendererShaderBufferDestroy(renderer, gGraphicsState.lightShaderBuffer);
     TMRendererShaderBufferDestroy(renderer, gGraphicsState.shaderBuffer);
@@ -166,13 +169,7 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
             
 
             TMRendererBindShader(renderer, graphics->shader);
-            if(graphics->texture) {
-                TMRendererTextureBind(renderer, graphics->texture, graphics->shader, "uTexture", 0);
-            }
-            else {
-                TMRendererTextureBind(renderer, gPlayerTexture, graphics->shader, "uTexture", 0);
-            }
-
+            if(graphics->texture) TMRendererTextureBind(renderer, graphics->texture, graphics->shader, "uTexture", 0);
         
             TMMat4 trans = TMMat4Translate(graphics->position.x,
                                            graphics->position.y,
