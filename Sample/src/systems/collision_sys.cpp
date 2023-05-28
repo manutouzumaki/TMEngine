@@ -235,7 +235,7 @@ void CollisionSystemOnMessage(MessageType type, void *sender, void *listener, Me
  
             for(int j = 0; j < TMDarraySize(entities); ++j) {
                 Entity *other = entities[j];
-                if(other != entity && other->collision) {
+                if(other != entity && other->collision && other->collision->solid) {
                     CollisionType a = entity->collision->type;
                     CollisionType b = other->collision->type;
                     if(a == COLLISION_TYPE_AABB && b == COLLISION_TYPE_AABB) {
@@ -250,6 +250,7 @@ void CollisionSystemOnMessage(MessageType type, void *sender, void *listener, Me
                     // TODO: others collision
                 }
             }
+
             entity->collision->count = collisionCount;
 
             // NOTE: this is important nor remove please!!!!

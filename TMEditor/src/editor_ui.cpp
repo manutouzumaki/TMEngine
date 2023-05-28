@@ -45,12 +45,21 @@ static void PlayerPrefabSelected(TMUIElement *element) {
 
 }
 
-static void EnemyPrefabSelected(TMUIElement *element) {
-    printf("Prefab enemy selected\n");
+static void ShotEnemyPrefabSelected(TMUIElement *element) {
+    printf("Prefab shot enemy selected\n");
     EditorState *state = (EditorState *)element->userData;
     state->element = element;
     state->modifyOption = MODIFY_NONE;
-    state->prefabType = PREFAB_TYPE_ENEMY;
+    state->prefabType = PREFAB_TYPE_SHOT_ENEMY;
+    state->selectedEntity = NULL;
+}
+
+static void MoveEnemyPrefabSelected(TMUIElement *element) {
+    printf("Prefab move enemy selected\n");
+    EditorState *state = (EditorState *)element->userData;
+    state->element = element;
+    state->modifyOption = MODIFY_NONE;
+    state->prefabType = PREFAB_TYPE_MOVE_ENEMY;
     state->selectedEntity = NULL;
 }
 
@@ -358,8 +367,9 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     }
 
     ui->prefabs = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.1f, 0.1f, 1});
-    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Enemy Prefab ", {1, 1, 1, 1}, EnemyPrefabSelected, state);
-    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL, " Player Prefab ", {1, 1, 1, 1}, PlayerPrefabSelected, state);
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Move Enemy Prefab ", {1, 1, 1, 1}, MoveEnemyPrefabSelected,  state);
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Shot Enemy Prefab ", {1, 1, 1, 1}, ShotEnemyPrefabSelected,  state);
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Player Prefab     ", {1, 1, 1, 1}, PlayerPrefabSelected,     state);
 
     ui->modify = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {8.0, 0}, {4.8, 2}, {0.1f, 0.1f, 0.1f, 1});
     TMUIElementAddChildLabel(ui->modify, TM_UI_ORIENTATION_VERTICAL,   " Scale ", {1, 1, 1, 1}, ScaleEntity, state);

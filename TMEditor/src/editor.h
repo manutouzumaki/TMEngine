@@ -49,7 +49,8 @@ struct Collision {
 enum PrefabsType {
     PREFAB_TYPE_NONE,
     PREFAB_TYPE_PLAYER,
-    PREFAB_TYPE_ENEMY
+    PREFAB_TYPE_SHOT_ENEMY,
+    PREFAB_TYPE_MOVE_ENEMY
 };
 
 struct AnimationState {

@@ -1092,7 +1092,7 @@ void TMRendererRenderBatchDraw(TMRenderBatch *renderBatch) {
     unsigned int offset = 0;
     renderer->deviceContext->IASetInputLayout(renderBatch->layout);
     TMRendererBindShader(renderer, renderBatch->shader);
-    TMRendererTextureBind(renderer, renderBatch->texture, renderBatch->shader, "uTexture", 0);
+    if(renderBatch->texture) TMRendererTextureBind(renderer, renderBatch->texture, renderBatch->shader, "uTexture", 0);
     renderer->deviceContext->IASetVertexBuffers(0, 1, &renderBatch->buffer, &stride, &offset);
 
     renderer->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

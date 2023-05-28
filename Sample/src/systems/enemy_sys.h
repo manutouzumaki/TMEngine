@@ -3,7 +3,7 @@
 
 struct Entity;
 
-void EnemySystemUpdate(Entity **entities);
+void EnemySystemUpdate(Entity **entities, float dt);
 
 
 

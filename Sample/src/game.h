@@ -21,6 +21,8 @@ struct GameState {
     Entity **entities;
     Entity *player;
 
+    Entity *enemy;
+
 };
 
 void GameInitialize(GameState *state, TMWindow *window);

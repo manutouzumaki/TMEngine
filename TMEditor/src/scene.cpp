@@ -10,7 +10,8 @@
 #include <string.h>
 
 extern TMTexture   *gPlayerTexture;
-extern TMTexture   *gEnemyTexture;
+extern TMTexture   *gShotEnemyTexture;
+extern TMTexture   *gMoveEnemyTexture;
 
 static float StringToFloat(const char *c, size_t size) {
     assert(size < 32);
@@ -211,8 +212,11 @@ static void EntityAddGraphic(Entity *entity, TMJsonObject *jsonObject, EditorSta
     }else if(entity->prefabType == PREFAB_TYPE_PLAYER) {
         texture = gPlayerTexture;
     }
-    else if(entity->prefabType == PREFAB_TYPE_ENEMY) {
-        texture = gEnemyTexture;
+    else if(entity->prefabType == PREFAB_TYPE_SHOT_ENEMY) {
+        texture = gShotEnemyTexture;
+    }
+    else if(entity->prefabType == PREFAB_TYPE_MOVE_ENEMY) {
+        texture = gMoveEnemyTexture;
     }
 
     entity->color = color;
@@ -261,6 +265,22 @@ static void EntityAddCollision(Entity *entity, TMJsonObject *jsonObject) {
 
         entity->collision->type = COLLISION_TYPE_CAPSULE;
         entity->collision->capsule = capsule;
+        entity->collision->solid = solid;
+
+    }
+    else if(jsonCircle) {
+
+        TMJsonObject *jsonC = TMJsonFindChildByName(jsonCircle, "C");
+        TMJsonObject *jsonR = TMJsonFindChildByName(jsonCircle, "Radio");
+        float x = StringToFloat(jsonC->values[0].value, jsonC->values[0].size);
+        float y = StringToFloat(jsonC->values[1].value, jsonC->values[1].size);
+        TMVec2 c  = {x, y};
+        float radio = StringToFloat(jsonR->values[0].value, jsonR->values[0].size);
+        Circle circle;
+        circle.r = radio;
+        circle.c = c;
+        entity->collision->type = COLLISION_TYPE_CIRCLE;
+        entity->collision->circle = circle;
         entity->collision->solid = solid;
 
     }
@@ -615,7 +635,7 @@ void SaveScene(TMUIElement *element) {
                 TMJsonObjectSetValue(&jsonInput, 1.0f);
                 TMJsonObjectAddChild(&jsonEntity, &jsonInput);
             }
-            if(entity->prefabType == PREFAB_TYPE_ENEMY) {
+            if(entity->prefabType == PREFAB_TYPE_MOVE_ENEMY) {
                 TMJsonObject jsonEnemyMovement = TMJsonObjectCreate();
                 TMJsonObjectSetName(&jsonEnemyMovement, "EnemyMovement");
                 TMJsonObjectSetValue(&jsonEnemyMovement, 1.0f);
@@ -702,6 +722,22 @@ void SaveScene(TMUIElement *element) {
                 } break;
                 case COLLISION_TYPE_CIRCLE: {
                     // TODO: ...
+                    TMJsonObject circle = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&circle, "Circle");
+
+                    TMJsonObject c = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&c, "C");
+                    TMJsonObjectSetValue(&c, entity->collision->circle.c.x);
+                    TMJsonObjectSetValue(&c, entity->collision->circle.c.y);
+
+                    TMJsonObject r = TMJsonObjectCreate();
+                    TMJsonObjectSetName(&r, "Radio");
+                    TMJsonObjectSetValue(&r, entity->collision->circle.r);
+
+                    TMJsonObjectAddChild(&circle, &c);
+                    TMJsonObjectAddChild(&circle, &r);
+
+                    TMJsonObjectAddChild(&jsonCollision, &circle);
 
                 } break;
                 case COLLISION_TYPE_CAPSULE: {

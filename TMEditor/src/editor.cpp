@@ -24,7 +24,8 @@ static TMVertex     gVertices[] = {
 };
 
 TMTexture   *gPlayerTexture;
-TMTexture   *gEnemyTexture;
+TMTexture   *gShotEnemyTexture;
+TMTexture   *gMoveEnemyTexture;
 
 ///////////////////////////////////////////////////
 
@@ -126,7 +127,39 @@ static void AddPlayerEntity(EditorState *state, float posX, float posY) {
     TMDarrayPush(state->entities, entity, Entity);
 }
 
-static void AddEnemyEntity(EditorState *state, float posX, float posY) {
+static void AddMoveEnemyEntity(EditorState *state, float posX, float posY) {
+    printf("Enemy added\n");
+
+    Entity entity = {};
+    entity.color = {1, 1, 1, 1};
+    entity.absUVs = {1.0f-(1.0f/9.0f), 0, 1, 1.0f/3.0f};
+    entity.relUVs = {0, 0, 1, 1};
+    entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
+    entity.size = {1, 1};
+    entity.texture = gMoveEnemyTexture;
+    entity.textureIndex = -1;
+    entity.shader = state->spriteShader;
+    entity.zIndex = 2;
+    entity.id = state->entities ? TMDarraySize(state->entities) : 0;
+    entity.prefabType = PREFAB_TYPE_MOVE_ENEMY;
+
+    entity.collision = (Collision *)malloc(sizeof(Collision));
+
+    TMVec2 offset = {0, entity.size.y * 0.15f};
+
+    Circle circle;
+    circle.r = entity.size.x*0.35f;
+    circle.c = entity.position;
+
+    entity.collision->circle = circle;
+    entity.collision->type = COLLISION_TYPE_CIRCLE;
+    entity.collision->solid = true;
+
+    TMDarrayPush(state->entities, entity, Entity);
+
+}
+
+static void AddShotEnemyEntity(EditorState *state, float posX, float posY) {
     printf("Enemy added\n");
 
     Entity entity = {};
@@ -135,12 +168,12 @@ static void AddEnemyEntity(EditorState *state, float posX, float posY) {
     entity.relUVs = {0, 0, 0.25, 0.5};
     entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
     entity.size = {1.2, 1.2};
-    entity.texture = gEnemyTexture;
+    entity.texture = gShotEnemyTexture;
     entity.textureIndex = -1;
     entity.shader = state->spriteShader;
     entity.zIndex = 2;
     entity.id = state->entities ? TMDarraySize(state->entities) : 0;
-    entity.prefabType = PREFAB_TYPE_ENEMY;
+    entity.prefabType = PREFAB_TYPE_SHOT_ENEMY;
 
     entity.collision = (Collision *)malloc(sizeof(Collision));
 
@@ -157,22 +190,6 @@ static void AddEnemyEntity(EditorState *state, float posX, float posY) {
 
     entity.animation = (Animation *)malloc(sizeof(Animation));
 
-    AnimationState walkLeft;
-    walkLeft.frames[0] = 0;
-    walkLeft.frames[1] = 1;
-    walkLeft.frames[2] = 2;
-    walkLeft.frames[3] = 3;
-    walkLeft.frameCount = 4;
-    walkLeft.speed = 15.0f;
-
-    AnimationState walkRight;
-    walkRight.frames[0] = 4;
-    walkRight.frames[1] = 5;
-    walkRight.frames[2] = 6;
-    walkRight.frames[3] = 7;
-    walkRight.frameCount = 4;
-    walkRight.speed = 15.0f;
-
     AnimationState idleLeft;
     idleLeft.frames[0] = 0;
     idleLeft.frames[1] = 3;
@@ -185,11 +202,9 @@ static void AddEnemyEntity(EditorState *state, float posX, float posY) {
     idleRight.frameCount = 2;
     idleRight.speed = 7.0f;
 
-    entity.animation->states[0] = walkLeft;
-    entity.animation->states[1] = walkRight;
-    entity.animation->states[2] = idleLeft;
-    entity.animation->states[3] = idleRight;
-    entity.animation->statesCount = 4;
+    entity.animation->states[0] = idleLeft;
+    entity.animation->states[1] = idleRight;
+    entity.animation->statesCount = 2;
     entity.animation->index = 0;
 
     TMDarrayPush(state->entities, entity, Entity);
@@ -208,9 +223,13 @@ static void AddEntity(EditorState *state, float posX, float posY) {
         {
             AddPlayerEntity(state, posX, posY);
         } break;
-        case PREFAB_TYPE_ENEMY:
+        case PREFAB_TYPE_SHOT_ENEMY:
         {
-            AddEnemyEntity(state, posX, posY);    
+            AddShotEnemyEntity(state, posX, posY);    
+        } break;
+        case PREFAB_TYPE_MOVE_ENEMY:
+        {
+            AddMoveEnemyEntity(state, posX, posY);    
         } break;
 
     }
@@ -256,8 +275,9 @@ static void UpdateCollision(Entity *entity) {
         } break;
         case COLLISION_TYPE_CIRCLE:
         {
-            //collision->circle
-            // TODO: ....
+            Circle *circle = &collision->circle;
+            circle->c = entity->position;
+            circle->r = entity->size.x*0.35f;
         } break;
         case COLLISION_TYPE_CAPSULE:
         {
@@ -271,7 +291,6 @@ static void UpdateCollision(Entity *entity) {
         } break;
 
     }
-
 }
 
 void ClearLights(EditorState *state) {
@@ -344,7 +363,8 @@ void EditorInitialize(EditorState *state, TMWindow *window) {
     // Initialize texture atlas
     // TODO: make a system to add and remove textures on the fly
     gPlayerTexture = TMRendererTextureCreate(state->renderer, "../../assets/images/player.png");
-    gEnemyTexture = TMRendererTextureCreate(state->renderer, "../../assets/images/player2.png");
+    gShotEnemyTexture = TMRendererTextureCreate(state->renderer, "../../assets/images/player2.png");
+    gMoveEnemyTexture = TMRendererTextureCreate(state->renderer, "../../assets/images/characters_packed.png");
 
     EditorUIInitialize(state, &state->ui, (float)clientWidth, (float)clientHeight, state->meterToPixel);
 
@@ -690,8 +710,8 @@ void EditorRender(EditorState *state) {
                     } break;
                     case COLLISION_TYPE_CIRCLE:
                     {
-                        //collision->circle
-                        // TODO: ....
+                        Circle circle = entity->collision->circle;
+                        TMDebugRendererDrawCircle(circle.c.x, circle.c.y, circle.r, color, 20);
                     } break;
                     case COLLISION_TYPE_CAPSULE:
                     {
@@ -747,7 +767,8 @@ void EditorShutdown(EditorState *state) {
 
     EditorUIShutdown(&state->ui);
     TMRendererTextureDestroy(state->renderer, gPlayerTexture);
-    TMRendererTextureDestroy(state->renderer, gEnemyTexture);
+    TMRendererTextureDestroy(state->renderer, gShotEnemyTexture);
+    TMRendererTextureDestroy(state->renderer, gMoveEnemyTexture);
 
     TMRendererBufferDestroy(state->renderer, state->vertexBuffer);
     TMRendererShaderBufferDestroy(state->renderer, state->lightShaderBuffer);

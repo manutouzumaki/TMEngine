@@ -13,7 +13,8 @@
 #include <stdio.h>
 
 extern TMTexture *gPlayerTexture;
-extern TMTexture *gEnemyTexture;
+extern TMTexture *gShotEnemyTexture;
+extern TMTexture *gMoveEnemyTexture;
 
 static float StringToFloat(const char *c, size_t size) {
     assert(size < 32);
@@ -109,7 +110,10 @@ void EntityAddGraphicCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameS
         texture = gPlayerTexture;
     }
     else if(prefabType == 2) {
-        texture = gEnemyTexture;
+        texture = gShotEnemyTexture;
+    }
+    else if(prefabType == 3) {
+        texture = gMoveEnemyTexture;
     }
 
     EntityAddGraphicsComponent(entity, position, size, color,
@@ -197,7 +201,21 @@ void EntityAddCollisionCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
         EntityAddCollisionComponent(entity, COLLISION_TYPE_AABB, aabb);
     }
     else if(jsonCircle) {
-        // TODO: ...
+        TMJsonObject *jsonC = TMJsonFindChildByName(jsonCircle, "C");
+        TMJsonObject *jsonR = TMJsonFindChildByName(jsonCircle, "Radio");
+
+        float x = StringToFloat(jsonC->values[0].value, jsonC->values[0].size);
+        float y = StringToFloat(jsonC->values[1].value, jsonC->values[1].size);
+        TMVec2 c  = {x, y};
+
+        float radio = StringToFloat(jsonR->values[0].value, jsonR->values[0].size);
+
+        Circle circle;
+        circle.r = radio;
+        circle.c = c;
+
+        EntityAddCollisionComponent(entity, COLLISION_TYPE_CIRCLE, circle);
+        
     }
 }
 
@@ -246,7 +264,7 @@ void EntityAddInputCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameSta
 
 }
 
-void EntityAddEnemyMovementComponent(Entity *entity, TMJsonObject *jsonObject) {
+void EntityAddEnemyMovementCmpFromJson(Entity *entity, TMJsonObject *jsonObject) {
 
     EntityAddEnemyMovementComponent(entity, entity->collision, entity->physics);
 
@@ -337,7 +355,7 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
         if(jsonCollision) EntityAddCollisionCmpFromJson(entity, jsonCollision);
         if(jsonAnimation) EntityAddAnimationCmpFromJson(entity, jsonAnimation);
         if(jsonInput) EntityAddInputCmpFromJson(entity, jsonInput, state);
-        if(jsonEnemyMovement) EntityAddEnemyMovementComponent(entity, jsonEnemyMovement);
+        if(jsonEnemyMovement) EntityAddEnemyMovementCmpFromJson(entity, jsonEnemyMovement);
 
         TMDarrayPush(state->entities, entity, Entity *);
 

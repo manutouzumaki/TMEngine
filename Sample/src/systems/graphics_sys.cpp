@@ -50,7 +50,8 @@ static TMVertex     gVertices[] = {
         TMVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec3{0, 0, 0}}  // 3
 };
 TMTexture *gPlayerTexture;
-TMTexture *gEnemyTexture;
+TMTexture *gShotEnemyTexture;
+TMTexture *gMoveEnemyTexture;
 static float     *gUVs[32];
 static int        gUVsCount[32];
 
@@ -119,7 +120,8 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
                                                  shader);
 
     gPlayerTexture = TMRendererTextureCreate(renderer, "../../assets/images/player.png");
-    gEnemyTexture = TMRendererTextureCreate(renderer, "../../assets/images/player2.png");
+    gShotEnemyTexture = TMRendererTextureCreate(renderer, "../../assets/images/player2.png");
+    gMoveEnemyTexture = TMRendererTextureCreate(renderer, "../../assets/images/characters_packed.png");
 
     gUVs[0] = TMGenerateUVs(gPlayerTexture, 16, 16, &gUVsCount[0]);
 
@@ -135,7 +137,8 @@ void GraphicsSystemInitialize(TMRenderer *renderer, TMShader *shader) {
 void GraphicsSystemShutdown(TMRenderer *renderer) {
 
     free(gUVs[0]);
-    TMRendererTextureDestroy(renderer, gEnemyTexture);
+    TMRendererTextureDestroy(renderer, gMoveEnemyTexture);
+    TMRendererTextureDestroy(renderer, gShotEnemyTexture);
     TMRendererTextureDestroy(renderer, gPlayerTexture);
     TMRendererShaderBufferDestroy(renderer, gGraphicsState.lightShaderBuffer);
     TMRendererShaderBufferDestroy(renderer, gGraphicsState.shaderBuffer);

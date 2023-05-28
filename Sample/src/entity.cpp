@@ -1,6 +1,7 @@
 #include "entity.h"
 
 #include <utils/tm_memory_pool.h>
+#include <utils/tm_darray.h>
 #include <memory.h>
 #include <assert.h>
 
@@ -15,6 +16,7 @@ static TMMemoryPool *inputComponentMem;
 static TMMemoryPool *collisionComponentMem;
 static TMMemoryPool *animationComponentMem;
 static TMMemoryPool *enemyMovementComponentMem;
+static TMMemoryPool *enemyShotComponentMem;
 
 
 void EntitySystemInitialize(int maxEntityCount) {
@@ -26,9 +28,11 @@ void EntitySystemInitialize(int maxEntityCount) {
     collisionComponentMem = TMMemoryPoolCreate(sizeof(CollisionComponent), maxEntityCount);
     animationComponentMem = TMMemoryPoolCreate(sizeof(AnimationComponet), maxEntityCount);
     enemyMovementComponentMem = TMMemoryPoolCreate(sizeof(EnemyMovementComponent), maxEntityCount);
+    enemyShotComponentMem = TMMemoryPoolCreate(sizeof(EnemyShotComponent), maxEntityCount);
 }
 
 void EntitySystemShutdown() {
+
     TMMemoryPoolDestroy(entityMem);
     TMMemoryPoolDestroy(graphicsComponenMem);
     TMMemoryPoolDestroy(physicsComponentMem);
@@ -36,7 +40,7 @@ void EntitySystemShutdown() {
     TMMemoryPoolDestroy(collisionComponentMem);
     TMMemoryPoolDestroy(animationComponentMem);
     TMMemoryPoolDestroy(enemyMovementComponentMem);
-
+    TMMemoryPoolDestroy(enemyShotComponentMem);
 }
 
 Entity *EntityCreate() {
@@ -151,6 +155,35 @@ void EntityAddEnemyMovementComponent(Entity *entity,
     entity->enemyMovement->right = {physics->down.o, { (width*0.5f)+0.08f, 0}};
 }
 
+
+void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsComponent *graphics, TMShader *shader, TMTexture *texture) {
+
+    assert(entity->enemyShot == NULL);
+
+    entity->enemyShot = (EnemyShotComponent *)TMMemoryPoolAlloc(enemyShotComponentMem);
+
+    Entity *bullet = EntityCreate();
+    EntityAddGraphicsComponent(bullet, graphics->position, {0.2, 0.2}, {1, 1, 0, 1}, {}, {}, 3, shader, texture);
+    
+    float halfSizeX = bullet->graphics->size.x * 0.5f;
+    float halfSizeY = bullet->graphics->size.y * 0.5f;
+    AABB aabb;
+    aabb.min.x = bullet->graphics->position.x - halfSizeX;
+    aabb.min.y = bullet->graphics->position.y - halfSizeY;
+    aabb.max.x = bullet->graphics->position.x + halfSizeX;
+    aabb.max.y = bullet->graphics->position.y + halfSizeY;
+
+    EntityAddCollisionComponent(bullet, COLLISION_TYPE_AABB, aabb, false);
+
+    entity->enemyShot->facingLeft = true;
+    entity->enemyShot->range = 6;
+    entity->enemyShot->speed = 3;
+    entity->enemyShot->bullet = bullet;
+
+    TMDarrayPush(*entities, bullet, Entity *);
+
+}
+
 void EntityDestroy(Entity *entity) {
     if(entity->graphics) TMMemoryPoolFree(graphicsComponenMem, (void *)entity->graphics);
     if(entity->physics) TMMemoryPoolFree(physicsComponentMem, (void *)entity->physics);
@@ -158,6 +191,7 @@ void EntityDestroy(Entity *entity) {
     if(entity->collision) TMMemoryPoolFree(collisionComponentMem, (void *)entity->collision);
     if(entity->animation) TMMemoryPoolFree(animationComponentMem, (void *)entity->animation);
     if(entity->enemyMovement) TMMemoryPoolFree(enemyMovementComponentMem, (void *)entity->enemyMovement);
+    if(entity->enemyShot) TMMemoryPoolFree(enemyShotComponentMem, (void *)entity->enemyShot);
 
     TMMemoryPoolFree(entityMem, (void *)entity);
     memset(entity, 0, sizeof(Entity));

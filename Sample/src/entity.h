@@ -79,15 +79,26 @@ struct EnemyMovementComponent {
     Ray downRight;
 };
 
+// TODO: change this to be shot component is going to be use by the player 
+
+struct Entity;
+
+struct EnemyShotComponent {
+    Entity *bullet;
+    bool facingLeft;
+    float range;
+    float speed;
+};
+
 struct Entity {
     unsigned int id;
-    TMVec4 uvs;
-    GraphicsComponent *graphics;
-    PhysicsComponent *physics;
-    InputComponent *input;
-    CollisionComponent *collision;
-    AnimationComponet *animation;
+    GraphicsComponent      *graphics;
+    PhysicsComponent       *physics;
+    InputComponent         *input;
+    CollisionComponent     *collision;
+    AnimationComponet      *animation;
     EnemyMovementComponent *enemyMovement;
+    EnemyShotComponent     *enemyShot;
 };
 
 
@@ -113,6 +124,8 @@ void EntityAddAnimationComponet(Entity *entity);
 
 
 void EntityAddEnemyMovementComponent(Entity *entity, CollisionComponent *collision, PhysicsComponent *physics);
+
+void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsComponent *graphics, TMShader *shader, TMTexture *texture = NULL);
 
 
 void InputSystemUpdate(Entity **entities, float dt);

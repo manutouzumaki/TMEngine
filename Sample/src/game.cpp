@@ -72,6 +72,20 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
 
     LoadSceneFromFile(state, "../../assets/json/level1.json");
+
+    // create the player
+    Entity *player = EntityCreate();
+    state->enemy = player;
+
+    EntityAddGraphicsComponent(player, {10, 3.5}, {1, 1}, {1, 0, 0, 1},
+                               {}, {}, 3, state->colorShader, NULL);
+
+
+    EntityAddEnemyShotComponent(&state->entities, player, player->graphics, state->colorShader);
+
+
+    TMDarrayPush(state->entities, player, Entity *);
+
 }
 
 void GameUpdate(GameState *state, float dt) {
@@ -79,7 +93,7 @@ void GameUpdate(GameState *state, float dt) {
     MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_CLEAR_FORCES, (void *)state->entities, {});
     InputSystemUpdate(state->entities, dt); 
     AnimationSystemUpdate(state->entities, dt);
-    EnemySystemUpdate(state->entities);
+    EnemySystemUpdate(state->entities, dt);
     PhysicSystemUpdate(state->entities, dt);
 }
 
@@ -137,4 +151,3 @@ void GameShutdown(GameState *state) {
     TMRendererDestroy(state->renderer);
 
 }
-

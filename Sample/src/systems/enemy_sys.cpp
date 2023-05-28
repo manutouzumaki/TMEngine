@@ -92,15 +92,44 @@ void EnemyProccesMovementComponent(Entity *entity, Entity **entities) {
 
 }
 
-void EnemySystemUpdate(Entity **entities) {
+static void UpdateBulletAABB(TMVec2 position, CollisionComponent *bullet, float halfSizeX, float halfSizeY) {
+
+    bullet->aabb.min.x = position.x - halfSizeX;
+    bullet->aabb.min.y = position.y - halfSizeY;
+    bullet->aabb.max.x = position.x + halfSizeX;
+    bullet->aabb.max.y = position.y + halfSizeY;
+
+}
+
+void EnemyProccesShotComponent(Entity *entity, float dt) {
+
+    if(!entity->enemyShot) return;
+
+    EnemyShotComponent *shot = entity->enemyShot;
+    float distanceTraveledSq = TMVec2LenSq(shot->bullet->graphics->position - entity->graphics->position);
+    if(distanceTraveledSq < shot->range * shot->range) {
+        shot->bullet->graphics->position.x -= shot->speed * dt;
+        UpdateBulletAABB(shot->bullet->graphics->position, shot->bullet->collision,
+                         shot->bullet->graphics->size.x*0.5f, shot->bullet->graphics->size.y*0.5f);
+    }
+    else {
+        shot->bullet->graphics->position = entity->graphics->position;
+        UpdateBulletAABB(shot->bullet->graphics->position, shot->bullet->collision,
+                         shot->bullet->graphics->size.x*0.5f, shot->bullet->graphics->size.y*0.5f);
+    }
+};
+
+void EnemySystemUpdate(Entity **entities, float dt) {
 
     for(int i = 0; i < TMDarraySize(entities); ++i) {
         Entity *entity = entities[i];
-
-        
+ 
         if(entity->enemyMovement) {
             EnemyUpdateMovementComponent(entity);
             EnemyProccesMovementComponent(entity, entities);
+        }
+        if(entity->enemyShot) {
+            EnemyProccesShotComponent(entity, dt);
         }
     }
 
