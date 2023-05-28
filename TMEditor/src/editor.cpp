@@ -155,6 +155,43 @@ static void AddEnemyEntity(EditorState *state, float posX, float posY) {
     entity.collision->type = COLLISION_TYPE_CAPSULE;
     entity.collision->solid = true;
 
+    entity.animation = (Animation *)malloc(sizeof(Animation));
+
+    AnimationState walkLeft;
+    walkLeft.frames[0] = 0;
+    walkLeft.frames[1] = 1;
+    walkLeft.frames[2] = 2;
+    walkLeft.frames[3] = 3;
+    walkLeft.frameCount = 4;
+    walkLeft.speed = 15.0f;
+
+    AnimationState walkRight;
+    walkRight.frames[0] = 4;
+    walkRight.frames[1] = 5;
+    walkRight.frames[2] = 6;
+    walkRight.frames[3] = 7;
+    walkRight.frameCount = 4;
+    walkRight.speed = 15.0f;
+
+    AnimationState idleLeft;
+    idleLeft.frames[0] = 0;
+    idleLeft.frames[1] = 3;
+    idleLeft.frameCount = 2;
+    idleLeft.speed = 7.0f;
+
+    AnimationState idleRight;
+    idleRight.frames[0] = 4;
+    idleRight.frames[1] = 7;
+    idleRight.frameCount = 2;
+    idleRight.speed = 7.0f;
+
+    entity.animation->states[0] = walkLeft;
+    entity.animation->states[1] = walkRight;
+    entity.animation->states[2] = idleLeft;
+    entity.animation->states[3] = idleRight;
+    entity.animation->statesCount = 4;
+    entity.animation->index = 0;
+
     TMDarrayPush(state->entities, entity, Entity);
 
 }

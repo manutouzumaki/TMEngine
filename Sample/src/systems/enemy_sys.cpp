@@ -1,5 +1,6 @@
 #include "enemy_sys.h"
 
+#include "../message.h"
 #include "../entity.h"
 #include <utils/tm_darray.h>
 
@@ -77,6 +78,16 @@ void EnemyProccesMovementComponent(Entity *entity, Entity **entities) {
         if(RayEntitities(entity, entities, entity->enemyMovement->left)) {
             entity->enemyMovement->facingLeft = false;
         }
+    }
+
+    Message message;
+    if (entity->enemyMovement->facingLeft){
+        message.i32[0] = 0;
+        MessageFireFirstHit(MESSAGE_TYPE_ANIMATION_SET_STATE, (void *)entity, message);
+    }
+    else {
+        message.i32[0] = 1;
+        MessageFireFirstHit(MESSAGE_TYPE_ANIMATION_SET_STATE, (void *)entity, message);
     }
 
 }
