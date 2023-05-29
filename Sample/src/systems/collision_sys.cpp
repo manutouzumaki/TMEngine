@@ -174,7 +174,7 @@ static void SetGrounded(Entity *entity, Entity **entities) {
     bool flag = false;
     for(int j = 0; j < TMDarraySize(entities); ++j) {
         Entity *other = entities[j];
-        if(other != entity && other->collision) {
+        if(other != entity && other->collision && other->collision->solid) {
             CollisionType type = other->collision->type;
             if(type == COLLISION_TYPE_AABB) {
                 AABB aabb = other->collision->aabb;

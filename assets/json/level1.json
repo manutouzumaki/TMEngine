@@ -1503,6 +1503,7 @@
 },
 "Damping": 0.010000
 },
+"EnemyShot": 1.000000,
 "Animation": {
 "AnimationStatesCount": 2.000000,
 "AnimationIndex": 0.000000,
@@ -1586,6 +1587,7 @@
 },
 "Damping": 0.010000
 },
+"EnemyShot": 1.000000,
 "Animation": {
 "AnimationStatesCount": 2.000000,
 "AnimationIndex": 0.000000,
@@ -1669,6 +1671,7 @@
 },
 "Damping": 0.010000
 },
+"EnemyShot": 1.000000,
 "Animation": {
 "AnimationStatesCount": 2.000000,
 "AnimationIndex": 0.000000,
@@ -1699,6 +1702,90 @@
 "B": [
 37.500000,
 8.320000
+],
+"Radio": 0.420000
+}
+}
+},
+"Entity": {
+"PrefabType": 2.000000,
+"Graphics": {
+"Type": 1.000000,
+"Position": {
+"X": 38.119999,
+"Y": 3.820000
+},
+"Size": {
+"X": 1.200000,
+"Y": 1.200000
+},
+"Color": {
+"R": 1.000000,
+"G": 1.000000,
+"B": 1.000000,
+"A": 1.000000
+},
+"AbsUvs": [
+0.000000,
+0.000000,
+1.000000,
+1.000000
+],
+"RelUvs": [
+0.000000,
+0.000000,
+0.250000,
+0.500000
+],
+"ZIndex": 2.000000,
+"TextureIndex": -1.000000
+},
+"Physics": {
+"Position": {
+"X": 38.119999,
+"Y": 3.820000
+},
+"Velocity": {
+"X": 0.000000,
+"Y": 0.000000
+},
+"Acceleration": {
+"X": 0.000000,
+"Y": 0.000000
+},
+"Damping": 0.010000
+},
+"EnemyShot": 1.000000,
+"Animation": {
+"AnimationStatesCount": 2.000000,
+"AnimationIndex": 0.000000,
+"AnimationState": {
+"FrameCount": 2.000000,
+"Frames": [
+0.000000,
+3.000000
+],
+"Speed": 7.000000
+},
+"AnimationState": {
+"FrameCount": 2.000000,
+"Frames": [
+4.000000,
+7.000000
+],
+"Speed": 7.000000
+}
+},
+"Collision": {
+"Solid": 1.000000,
+"Capsule": {
+"A": [
+38.119999,
+4.000000
+],
+"B": [
+38.119999,
+3.640000
 ],
 "Radio": 0.420000
 }

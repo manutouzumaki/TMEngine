@@ -270,6 +270,13 @@ void EntityAddEnemyMovementCmpFromJson(Entity *entity, TMJsonObject *jsonObject)
 
 }
 
+void EntityAddEnemyShotCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state) {
+
+    EntityAddEnemyShotComponent(&state->entities, entity, entity->graphics, state->colorShader);
+
+}
+
+
 void LoadSceneFromFile(GameState *state, const char *filepath) {
 
     TMJson *jsonFile = TMJsonOpen(filepath);
@@ -345,6 +352,7 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
         TMJsonObject *jsonAnimation     = TMJsonFindChildByName(jsonEntity, "Animation");
         TMJsonObject *jsonInput         = TMJsonFindChildByName(jsonEntity, "Input");
         TMJsonObject *jsonEnemyMovement = TMJsonFindChildByName(jsonEntity, "EnemyMovement");
+        TMJsonObject *jsonEnemyShot     = TMJsonFindChildByName(jsonEntity, "EnemyShot");
  
         int prefabType = StringToInt(jsonPrefabType->values[0].value, jsonPrefabType->values[0].size);
 
@@ -356,6 +364,7 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
         if(jsonAnimation) EntityAddAnimationCmpFromJson(entity, jsonAnimation);
         if(jsonInput) EntityAddInputCmpFromJson(entity, jsonInput, state);
         if(jsonEnemyMovement) EntityAddEnemyMovementCmpFromJson(entity, jsonEnemyMovement);
+        if(jsonEnemyShot) EntityAddEnemyShotCmpFromJson(entity, jsonEnemyMovement, state);
 
         TMDarrayPush(state->entities, entity, Entity *);
 

@@ -641,6 +641,14 @@ void SaveScene(TMUIElement *element) {
                 TMJsonObjectSetValue(&jsonEnemyMovement, 1.0f);
                 TMJsonObjectAddChild(&jsonEntity, &jsonEnemyMovement);
             }
+            if(entity->prefabType == PREFAB_TYPE_SHOT_ENEMY) {
+
+                TMJsonObject jsonEnemyShot = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonEnemyShot, "EnemyShot");
+                TMJsonObjectSetValue(&jsonEnemyShot, 1.0f);
+                TMJsonObjectAddChild(&jsonEntity, &jsonEnemyShot);
+                
+            }
         }
 
         if(entity->animation) {
