@@ -207,6 +207,12 @@ static void AddShotEnemyEntity(EditorState *state, float posX, float posY) {
     entity.animation->statesCount = 2;
     entity.animation->index = 0;
 
+    entity.enemyShot = (EnemyShot *)malloc(sizeof(EnemyShot));
+
+    entity.enemyShot->speed = 3;
+    entity.enemyShot->range = 6;
+    entity.enemyShot->facingLeft = true;
+
     TMDarrayPush(state->entities, entity, Entity);
 
 }
@@ -513,6 +519,17 @@ void EditorUpdate(EditorState *state) {
             entity->absUVs.y += offsetY*0.02f;
             entity->absUVs.w += offsetY*0.02f;
         }
+        else if(state->modifyOption == MODIFY_SHOT_RANGE) {
+            if(entity->enemyShot) {
+                entity->enemyShot->range += offsetX*0.5f;
+            }
+        }
+        else if(state->modifyOption == MODIFY_SHOT_SPEED) {
+            if(entity->enemyShot) {
+                entity->enemyShot->speed += offsetX;
+                printf("bullet speed: %f\n", entity->enemyShot->speed);
+            }
+        }
     }
 
     if(!state->mouseIsHot && state->lightSelected >= 0 && TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
@@ -620,14 +637,16 @@ void EditorRender(EditorState *state) {
         TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &gConstBuffer);
 
         state->ui.modify->position      = {clientWidth/state->meterToPixel - 4.8f, 0.0f};  
+        state->ui.shotEnemyModify->position      = {clientWidth/state->meterToPixel - 4.8f, 2.0f};  
         state->ui.lightModify->position      = {clientWidth/state->meterToPixel - 4.8f, 0.0f};  
         state->ui.save->position        = {0.0f, clientHeight/state->meterToPixel - 0.25f};
 
-        state->ui.loadScene->position   = {2.0f, clientHeight/state->meterToPixel - 0.25f - 3.5f};
-        state->ui.loadTexture->position = {4.0f, clientHeight/state->meterToPixel - 0.25f - 4.0f};
-        state->ui.loadShader->position  = {6.0f, clientHeight/state->meterToPixel - 0.25f - 4.5f};
+        state->ui.loadScene->position   = {3.0f, clientHeight/state->meterToPixel - 0.25f - 3.5f};
+        state->ui.loadTexture->position = {6.0f, clientHeight/state->meterToPixel - 0.25f - 4.0f};
+        state->ui.loadShader->position  = {9.0f, clientHeight/state->meterToPixel - 0.25f - 4.5f};
     
         TMUIElementRecalculateChilds(state->ui.modify);
+        TMUIElementRecalculateChilds(state->ui.shotEnemyModify);
         TMUIElementRecalculateChilds(state->ui.lightModify);
         TMUIElementRecalculateChilds(state->ui.save);
         TMUIElementRecalculateChilds(state->ui.loadScene);
@@ -722,6 +741,18 @@ void EditorRender(EditorState *state) {
                     } break;
                 }
             }
+            if(entity->enemyShot) {
+                TMVec2 start = entity->position;
+                TMVec2 end = {1, 0};
+                if(entity->enemyShot->facingLeft) {
+                    end = end * -entity->enemyShot->range;
+                }
+                else {
+                    end = end * entity->enemyShot->range;
+                }
+                end = start + end;
+                TMDebugRendererDrawLine(start.x, start.y, end.x, end.y, 0xFFFFFF00);
+            }
 
 
 
@@ -743,6 +774,7 @@ void EditorShutdown(EditorState *state) {
             Entity *entity = state->entities + i;
             if (entity->collision) free(entity->collision);
             if (entity->animation) free(entity->animation);
+            if (entity->enemyShot) free(entity->enemyShot);
         }
         TMDarrayDestroy(state->entities);
     }
@@ -782,7 +814,3 @@ void EditorShutdown(EditorState *state) {
     printf("Shuting down !!!\n");
 
 }
-
-
-
-

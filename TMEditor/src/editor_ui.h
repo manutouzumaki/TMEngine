@@ -25,6 +25,9 @@ enum ModifyOption {
     MODIFY_R_LIGHT,
     MODIFY_G_LIGHT,
     MODIFY_B_LIGHT,
+
+    MODIFY_SHOT_RANGE,
+    MODIFY_SHOT_SPEED
 };
 
 enum BrushOption {
@@ -59,6 +62,7 @@ struct EditorUI {
     TMUIElement *loadScene;
 
     TMUIElement *lightModify;
+    TMUIElement *shotEnemyModify;
 
     char **texturesNames;
     char **shadersNames;

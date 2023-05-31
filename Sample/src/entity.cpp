@@ -1,4 +1,5 @@
 #include "entity.h"
+#include "message.h"
 
 #include <utils/tm_memory_pool.h>
 #include <utils/tm_darray.h>
@@ -156,7 +157,8 @@ void EntityAddEnemyMovementComponent(Entity *entity,
 }
 
 
-void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsComponent *graphics, TMShader *shader, TMTexture *texture) {
+void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsComponent *graphics, TMShader *shader,
+                                 bool facingLeft, float range, float speed, TMTexture *texture) {
 
     assert(entity->enemyShot == NULL);
 
@@ -175,12 +177,21 @@ void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsCom
 
     EntityAddCollisionComponent(bullet, COLLISION_TYPE_AABB, aabb, false);
 
-    entity->enemyShot->facingLeft = true;
-    entity->enemyShot->range = 6;
-    entity->enemyShot->speed = 3;
+    entity->enemyShot->facingLeft = facingLeft;
+    entity->enemyShot->range = range;
+    entity->enemyShot->speed = speed;
     entity->enemyShot->bullet = bullet;
 
+    if(!facingLeft && entity->animation) {
+        Message message;
+        message.i32[0] = 1;
+        MessageFireFirstHit(MESSAGE_TYPE_ANIMATION_SET_STATE, (void *)entity, message);
+    }
+
+
     TMDarrayPush(*entities, bullet, Entity *);
+
+
 
 }
 

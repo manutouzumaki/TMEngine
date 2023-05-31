@@ -125,7 +125,9 @@ void EntityAddAnimationComponet(Entity *entity);
 
 void EntityAddEnemyMovementComponent(Entity *entity, CollisionComponent *collision, PhysicsComponent *physics);
 
-void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsComponent *graphics, TMShader *shader, TMTexture *texture = NULL);
+void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsComponent *graphics, TMShader *shader,
+                                 bool facingLeft, float range, float speed, TMTexture *texture = NULL);
+
 
 
 void InputSystemUpdate(Entity **entities, float dt);

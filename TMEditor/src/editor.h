@@ -66,6 +66,12 @@ struct Animation {
     float timer;
 };
 
+struct EnemyShot {
+    float speed;
+    float range;
+    bool facingLeft;
+};
+
 struct PointLight {
     TMVec3 attributes;
     float range;
@@ -99,6 +105,7 @@ struct Entity {
     // components
     Collision *collision;
     Animation *animation;
+    EnemyShot *enemyShot;
 };
 
 struct EditorState {

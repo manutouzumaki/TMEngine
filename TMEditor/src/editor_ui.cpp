@@ -163,6 +163,34 @@ static void SolidCollision(TMUIElement *element) {
 
 }
 
+static void EnemyShotDir(TMUIElement *element) {
+
+    EditorState *state = (EditorState *)element->userData;
+    state->modifyOption = MODIFY_NONE;
+    if(state->selectedEntity) {
+        Entity *entity = state->selectedEntity;
+        if(entity->enemyShot) {
+            entity->enemyShot->facingLeft = !entity->enemyShot->facingLeft;
+        }
+    }
+
+}
+
+static void EnemyShotRange(TMUIElement *element) {
+
+    EditorState *state = (EditorState *)element->userData;
+    state->modifyOption = MODIFY_SHOT_RANGE;
+
+}
+
+static void EnemyShotSpeed(TMUIElement *element) {
+
+    EditorState *state = (EditorState *)element->userData;
+    state->modifyOption = MODIFY_SHOT_SPEED;
+
+}
+
+
 static void LoadTexture(TMUIElement *element) {
 
     EditorState *state = (EditorState *)element->userData;
@@ -283,6 +311,7 @@ static void DeleteEntity(EditorState *state, Entity *entity) {
                 Entity *entityToDelete = &state->entities[index];
                 if(entityToDelete->collision) free(entityToDelete->collision);
                 if(entityToDelete->animation) free(entityToDelete->animation);
+                if(entityToDelete->enemyShot) free(entityToDelete->enemyShot);
                 state->entities[index] = state->entities[TMDarraySize(state->entities) - 1];
                 TMDarrayModifySize(state->entities, TMDarraySize(state->entities) - 1);
                 printf("entities count: %d\n", TMDarraySize(state->entities));
@@ -324,6 +353,74 @@ static void DeleteSelectedEntity(TMUIElement *element) {
         DeleteLight(state, state->lightSelected);
         state->lightSelected = -1;
     }
+
+}
+
+static void IncrementAmbienRed(TMUIElement *element) {
+
+    EditorState *state = (EditorState *)element->userData;
+    TMVec3 *ambient = &state->lightsConstBuffer.ambient;
+    ambient->x += 0.01f;
+    ambient->x = MinF32(ambient->x, 1.0f);
+    printf("ambient red: %f green: %f blue: %f\n", ambient->x, ambient->y, ambient->z);
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+
+}
+
+
+static void DecrementAmbienRed(TMUIElement *element) {
+
+    EditorState *state = (EditorState *)element->userData;
+    TMVec3 *ambient = &state->lightsConstBuffer.ambient;
+    ambient->x -= 0.01f;
+    ambient->x = MaxF32(ambient->x, 0.0f);
+    printf("ambient red: %f green: %f blue: %f\n", ambient->x, ambient->y, ambient->z);
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+
+}
+
+
+static void IncrementAmbienGreen(TMUIElement *element) {
+
+    EditorState *state = (EditorState *)element->userData;
+    TMVec3 *ambient = &state->lightsConstBuffer.ambient;
+    ambient->y += 0.01f;
+    ambient->y = MinF32(ambient->y, 1.0f);
+    printf("ambient red: %f green: %f blue: %f\n", ambient->x, ambient->y, ambient->z);
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+
+}
+
+static void DecrementAmbienGreen(TMUIElement *element) {
+
+    EditorState *state = (EditorState *)element->userData;
+    TMVec3 *ambient = &state->lightsConstBuffer.ambient;
+    ambient->y -= 0.01f;
+    ambient->y = MaxF32(ambient->y, 0.0f);
+    printf("ambient red: %f green: %f blue: %f\n", ambient->x, ambient->y, ambient->z);
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+
+}
+
+static void IncrementAmbienBlue(TMUIElement *element) {
+
+    EditorState *state = (EditorState *)element->userData;
+    TMVec3 *ambient = &state->lightsConstBuffer.ambient;
+    ambient->z += 0.01f;
+    ambient->z = MinF32(ambient->z, 1.0f);
+    printf("ambient red: %f green: %f blue: %f\n", ambient->x, ambient->y, ambient->z);
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
+
+}
+
+static void DecrementAmbienBlue(TMUIElement *element) {
+
+    EditorState *state = (EditorState *)element->userData;
+    TMVec3 *ambient = &state->lightsConstBuffer.ambient;
+    ambient->z -= 0.01f;
+    ambient->z = MaxF32(ambient->z, 0.0f);
+    printf("ambient red: %f green: %f blue: %f\n", ambient->x, ambient->y, ambient->z);
+    TMRendererShaderBufferUpdate(state->renderer, state->lightShaderBuffer, &state->lightsConstBuffer);
 
 }
 
@@ -395,29 +492,44 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " add Collider ", {1, 1, 1, 1}, AddCollision, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " rem Collider ", {1, 1, 1, 1}, RemCollision, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Solid ",        {1, 1, 1, 1}, SolidCollision, state);
+
+    ui->shotEnemyModify = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {8.0, 2}, {4.8, 1}, {0.1f, 0.2f, 0.1f, 1});
+    TMUIElementAddChildLabel(ui->shotEnemyModify, TM_UI_ORIENTATION_VERTICAL,   " facing ", {1, 1, 1, 1}, EnemyShotDir, state);
+    TMUIElementAddChildLabel(ui->shotEnemyModify, TM_UI_ORIENTATION_VERTICAL,   " range ", {1, 1, 1, 1}, EnemyShotRange, state);
+    TMUIElementAddChildLabel(ui->shotEnemyModify, TM_UI_ORIENTATION_VERTICAL,   " speed ", {1, 1, 1, 1}, EnemyShotSpeed, state);
     
-    ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {10.0, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
+    ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {18.0, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Scene ", {1, 1, 1, 1}, LoadScene, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture ", {1, 1, 1, 1}, LoadTexture, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader ", {1, 1, 1, 1}, LoadShader, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Delete Entity ", {1, 1, 1, 1}, DeleteSelectedEntity, state);
+    TMUIElementAddChildButton(ui->save, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
 
-    ui->loadScene = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {2.0f, height/meterToPixel - 0.25f - 3.5f}, {2.5, 3.5}, {0.02f, 0.02f, 0.02f, 1.0f});
+    child = TMUIElementGetChild(ui->save, 5);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " +R ", {1, 1, 1, 1}, IncrementAmbienRed, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " -R ", {1, 1, 1, 1}, DecrementAmbienRed, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " +G ", {1, 1, 1, 1}, IncrementAmbienGreen, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " -G ", {1, 1, 1, 1}, DecrementAmbienGreen, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " +B ", {1, 1, 1, 1}, IncrementAmbienBlue, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " -B ", {1, 1, 1, 1}, DecrementAmbienBlue, state);
+
+
+    ui->loadScene = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {3.0f, height/meterToPixel - 0.25f - 3.5f}, {2.5, 3.5}, {0.02f, 0.02f, 0.02f, 1.0f});
     if(ui->scenesNames) {
         for(int i = 0; i < TMDarraySize(ui->scenesNames); ++i) {
             TMUIElementAddChildLabel(ui->loadScene, TM_UI_ORIENTATION_VERTICAL, ui->scenesNames[i], {1, 1, 1, 1}, SelectScene, state);
         }
     }
 
-    ui->loadTexture = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {4.0f, height/meterToPixel - 0.25f - 4.0f}, {2.5, 4}, {0.02f, 0.02f, 0.02f, 1.0f});
+    ui->loadTexture = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {6.0f, height/meterToPixel - 0.25f - 4.0f}, {2.5, 4}, {0.02f, 0.02f, 0.02f, 1.0f});
     if(ui->texturesNames) {
         for(int i = 0; i < TMDarraySize(ui->texturesNames); ++i) {
             TMUIElementAddChildLabel(ui->loadTexture, TM_UI_ORIENTATION_VERTICAL, ui->texturesNames[i], {1, 1, 1, 1}, SelectTexture, state);
         }
     }
 
-    ui->loadShader = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {6.0f, height/meterToPixel - 0.25f - 4.5f}, {2.5, 4.5}, {0.02f, 0.02f, 0.02f, 1.0f});
+    ui->loadShader = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {9.0f, height/meterToPixel - 0.25f - 4.5f}, {2.5, 4.5}, {0.02f, 0.02f, 0.02f, 1.0f});
     if(ui->shadersNames) {
         for(int i = 0; i < TMDarraySize(ui->shadersNames); ++i) {
             TMUIElementAddChildLabel(ui->loadShader, TM_UI_ORIENTATION_VERTICAL, ui->shadersNames[i], {1, 1, 1, 1}, SelectShader, state);
@@ -470,6 +582,9 @@ void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height,
 
     if(!state->element && state->selectedEntity) {
         TMUIElementProcessInput(ui->modify, pos.x, pos.y, width, height, meterToPixel);
+        if(state->selectedEntity->prefabType == PREFAB_TYPE_SHOT_ENEMY) {
+            TMUIElementProcessInput(ui->shotEnemyModify, pos.x, pos.y, width, height, meterToPixel);
+        }
     }
 
     if(!state->element && state->lightSelected >= 0) {
@@ -497,6 +612,9 @@ void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height,
     TMUIMouseIsHot(ui->save,     &state->mouseIsHot);
     if(!state->element && state->selectedEntity) {
         TMUIMouseIsHot(ui->modify, &state->mouseIsHot);
+        if(state->selectedEntity->prefabType == PREFAB_TYPE_SHOT_ENEMY) {
+            TMUIMouseIsHot(ui->shotEnemyModify, &state->mouseIsHot);
+        }
     }
     if(!state->element && state->lightSelected >= 0) {
         TMUIMouseIsHot(ui->lightModify, &state->mouseIsHot);
@@ -546,6 +664,9 @@ void EditorUIDraw(EditorState *state, EditorUI *ui, TMRenderer *renderer) {
 
     if(!state->element && state->selectedEntity) {
         TMUIElementDraw(renderer, ui->modify, 0.0f);
+        if(state->selectedEntity->prefabType == PREFAB_TYPE_SHOT_ENEMY) {
+            TMUIElementDraw(renderer, ui->shotEnemyModify, 0.0f);
+        }
     }
     if(!state->element && state->lightSelected >= 0) {
         TMUIElementDraw(renderer, ui->lightModify, 0.0f);
@@ -556,6 +677,7 @@ void EditorUIShutdown(EditorUI *ui) {
 
     TMUIElementDestroy(ui->save);
     TMUIElementDestroy(ui->modify);
+    TMUIElementDestroy(ui->shotEnemyModify);
     TMUIElementDestroy(ui->clear);
     TMUIElementDestroy(ui->lights);
     TMUIElementDestroy(ui->prefabs);

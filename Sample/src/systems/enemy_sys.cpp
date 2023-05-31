@@ -108,7 +108,12 @@ void EnemyProccesShotComponent(Entity *entity, float dt) {
     EnemyShotComponent *shot = entity->enemyShot;
     float distanceTraveledSq = TMVec2LenSq(shot->bullet->graphics->position - entity->graphics->position);
     if(distanceTraveledSq < shot->range * shot->range) {
-        shot->bullet->graphics->position.x -= shot->speed * dt;
+        if(shot->facingLeft) {
+            shot->bullet->graphics->position.x -= shot->speed * dt;
+        }
+        else {
+            shot->bullet->graphics->position.x += shot->speed * dt;
+        }
         UpdateBulletAABB(shot->bullet->graphics->position, shot->bullet->collision,
                          shot->bullet->graphics->size.x*0.5f, shot->bullet->graphics->size.y*0.5f);
     }
@@ -117,7 +122,8 @@ void EnemyProccesShotComponent(Entity *entity, float dt) {
         UpdateBulletAABB(shot->bullet->graphics->position, shot->bullet->collision,
                          shot->bullet->graphics->size.x*0.5f, shot->bullet->graphics->size.y*0.5f);
     }
-};
+
+}
 
 void EnemySystemUpdate(Entity **entities, float dt) {
 

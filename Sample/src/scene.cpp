@@ -272,7 +272,11 @@ void EntityAddEnemyMovementCmpFromJson(Entity *entity, TMJsonObject *jsonObject)
 
 void EntityAddEnemyShotCmpFromJson(Entity *entity, TMJsonObject *jsonObject, GameState *state) {
 
-    EntityAddEnemyShotComponent(&state->entities, entity, entity->graphics, state->colorShader);
+    float speed = StringToFloat(jsonObject->values[0].value, jsonObject->values[0].size);
+    float range = StringToFloat(jsonObject->values[1].value, jsonObject->values[1].size);
+    bool facingLeft = (bool)StringToInt(jsonObject->values[2].value, jsonObject->values[2].size);
+
+    EntityAddEnemyShotComponent(&state->entities, entity, entity->graphics, state->colorShader, facingLeft, range, speed);
 
 }
 
@@ -290,7 +294,6 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
 
     for(int i = 0; i < jsonLevelTextures->valuesCount; ++i) {
         TMJsonValue *jsonValue = jsonLevelTextures->values + i;
-
 
         char filepath[10000] = "../../assets/images/";
         int headerSize = StringLength(filepath);
@@ -311,7 +314,6 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
     ambient.x = StringToFloat(jsonLevelAmbient->values[0].value, jsonLevelAmbient->values[0].size);
     ambient.y = StringToFloat(jsonLevelAmbient->values[1].value, jsonLevelAmbient->values[1].size);
     ambient.z = StringToFloat(jsonLevelAmbient->values[2].value, jsonLevelAmbient->values[2].size);
-
     GraphicsSystemSetAmbientLight(state->renderer, ambient);
 
     for(int i = 0; i < jsonLevelLights->childsCount; ++i) {
@@ -364,7 +366,7 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
         if(jsonAnimation) EntityAddAnimationCmpFromJson(entity, jsonAnimation);
         if(jsonInput) EntityAddInputCmpFromJson(entity, jsonInput, state);
         if(jsonEnemyMovement) EntityAddEnemyMovementCmpFromJson(entity, jsonEnemyMovement);
-        if(jsonEnemyShot) EntityAddEnemyShotCmpFromJson(entity, jsonEnemyMovement, state);
+        if(jsonEnemyShot) EntityAddEnemyShotCmpFromJson(entity, jsonEnemyShot, state);
 
         TMDarrayPush(state->entities, entity, Entity *);
 

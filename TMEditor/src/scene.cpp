@@ -347,6 +347,20 @@ static void EntityAddAnimation(Entity *entity, TMJsonObject *jsonObject) {
 
 }
 
+static void EntityAddEnemyShot(Entity *entity, TMJsonObject *jsonObject) {
+
+    entity->enemyShot = (EnemyShot *)malloc(sizeof(EnemyShot));
+    
+    float speed = StringToFloat(jsonObject->values[0].value, jsonObject->values[0].size);
+    float range = StringToFloat(jsonObject->values[1].value, jsonObject->values[1].size);
+    int facingLeft = StringToInt(jsonObject->values[2].value, jsonObject->values[2].size);
+
+    entity->enemyShot->speed = speed;
+    entity->enemyShot->range = range;
+    entity->enemyShot->facingLeft = (bool)facingLeft;
+
+}
+
 void LoadSceneFromFile(EditorState *state, char *filepath) {
 
     TMJson *jsonFile = TMJsonOpen(filepath);
@@ -387,6 +401,7 @@ void LoadSceneFromFile(EditorState *state, char *filepath) {
         TMJsonObject *jsonGraphic    = TMJsonFindChildByName(jsonEntity, "Graphics");
         TMJsonObject *jsonCollision  = TMJsonFindChildByName(jsonEntity, "Collision");
         TMJsonObject *jsonAnimation  = TMJsonFindChildByName(jsonEntity, "Animation");
+        TMJsonObject *jsonEnemyShot  = TMJsonFindChildByName(jsonEntity, "EnemyShot");
 
         Entity entity = {};
         entity.id = i;
@@ -395,6 +410,7 @@ void LoadSceneFromFile(EditorState *state, char *filepath) {
         if(jsonGraphic) EntityAddGraphic(&entity, jsonGraphic, state);
         if(jsonCollision) EntityAddCollision(&entity, jsonCollision);
         if(jsonAnimation) EntityAddAnimation(&entity, jsonAnimation);
+        if(jsonEnemyShot) EntityAddEnemyShot(&entity, jsonEnemyShot);
 
         TMDarrayPush(state->entities, entity, Entity);
 
@@ -645,7 +661,9 @@ void SaveScene(TMUIElement *element) {
 
                 TMJsonObject jsonEnemyShot = TMJsonObjectCreate();
                 TMJsonObjectSetName(&jsonEnemyShot, "EnemyShot");
-                TMJsonObjectSetValue(&jsonEnemyShot, 1.0f);
+                TMJsonObjectSetValue(&jsonEnemyShot, entity->enemyShot->speed);
+                TMJsonObjectSetValue(&jsonEnemyShot, entity->enemyShot->range);
+                TMJsonObjectSetValue(&jsonEnemyShot, (float)entity->enemyShot->facingLeft);
                 TMJsonObjectAddChild(&jsonEntity, &jsonEnemyShot);
                 
             }
