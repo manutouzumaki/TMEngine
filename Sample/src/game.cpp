@@ -9,6 +9,7 @@
 #include "systems/graphics_sys.h"
 #include "systems/animation_sys.h"
 #include "systems/enemy_sys.h"
+#include "systems/aabb_sys.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -18,6 +19,15 @@
 
 static float MetersToPixel = 100;
 
+static float MinF32(float a, float b) {
+    if(a < b) return a;
+    return b;
+}
+
+static float MaxF32(float a, float b) {
+    if(a > b) return a;
+    return b;
+}
 
 void UpdateCameraToFollowTarget(GameState *state, Entity *target) {
 
@@ -25,9 +35,20 @@ void UpdateCameraToFollowTarget(GameState *state, Entity *target) {
         int width = TMRendererGetWidth(state->renderer);
         int height = TMRendererGetHeight(state->renderer);
         GraphicsComponent *graphics = target->graphics;
-        TMVec3 pos = {graphics->position.x - (width*0.5f)/MetersToPixel,
-                      graphics->position.y - (height*0.5f)/MetersToPixel,
-                      0};
+
+        float cameraUnitsX = (float)width/MetersToPixel;
+        float cameraUnitsY = (float)height/MetersToPixel;
+
+        // TODO: save this in the level file, this should be set per level        
+        float levelStartX = 3.0f;
+        float levelStartY = 2.0f;
+        float levelEndX = 27.0f + 12.8f;
+        float levelEndY = 9.0f + 7.2f;
+
+        float x = MinF32(MaxF32(graphics->position.x - (width*0.5f)/MetersToPixel, levelStartX), levelEndX - cameraUnitsX);
+        float y = MinF32(MaxF32(graphics->position.y - (height*0.5f)/MetersToPixel, levelStartY), levelEndY - cameraUnitsY);
+
+        TMVec3 pos = {x, y, 0};
         TMVec3 tar = {0, 0, 1};
         TMVec3 up  = {0, 1, 0};
         state->view = TMMat4LookAt(pos, pos + tar, up);
@@ -86,6 +107,7 @@ void GameUpdate(GameState *state, float dt) {
     AnimationSystemUpdate(state->entities, dt);
     EnemySystemUpdate(state->entities, dt);
     PhysicSystemUpdate(state->entities, dt);
+    AABBSystemUpdate(state->player, state->entities);
  
     if((TMVec2LenSq(state->player->physics->velocity) > 0.1f) && state->player->physics->grounded) {
         TMVec2 position = state->player->physics->position;

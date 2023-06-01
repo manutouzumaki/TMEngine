@@ -90,8 +90,16 @@ struct EnemyShotComponent {
     float speed;
 };
 
+typedef void (*PFN_OnHit) (Entity *e, Entity *other);
+
+struct AABBComponent {
+    AABB aabb;
+    PFN_OnHit onHit;
+};
+
 struct Entity {
     unsigned int id;
+    bool active;
     GraphicsComponent      *graphics;
     PhysicsComponent       *physics;
     InputComponent         *input;
@@ -99,6 +107,7 @@ struct Entity {
     AnimationComponet      *animation;
     EnemyMovementComponent *enemyMovement;
     EnemyShotComponent     *enemyShot;
+    AABBComponent          *aabb;
 };
 
 

@@ -92,15 +92,6 @@ void EnemyProccesMovementComponent(Entity *entity, Entity **entities) {
 
 }
 
-static void UpdateBulletAABB(TMVec2 position, CollisionComponent *bullet, float halfSizeX, float halfSizeY) {
-
-    bullet->aabb.min.x = position.x - halfSizeX;
-    bullet->aabb.min.y = position.y - halfSizeY;
-    bullet->aabb.max.x = position.x + halfSizeX;
-    bullet->aabb.max.y = position.y + halfSizeY;
-
-}
-
 void EnemyProccesShotComponent(Entity *entity, float dt) {
 
     if(!entity->enemyShot) return;
@@ -114,13 +105,10 @@ void EnemyProccesShotComponent(Entity *entity, float dt) {
         else {
             shot->bullet->graphics->position.x += shot->speed * dt;
         }
-        UpdateBulletAABB(shot->bullet->graphics->position, shot->bullet->collision,
-                         shot->bullet->graphics->size.x*0.5f, shot->bullet->graphics->size.y*0.5f);
     }
     else {
         shot->bullet->graphics->position = entity->graphics->position;
-        UpdateBulletAABB(shot->bullet->graphics->position, shot->bullet->collision,
-                         shot->bullet->graphics->size.x*0.5f, shot->bullet->graphics->size.y*0.5f);
+        shot->bullet->graphics->position.y -= entity->graphics->size.y * 0.225f;
     }
 
 }

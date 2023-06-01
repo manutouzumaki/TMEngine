@@ -1,5 +1,6 @@
 #include "entity.h"
 #include "message.h"
+#include "systems/aabb_sys.h"
 
 #include <utils/tm_memory_pool.h>
 #include <utils/tm_darray.h>
@@ -18,6 +19,7 @@ static TMMemoryPool *collisionComponentMem;
 static TMMemoryPool *animationComponentMem;
 static TMMemoryPool *enemyMovementComponentMem;
 static TMMemoryPool *enemyShotComponentMem;
+static TMMemoryPool *aabbComponentMem;
 
 
 void EntitySystemInitialize(int maxEntityCount) {
@@ -30,6 +32,7 @@ void EntitySystemInitialize(int maxEntityCount) {
     animationComponentMem = TMMemoryPoolCreate(sizeof(AnimationComponet), maxEntityCount);
     enemyMovementComponentMem = TMMemoryPoolCreate(sizeof(EnemyMovementComponent), maxEntityCount);
     enemyShotComponentMem = TMMemoryPoolCreate(sizeof(EnemyShotComponent), maxEntityCount);
+    aabbComponentMem = TMMemoryPoolCreate(sizeof(AABBComponent), maxEntityCount);
 }
 
 void EntitySystemShutdown() {
@@ -42,6 +45,7 @@ void EntitySystemShutdown() {
     TMMemoryPoolDestroy(animationComponentMem);
     TMMemoryPoolDestroy(enemyMovementComponentMem);
     TMMemoryPoolDestroy(enemyShotComponentMem);
+    TMMemoryPoolDestroy(aabbComponentMem);
 }
 
 Entity *EntityCreate() {
@@ -79,9 +83,25 @@ void EntityAddPhysicsComponent(Entity *entity, TMVec2 position, TMVec2 velocity,
     entity->physics->damping = damping;
 }
 
+void EntityAddAABBComponent(Entity *entity, AABB aabb, PFN_OnHit onHit) {
+    assert(entity->aabb == NULL);
+    entity->aabb = (AABBComponent *)TMMemoryPoolAlloc(aabbComponentMem);
+    entity->aabb->aabb = aabb;
+    entity->aabb->onHit = onHit;
+}
+
 void EntityAddInputComponent(Entity *entity) {
     assert(entity->input == NULL);
     entity->input = (InputComponent *)TMMemoryPoolAlloc(inputComponentMem);
+    float halfSizeX = entity->graphics->size.x * 0.2f;
+    float halfSizeY = entity->graphics->size.y * 0.45f;
+    AABB aabb;
+    aabb.min.x = entity->graphics->position.x - halfSizeX;
+    aabb.min.y = entity->graphics->position.y - halfSizeY;
+    aabb.max.x = entity->graphics->position.x + halfSizeX;
+    aabb.max.y = entity->graphics->position.y + halfSizeY;
+    EntityAddAABBComponent(entity, aabb, NULL);
+
 }
 
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, AABB aabb, bool solid) {
@@ -154,8 +174,17 @@ void EntityAddEnemyMovementComponent(Entity *entity,
 
     entity->enemyMovement->left  = {physics->down.o, {(-width*0.5f)-0.08f, 0}}; 
     entity->enemyMovement->right = {physics->down.o, { (width*0.5f)+0.08f, 0}};
-}
 
+
+    float halfSizeX = entity->graphics->size.x * 0.3f;
+    float halfSizeY = entity->graphics->size.y * 0.3f;
+    AABB aabb;
+    aabb.min.x = entity->graphics->position.x - halfSizeX;
+    aabb.min.y = entity->graphics->position.y - halfSizeY;
+    aabb.max.x = entity->graphics->position.x + halfSizeX;
+    aabb.max.y = entity->graphics->position.y + halfSizeY;
+    EntityAddAABBComponent(entity, aabb, PlayerMoveEnemy);
+}
 
 void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsComponent *graphics, TMShader *shader,
                                  bool facingLeft, float range, float speed, TMTexture *texture) {
@@ -167,15 +196,15 @@ void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsCom
     Entity *bullet = EntityCreate();
     EntityAddGraphicsComponent(bullet, graphics->position, {0.2, 0.2}, {1, 1, 0, 1}, {}, {}, 3, shader, texture);
     
-    float halfSizeX = bullet->graphics->size.x * 0.5f;
-    float halfSizeY = bullet->graphics->size.y * 0.5f;
+    float halfSizeX = bullet->graphics->size.x * 0.3f;
+    float halfSizeY = bullet->graphics->size.y * 0.3f;
     AABB aabb;
     aabb.min.x = bullet->graphics->position.x - halfSizeX;
     aabb.min.y = bullet->graphics->position.y - halfSizeY;
     aabb.max.x = bullet->graphics->position.x + halfSizeX;
     aabb.max.y = bullet->graphics->position.y + halfSizeY;
 
-    EntityAddCollisionComponent(bullet, COLLISION_TYPE_AABB, aabb, false);
+    EntityAddAABBComponent(bullet, aabb, PlayerBullet);
 
     entity->enemyShot->facingLeft = facingLeft;
     entity->enemyShot->range = range;
@@ -188,11 +217,7 @@ void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsCom
         MessageFireFirstHit(MESSAGE_TYPE_ANIMATION_SET_STATE, (void *)entity, message);
     }
 
-
     TMDarrayPush(*entities, bullet, Entity *);
-
-
-
 }
 
 void EntityDestroy(Entity *entity) {
@@ -203,6 +228,7 @@ void EntityDestroy(Entity *entity) {
     if(entity->animation) TMMemoryPoolFree(animationComponentMem, (void *)entity->animation);
     if(entity->enemyMovement) TMMemoryPoolFree(enemyMovementComponentMem, (void *)entity->enemyMovement);
     if(entity->enemyShot) TMMemoryPoolFree(enemyShotComponentMem, (void *)entity->enemyShot);
+    if(entity->aabb) TMMemoryPoolFree(aabbComponentMem, (void *)entity->aabb);
 
     TMMemoryPoolFree(entityMem, (void *)entity);
     memset(entity, 0, sizeof(Entity));

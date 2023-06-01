@@ -205,7 +205,7 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
     // draw debug geometry
     for(int i = 0; i < TMDarraySize(entities); ++i) {
         Entity *entity = entities[i];
-        if(entity->collision, entity->graphics) {
+        if(entity->collision && entity->graphics) {
             CollisionComponent *collision = entity->collision;
             if(collision) {
 
@@ -251,6 +251,15 @@ void GraphicsSystemDraw(TMRenderer *renderer, Entity **entities) {
                         }break;           
                 }
             }
+        }
+        if(entity->aabb) {
+            AABB aabb = entity->aabb->aabb;
+            float width = aabb.max.x - aabb.min.x;
+            float height = aabb.max.y - aabb.min.y;
+            float x = aabb.min.x + width*0.5f;
+            float y = aabb.min.y + height*0.5f;
+            
+            TMDebugRendererDrawQuad(x, y, width, height, 0, 0xFF00FF00);
         }
         if(entity->graphics) {
             GraphicsComponent *graphics = entity->graphics;
