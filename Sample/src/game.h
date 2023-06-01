@@ -3,6 +3,7 @@
 
 #include <tm_renderer.h>
 #include <utils/tm_math.h>
+#include "particles.h"
 
 struct Entity;
 
@@ -21,7 +22,8 @@ struct GameState {
     Entity **entities;
     Entity *player;
 
-    Entity *enemy;
+    ParticleSystem particleSystem;
+
 
 };
 

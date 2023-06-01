@@ -4,7 +4,7 @@
 #include <utils/tm_math.h>
 #include <tm_renderer.h>
 
-#define MAX_PARTICLE_COUNT 300
+#define MAX_PARTICLE_COUNT 1000
 
 struct Particle {
     
@@ -25,22 +25,15 @@ struct ParticleSystem {
     TMRenderBatch *renderBatch;
     Particle particles[MAX_PARTICLE_COUNT];
     int particleCount;
-    bool autoManage;
-    bool physics;
-    float lifeTime;
+    float rate;
+    float timer;
 
 };
 
-ParticleSystem ParticleSystemCreate(TMRenderer *renderer,
-                                    bool autoManage, bool physics,
-                                    float lifeTime, TMTexture *texture = NULL);
+ParticleSystem ParticleSystemCreate(TMRenderer *renderer, TMTexture *texture = NULL);
 void ParticleSystemDestroy(TMRenderer *renderer, ParticleSystem *particleSystem);
-
-void ParticleSystemAddParticles(ParticleSystem *particleSystem, Particle *particles, int count);
-void ParticleSystemUpdate(ParticleSystem *particleSystem, Particle *particles, int count);
-void ParticleSystemDraw(ParticleSystem *particleSystem, Particle *particles, int count);
-void ParticleSystemDestroyParticle(ParticleSystem *particleSystem, int index);
-
-
+void ParticleSystemAddParticles(ParticleSystem *particleSystem, TMVec2 position);
+void ParticleSystemUpdate(ParticleSystem *particleSystem, float dt);
+void ParticleSystemDraw(ParticleSystem *particleSystem);
 
 #endif

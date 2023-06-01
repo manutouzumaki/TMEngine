@@ -73,15 +73,25 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     LoadSceneFromFile(state, "../../assets/json/level1.json");
 
+    state->particleSystem = ParticleSystemCreate(state->renderer);
+
 }
 
 void GameUpdate(GameState *state, float dt) {
+
+    ParticleSystemUpdate(&state->particleSystem, dt);
 
     MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_CLEAR_FORCES, (void *)state->entities, {});
     InputSystemUpdate(state->entities, dt); 
     AnimationSystemUpdate(state->entities, dt);
     EnemySystemUpdate(state->entities, dt);
     PhysicSystemUpdate(state->entities, dt);
+ 
+    if((TMVec2LenSq(state->player->physics->velocity) > 0.1f) && state->player->physics->grounded) {
+        TMVec2 position = state->player->physics->position;
+        position.y -= state->player->graphics->size.y*0.44f;
+        ParticleSystemAddParticles(&state->particleSystem, position);
+    }
 }
 
 void GameFixUpdate(GameState *state, float dt) {
@@ -107,6 +117,9 @@ void GameRender(GameState *state) {
 
 
     GraphicsSystemDraw(state->renderer, state->entities);
+
+
+    ParticleSystemDraw(&state->particleSystem);
     
     TMDebugRenderDraw();
 
@@ -115,6 +128,9 @@ void GameRender(GameState *state) {
 
 void GameShutdown(GameState *state) {
     // TODO: this should be handle by the entity system not the game directly
+    
+    ParticleSystemDestroy(state->renderer, &state->particleSystem);
+
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
         Entity *entity = state->entities[i];
         EntityDestroy(entity);
