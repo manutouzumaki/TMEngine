@@ -3,10 +3,6 @@
 
 struct Entity;
 
-void PlayerMoveEnemy(Entity *entity, Entity *other);
-void PlayerBullet(Entity *entity, Entity *other);
-
-
 void AABBSystemUpdate(Entity *player, Entity **entities);
 
 #endif

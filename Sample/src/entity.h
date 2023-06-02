@@ -49,8 +49,7 @@ struct PhysicsComponent {
     bool grounded;
 };
 
-struct InputComponent {
-};
+struct InputComponent {int data;};
 
 enum CollisionType {
     COLLISION_TYPE_AABB,
@@ -97,9 +96,20 @@ struct AABBComponent {
     PFN_OnHit onHit;
 };
 
+struct WinComponent {int data;};
+
+struct GameOverComponent {int data;};
+
+struct PlayerComponent {
+    int life;
+    float invencibleTimer;
+    float invencibleMaxTime;
+    bool winCondition;
+    bool lostCondition;
+};
+
 struct Entity {
     unsigned int id;
-    bool active;
     GraphicsComponent      *graphics;
     PhysicsComponent       *physics;
     InputComponent         *input;
@@ -108,6 +118,9 @@ struct Entity {
     EnemyMovementComponent *enemyMovement;
     EnemyShotComponent     *enemyShot;
     AABBComponent          *aabb;
+    PlayerComponent        *player;
+    WinComponent           *win;
+    GameOverComponent      *gameOver;
 };
 
 
@@ -137,7 +150,10 @@ void EntityAddEnemyMovementComponent(Entity *entity, CollisionComponent *collisi
 void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsComponent *graphics, TMShader *shader,
                                  bool facingLeft, float range, float speed, TMTexture *texture = NULL);
 
+void EntityAddPlayerComponent(Entity *entity, int life, float invencibleMaxTime);
 
+void EntityAddWinComponent(Entity *entity);
+void EntityAddGameOverComponent(Entity *entity);
 
 void InputSystemUpdate(Entity **entities, float dt);
 

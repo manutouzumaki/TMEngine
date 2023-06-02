@@ -118,7 +118,6 @@ void PhysicSystemUpdate(Entity **entities, float dt) {
         Entity *entity = entities[i];
         if(entity->physics) {
 
-
             // NOTE: update the ray for ground check ...
             CollisionComponent *collision = entity->collision;
             PhysicsComponent *physics = entity->physics;
@@ -146,7 +145,6 @@ void PhysicSystemUpdate(Entity **entities, float dt) {
                 TMVec2 gravity = {0, -30.0f};
                 PhysicsAddForce(entity, gravity);
             }
-            //printf("grounded: %d\n", entity->physics->grounded);
         }
     }
 

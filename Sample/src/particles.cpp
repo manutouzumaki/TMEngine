@@ -50,7 +50,7 @@ void ParticleSystemAddParticles(ParticleSystem *particleSystem, TMVec2 position)
         float size = ((rand() % 5) + 1)*0.05f;
         particle.size.x = size;
         particle.size.y = size;
-        particle.life = 0.5f;
+        particle.life = 0.3f;
 
         particleSystem->particles[particleSystem->particleCount++] = particle;
         particleSystem->particleCount %= MAX_PARTICLE_COUNT;

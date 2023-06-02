@@ -1,6 +1,6 @@
 #include "entity.h"
 #include "message.h"
-#include "systems/aabb_sys.h"
+#include "systems/player_sys.h"
 
 #include <utils/tm_memory_pool.h>
 #include <utils/tm_darray.h>
@@ -20,6 +20,9 @@ static TMMemoryPool *animationComponentMem;
 static TMMemoryPool *enemyMovementComponentMem;
 static TMMemoryPool *enemyShotComponentMem;
 static TMMemoryPool *aabbComponentMem;
+static TMMemoryPool *playerComponentMem;
+static TMMemoryPool *winComponentMem;
+static TMMemoryPool *gameOverComponentMem;
 
 
 void EntitySystemInitialize(int maxEntityCount) {
@@ -33,6 +36,9 @@ void EntitySystemInitialize(int maxEntityCount) {
     enemyMovementComponentMem = TMMemoryPoolCreate(sizeof(EnemyMovementComponent), maxEntityCount);
     enemyShotComponentMem = TMMemoryPoolCreate(sizeof(EnemyShotComponent), maxEntityCount);
     aabbComponentMem = TMMemoryPoolCreate(sizeof(AABBComponent), maxEntityCount);
+    playerComponentMem = TMMemoryPoolCreate(sizeof(PlayerComponent), maxEntityCount);
+    winComponentMem = TMMemoryPoolCreate(sizeof(WinComponent), maxEntityCount);
+    gameOverComponentMem = TMMemoryPoolCreate(sizeof(GameOverComponent), maxEntityCount);
 }
 
 void EntitySystemShutdown() {
@@ -46,6 +52,9 @@ void EntitySystemShutdown() {
     TMMemoryPoolDestroy(enemyMovementComponentMem);
     TMMemoryPoolDestroy(enemyShotComponentMem);
     TMMemoryPoolDestroy(aabbComponentMem);
+    TMMemoryPoolDestroy(playerComponentMem);
+    TMMemoryPoolDestroy(winComponentMem);
+    TMMemoryPoolDestroy(gameOverComponentMem);
 }
 
 Entity *EntityCreate() {
@@ -90,6 +99,18 @@ void EntityAddAABBComponent(Entity *entity, AABB aabb, PFN_OnHit onHit) {
     entity->aabb->onHit = onHit;
 }
 
+void EntityAddPlayerComponent(Entity *entity, int life, float invencibleMaxTime) {
+
+    assert(entity->player == NULL);
+    entity->player = (PlayerComponent *)TMMemoryPoolAlloc(playerComponentMem);
+    entity->player->life = life;
+    entity->player->invencibleTimer = 0.0f;
+    entity->player->invencibleMaxTime = invencibleMaxTime;
+    entity->player->winCondition  = false;
+    entity->player->lostCondition = false;
+
+}
+
 void EntityAddInputComponent(Entity *entity) {
     assert(entity->input == NULL);
     entity->input = (InputComponent *)TMMemoryPoolAlloc(inputComponentMem);
@@ -101,7 +122,35 @@ void EntityAddInputComponent(Entity *entity) {
     aabb.max.x = entity->graphics->position.x + halfSizeX;
     aabb.max.y = entity->graphics->position.y + halfSizeY;
     EntityAddAABBComponent(entity, aabb, NULL);
+    EntityAddPlayerComponent(entity, 3, 1.5f);
 
+}
+
+void EntityAddWinComponent(Entity *entity) {
+    assert(entity->win == NULL);
+    entity->win = (WinComponent *)TMMemoryPoolAlloc(winComponentMem);
+    float halfSizeX = entity->graphics->size.x * 0.2f;
+    float halfSizeY = entity->graphics->size.y * 0.45f;
+    AABB aabb;
+    aabb.min.x = entity->graphics->position.x - halfSizeX;
+    aabb.min.y = entity->graphics->position.y - halfSizeY;
+    aabb.max.x = entity->graphics->position.x + halfSizeX;
+    aabb.max.y = entity->graphics->position.y + halfSizeY;
+    EntityAddAABBComponent(entity, aabb, PlayerWin);
+
+}
+
+void EntityAddGameOverComponent(Entity *entity) {
+    assert(entity->gameOver == NULL);
+    entity->gameOver = (GameOverComponent *)TMMemoryPoolAlloc(gameOverComponentMem);
+    float halfSizeX = entity->graphics->size.x * 0.2f;
+    float halfSizeY = entity->graphics->size.y * 0.45f;
+    AABB aabb;
+    aabb.min.x = entity->graphics->position.x - halfSizeX;
+    aabb.min.y = entity->graphics->position.y - halfSizeY;
+    aabb.max.x = entity->graphics->position.x + halfSizeX;
+    aabb.max.y = entity->graphics->position.y + halfSizeY;
+    EntityAddAABBComponent(entity, aabb, PlayerGameOver);
 }
 
 void EntityAddCollisionComponent(Entity *entity, CollisionType type, AABB aabb, bool solid) {
@@ -183,7 +232,7 @@ void EntityAddEnemyMovementComponent(Entity *entity,
     aabb.min.y = entity->graphics->position.y - halfSizeY;
     aabb.max.x = entity->graphics->position.x + halfSizeX;
     aabb.max.y = entity->graphics->position.y + halfSizeY;
-    EntityAddAABBComponent(entity, aabb, PlayerMoveEnemy);
+    EntityAddAABBComponent(entity, aabb, PlayerHitEnemy);
 }
 
 void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsComponent *graphics, TMShader *shader,
@@ -204,7 +253,7 @@ void EntityAddEnemyShotComponent(Entity ***entities, Entity *entity, GraphicsCom
     aabb.max.x = bullet->graphics->position.x + halfSizeX;
     aabb.max.y = bullet->graphics->position.y + halfSizeY;
 
-    EntityAddAABBComponent(bullet, aabb, PlayerBullet);
+    EntityAddAABBComponent(bullet, aabb, PlayerHitEnemy);
 
     entity->enemyShot->facingLeft = facingLeft;
     entity->enemyShot->range = range;
@@ -229,6 +278,10 @@ void EntityDestroy(Entity *entity) {
     if(entity->enemyMovement) TMMemoryPoolFree(enemyMovementComponentMem, (void *)entity->enemyMovement);
     if(entity->enemyShot) TMMemoryPoolFree(enemyShotComponentMem, (void *)entity->enemyShot);
     if(entity->aabb) TMMemoryPoolFree(aabbComponentMem, (void *)entity->aabb);
+    if(entity->player) TMMemoryPoolFree(playerComponentMem, (void *)entity->player);
+    if(entity->win) TMMemoryPoolFree(winComponentMem, (void *)entity->win);
+    if(entity->gameOver) TMMemoryPoolFree(gameOverComponentMem, (void *)entity->gameOver);
+
 
     TMMemoryPoolFree(entityMem, (void *)entity);
     memset(entity, 0, sizeof(Entity));

@@ -45,6 +45,24 @@ static void PlayerPrefabSelected(TMUIElement *element) {
 
 }
 
+static void WinPrefabSelected(TMUIElement *element) {
+    printf("Prefab player selected\n");
+    EditorState *state = (EditorState *)element->userData;
+    state->element = element;
+    state->modifyOption = MODIFY_NONE;
+    state->prefabType = PREFAB_TYPE_WIN;
+    state->selectedEntity = NULL;
+}
+
+static void GameOverPrefabSelected(TMUIElement *element) {
+    printf("Prefab player selected\n");
+    EditorState *state = (EditorState *)element->userData;
+    state->element = element;
+    state->modifyOption = MODIFY_NONE;
+    state->prefabType = PREFAB_TYPE_GAME_OVER;
+    state->selectedEntity = NULL;
+}
+
 static void ShotEnemyPrefabSelected(TMUIElement *element) {
     printf("Prefab shot enemy selected\n");
     EditorState *state = (EditorState *)element->userData;
@@ -431,10 +449,10 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     LoadFileNamesFromDirectory("../../assets/shaders", &ui->shadersNames);
 
     ui->options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {6, 0.4}, {0.1, 0.1, 0.1, 1});
-    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures ", {1, 1, 1, 1}, OptionSelected, state);
-    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Colors ",   {1, 1, 1, 1}, OptionSelected, state);
-    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Prefabs ",   {1, 1, 1, 1}, OptionSelected, state);
-    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Lights ",   {1, 1, 1, 1}, OptionSelected, state);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures    ", {1, 1, 1, 1}, OptionSelected, state);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Colors      ",   {1, 1, 1, 1}, OptionSelected, state);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Prefabs     ",   {1, 1, 1, 1}, OptionSelected, state);
+    TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Lights      ",   {1, 1, 1, 1}, OptionSelected, state);
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Clear Brush ",   {1, 1, 1, 1}, ClearSelected, state);
 
     ui->textures = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.4f, 0.1f, 1});
@@ -464,9 +482,11 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     }
 
     ui->prefabs = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.1f, 0.1f, 1});
-    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Move Enemy Prefab ", {1, 1, 1, 1}, MoveEnemyPrefabSelected,  state);
-    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Shot Enemy Prefab ", {1, 1, 1, 1}, ShotEnemyPrefabSelected,  state);
-    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Player Prefab     ", {1, 1, 1, 1}, PlayerPrefabSelected,     state);
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Move Enemy Prefab ", {1, 1, 1, 1}, MoveEnemyPrefabSelected, state);
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Shot Enemy Prefab ", {1, 1, 1, 1}, ShotEnemyPrefabSelected, state);
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Player Prefab     ", {1, 1, 1, 1}, PlayerPrefabSelected,    state);
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " Win Prefab        ", {1, 1, 1, 1}, WinPrefabSelected,       state);
+    TMUIElementAddChildLabel(ui->prefabs, TM_UI_ORIENTATION_VERTICAL,  " GameOver Prefab   ", {1, 1, 1, 1}, GameOverPrefabSelected,  state);
 
     ui->modify = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {8.0, 0}, {4.8, 2}, {0.1f, 0.1f, 0.1f, 1});
     TMUIElementAddChildLabel(ui->modify, TM_UI_ORIENTATION_VERTICAL,   " Scale ", {1, 1, 1, 1}, ScaleEntity, state);
@@ -499,10 +519,10 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     TMUIElementAddChildLabel(ui->shotEnemyModify, TM_UI_ORIENTATION_VERTICAL,   " speed ", {1, 1, 1, 1}, EnemyShotSpeed, state);
     
     ui->save = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0.0f, height/meterToPixel - 0.25f}, {18.0, 0.25}, {0.1f, 0.1f, 0.1f, 1.0f});
-    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene ", {1, 1, 1, 1}, SaveScene, state);
-    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Scene ", {1, 1, 1, 1}, LoadScene, state);
-    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture ", {1, 1, 1, 1}, LoadTexture, state);
-    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader ", {1, 1, 1, 1}, LoadShader, state);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene    ", {1, 1, 1, 1}, SaveScene, state);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Scene    ", {1, 1, 1, 1}, LoadScene, state);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture  ", {1, 1, 1, 1}, LoadTexture, state);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader   ", {1, 1, 1, 1}, LoadShader, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Delete Entity ", {1, 1, 1, 1}, DeleteSelectedEntity, state);
     TMUIElementAddChildButton(ui->save, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
 
@@ -548,14 +568,14 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     TMUIElementAddChildButton(ui->lightModify, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
 
     child = TMUIElementGetChild(ui->lightModify, 1);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " constant ", {1, 1, 1, 1}, Constant, state);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " linear ",    {1, 1, 1, 1}, Linear, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " constant  ", {1, 1, 1, 1}, Constant, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " linear    ",    {1, 1, 1, 1}, Linear, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " quadratic ", {1, 1, 1, 1}, Quadratic, state);
 
     child = TMUIElementGetChild(ui->lightModify, 2);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Red ",      {1, 1, 1, 1}, Red, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Red   ",      {1, 1, 1, 1}, Red, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Green ",    {1, 1, 1, 1}, Green, state);
-    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Blue ",     {1, 1, 1, 1}, Blue, state);
+    TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Blue  ",     {1, 1, 1, 1}, Blue, state);
     TMUIElementAddChildLabel(child, TM_UI_ORIENTATION_VERTICAL, " Range ",     {1, 1, 1, 1}, Range, state);
 }
 

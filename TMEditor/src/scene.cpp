@@ -595,6 +595,7 @@ void SaveScene(TMUIElement *element) {
         if(entity->prefabType != PREFAB_TYPE_NONE) {
         
             // add Physics Component
+            if(entity->prefabType != PREFAB_TYPE_WIN && entity->prefabType != PREFAB_TYPE_GAME_OVER)
             {
                 TMJsonObject jsonPhysics = TMJsonObjectCreate();
                 TMJsonObjectSetName(&jsonPhysics, "Physics");
@@ -666,6 +667,22 @@ void SaveScene(TMUIElement *element) {
                 TMJsonObjectSetValue(&jsonEnemyShot, (float)entity->enemyShot->facingLeft);
                 TMJsonObjectAddChild(&jsonEntity, &jsonEnemyShot);
                 
+            }
+            if(entity->prefabType == PREFAB_TYPE_WIN) {
+                
+                TMJsonObject jsonWin = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonWin, "Win");
+                TMJsonObjectSetValue(&jsonWin, 1.0f);
+                TMJsonObjectAddChild(&jsonEntity, &jsonWin);
+
+            }
+            if(entity->prefabType == PREFAB_TYPE_GAME_OVER) {
+
+                TMJsonObject jsonGameOver = TMJsonObjectCreate();
+                TMJsonObjectSetName(&jsonGameOver, "GameOver");
+                TMJsonObjectSetValue(&jsonGameOver, 1.0f);
+                TMJsonObjectAddChild(&jsonEntity, &jsonGameOver);
+
             }
         }
 

@@ -3,19 +3,6 @@
 #include "../collision.h"
 
 #include <utils/tm_darray.h>
-#include <stdio.h>
-
-void PlayerMoveEnemy(Entity *player, Entity *other) {
-    printf("Player Hit Move Enemy\n");
-    player->graphics->color = {1, 0.2, 0.2, 1}; 
-
-}
-
-void PlayerBullet(Entity *player, Entity *other) {
-    printf("Player Hit Bullet\n");
-    player->graphics->color = {1, 0.2, 0.2, 1}; 
-
-}
 
 static void UpdateAABB(AABBComponent *aabb, TMVec2 position) {
     float halfSizeX = (aabb->aabb.max.x - aabb->aabb.min.x)*0.5f;

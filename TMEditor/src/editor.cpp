@@ -217,6 +217,42 @@ static void AddShotEnemyEntity(EditorState *state, float posX, float posY) {
 
 }
 
+static void AddWinEntity(EditorState *state, float posX, float posY) {
+    printf("Win added\n");
+
+    Entity entity = {};
+    entity.color = {0, 1, 0, 1};
+    entity.absUVs = {0, 0, 1, 1};
+    entity.relUVs = {0, 0, 1, 1};
+    entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
+    entity.size = {1, 1};
+    entity.texture = NULL;
+    entity.textureIndex = 0;
+    entity.shader = state->colorShader;
+    entity.zIndex = 5;
+    entity.id = state->entities ? TMDarraySize(state->entities) : 0;
+    entity.prefabType = PREFAB_TYPE_WIN;
+    TMDarrayPush(state->entities, entity, Entity);
+}
+
+static void AddGameOverEntity(EditorState *state, float posX, float posY) {
+    printf("GameOver added\n");
+
+    Entity entity = {};
+    entity.color = {1, 0, 0, 1};
+    entity.absUVs = {0, 0, 1, 1};
+    entity.relUVs = {0, 0, 1, 1};
+    entity.position = {floorf(posX) + 0.5f, floorf(posY) + 0.5f};
+    entity.size = {1, 1};
+    entity.texture = NULL;
+    entity.textureIndex = 0;
+    entity.shader = state->colorShader;
+    entity.zIndex = 5;
+    entity.id = state->entities ? TMDarraySize(state->entities) : 0;
+    entity.prefabType = PREFAB_TYPE_GAME_OVER;
+    TMDarrayPush(state->entities, entity, Entity);
+}
+
 static void AddEntity(EditorState *state, float posX, float posY) {
 
     switch(state->prefabType) {
@@ -236,6 +272,14 @@ static void AddEntity(EditorState *state, float posX, float posY) {
         case PREFAB_TYPE_MOVE_ENEMY:
         {
             AddMoveEnemyEntity(state, posX, posY);    
+        } break;
+        case PREFAB_TYPE_WIN:
+        {
+            AddWinEntity(state, posX, posY);    
+        } break;
+        case PREFAB_TYPE_GAME_OVER:
+        {
+            AddGameOverEntity(state, posX, posY);    
         } break;
 
     }

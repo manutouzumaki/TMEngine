@@ -10,6 +10,7 @@
 #include "systems/animation_sys.h"
 #include "systems/enemy_sys.h"
 #include "systems/aabb_sys.h"
+#include "systems/player_sys.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -108,16 +109,16 @@ void GameUpdate(GameState *state, float dt) {
     EnemySystemUpdate(state->entities, dt);
     PhysicSystemUpdate(state->entities, dt);
     AABBSystemUpdate(state->player, state->entities);
- 
+    PlayerComponentUpdate(state->player, dt);
+}
+
+void GameFixUpdate(GameState *state, float dt) {
+    PhysicSystemFixUpdate(state->entities, dt);
     if((TMVec2LenSq(state->player->physics->velocity) > 0.1f) && state->player->physics->grounded) {
         TMVec2 position = state->player->physics->position;
         position.y -= state->player->graphics->size.y*0.44f;
         ParticleSystemAddParticles(&state->particleSystem, position);
     }
-}
-
-void GameFixUpdate(GameState *state, float dt) {
-    PhysicSystemFixUpdate(state->entities, dt);
 }
 
 void GamePostUpdate(GameState *state, float t) {

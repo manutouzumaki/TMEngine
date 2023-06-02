@@ -280,6 +280,14 @@ void EntityAddEnemyShotCmpFromJson(Entity *entity, TMJsonObject *jsonObject, Gam
 
 }
 
+void EntityAddWinCmpFromJson(Entity *entity) {
+    EntityAddWinComponent(entity);
+}
+
+void EntityAddGameOverCmpFromJson(Entity *entity) {
+    EntityAddGameOverComponent(entity);
+}
+
 
 void LoadSceneFromFile(GameState *state, const char *filepath) {
 
@@ -355,6 +363,8 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
         TMJsonObject *jsonInput         = TMJsonFindChildByName(jsonEntity, "Input");
         TMJsonObject *jsonEnemyMovement = TMJsonFindChildByName(jsonEntity, "EnemyMovement");
         TMJsonObject *jsonEnemyShot     = TMJsonFindChildByName(jsonEntity, "EnemyShot");
+        TMJsonObject *jsonWin           = TMJsonFindChildByName(jsonEntity, "Win");
+        TMJsonObject *jsonGameOver      = TMJsonFindChildByName(jsonEntity, "GameOver");
  
         int prefabType = StringToInt(jsonPrefabType->values[0].value, jsonPrefabType->values[0].size);
 
@@ -367,6 +377,8 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
         if(jsonInput) EntityAddInputCmpFromJson(entity, jsonInput, state);
         if(jsonEnemyMovement) EntityAddEnemyMovementCmpFromJson(entity, jsonEnemyMovement);
         if(jsonEnemyShot) EntityAddEnemyShotCmpFromJson(entity, jsonEnemyShot, state);
+        if(jsonWin) EntityAddWinCmpFromJson(entity);
+        if(jsonGameOver) EntityAddGameOverCmpFromJson(entity);
 
         TMDarrayPush(state->entities, entity, Entity *);
 
