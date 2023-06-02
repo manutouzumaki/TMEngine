@@ -98,6 +98,15 @@ void GraphicsSystemAddLight(TMRenderer *renderer, TMVec2 position, TMVec3 attrib
     }
 }
 
+
+void GraphicsSystemRemoveLights(TMRenderer *renderer) {
+
+    LightsConstBuffer *lightsConstBuffer = &gGraphicsState.lightsConstBuffer;
+    lightsConstBuffer->count = 0;
+    TMRendererShaderBufferUpdate(renderer, gGraphicsState.lightShaderBuffer, &gGraphicsState.lightsConstBuffer);
+
+}
+
 void GraphicsSystemSetAmbientLight(TMRenderer *renderer, TMVec3 ambient) {
     LightsConstBuffer *lightsConstBuffer = &gGraphicsState.lightsConstBuffer;
     lightsConstBuffer->ambient = ambient;

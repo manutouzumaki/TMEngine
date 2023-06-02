@@ -26,12 +26,16 @@ static int MaxI32(int a, int b) {
 
 void PlayerWin(Entity *entity, Entity *other) {
     printf("you win mother fucker!!!\n");
+    PlayerComponent  *player =  entity->player;
+    player->winCondition = true;
+
 
 }
 
 void PlayerGameOver(Entity *entity, Entity *other) {
     printf("you lost mother fucker!!!\n");
-
+    PlayerComponent  *player =  entity->player;
+    player->lostCondition = true;
 }
 
 void PlayerHitEnemy(Entity *entity, Entity *other) {
@@ -62,6 +66,10 @@ void PlayerComponentUpdate(Entity *entity, float dt) {
         graphics->color = {1.0f, animation, animation, 1.0f};
     }
 
+    if(player->life == 0) {
+        PlayerGameOver(entity, NULL);
+    }
+
 }
 
 bool PlayerWin(Entity *entity) {
@@ -71,5 +79,5 @@ bool PlayerWin(Entity *entity) {
 
 bool PlayerAlive(Entity *entity) {
     PlayerComponent *player =  entity->player;
-    return (bool)player->life;
+    return !player->lostCondition;
 }

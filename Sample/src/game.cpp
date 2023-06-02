@@ -99,7 +99,39 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
 }
 
+static void RestartLevel(GameState *state) {
+
+    AnimationSystemShutdown(state->entities);
+    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+        Entity *entity = state->entities[i];
+        EntityDestroy(entity);
+    }
+    EntitySystemShutdown();
+    TMDarrayDestroy(state->entities);
+    
+    state->entities = NULL;
+    GraphicsSystemRemoveLights(state->renderer);
+
+    if(state->levelTextures) {
+        for(int i = 0; i < TMDarraySize(state->levelTextures); ++i) {
+            TMTexture *texture = state->levelTextures[i];
+            TMRendererTextureDestroy(state->renderer, texture);
+        }
+        TMDarrayDestroy(state->levelTextures);
+        state->levelTextures = NULL;
+    }
+
+
+    EntitySystemInitialize(100);
+    LoadSceneFromFile(state, "../../assets/json/level1.json");
+
+}
+
 void GameUpdate(GameState *state, float dt) {
+
+    if(!PlayerAlive(state->player)) {
+        RestartLevel(state);
+    }
 
     ParticleSystemUpdate(&state->particleSystem, dt);
 
@@ -154,15 +186,16 @@ void GameShutdown(GameState *state) {
     
     ParticleSystemDestroy(state->renderer, &state->particleSystem);
 
+    GraphicsSystemShutdown(state->renderer);
+    CollisionSystemShutdown();
+    PhysicSystemShutdown();
+    AnimationSystemShutdown(state->entities);
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
         Entity *entity = state->entities[i];
         EntityDestroy(entity);
     }
     EntitySystemShutdown();
-    GraphicsSystemShutdown(state->renderer);
-    CollisionSystemShutdown();
-    PhysicSystemShutdown();
-    AnimationSystemShutdown(state->entities);
+    TMDarrayDestroy(state->entities);
     MessageSystemShoutdown();
     TMDebugRendererShutdown();
     if(state->levelTextures) {
