@@ -100,6 +100,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
 }
 
 static void RestartLevel(GameState *state) {
+    // TODO: check if we are freeing all the memory ...
 
     AnimationSystemShutdown(state->entities);
     for(int i = 0; i < TMDarraySize(state->entities); ++i) {
@@ -121,9 +122,8 @@ static void RestartLevel(GameState *state) {
         state->levelTextures = NULL;
     }
 
-
     EntitySystemInitialize(100);
-    LoadSceneFromFile(state, "../../assets/json/level1.json");
+    LoadSceneFromFile(state, "../../assets/json/testScene.json");
 
 }
 
