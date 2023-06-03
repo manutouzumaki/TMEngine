@@ -99,6 +99,34 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
 }
 
+static void NextLevel(GameState *state) {
+    // TODO: check if we are freeing all the memory ...
+
+    AnimationSystemShutdown(state->entities);
+    for(int i = 0; i < TMDarraySize(state->entities); ++i) {
+        Entity *entity = state->entities[i];
+        EntityDestroy(entity);
+    }
+    EntitySystemShutdown();
+    TMDarrayDestroy(state->entities);
+    
+    state->entities = NULL;
+    GraphicsSystemRemoveLights(state->renderer);
+
+    if(state->levelTextures) {
+        for(int i = 0; i < TMDarraySize(state->levelTextures); ++i) {
+            TMTexture *texture = state->levelTextures[i];
+            TMRendererTextureDestroy(state->renderer, texture);
+        }
+        TMDarrayDestroy(state->levelTextures);
+        state->levelTextures = NULL;
+    }
+
+    EntitySystemInitialize(100);
+    LoadSceneFromFile(state, "../../assets/json/level1.json");
+
+}
+
 static void RestartLevel(GameState *state) {
     // TODO: check if we are freeing all the memory ...
 
@@ -131,6 +159,9 @@ void GameUpdate(GameState *state, float dt) {
 
     if(!PlayerAlive(state->player)) {
         RestartLevel(state);
+    }
+    if(PlayerWin(state->player)) {
+        NextLevel(state);
     }
 
     ParticleSystemUpdate(&state->particleSystem, dt);
