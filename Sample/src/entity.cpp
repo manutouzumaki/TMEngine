@@ -129,8 +129,8 @@ void EntityAddInputComponent(Entity *entity) {
 void EntityAddWinComponent(Entity *entity) {
     assert(entity->win == NULL);
     entity->win = (WinComponent *)TMMemoryPoolAlloc(winComponentMem);
-    float halfSizeX = entity->graphics->size.x * 0.2f;
-    float halfSizeY = entity->graphics->size.y * 0.45f;
+    float halfSizeX = entity->graphics->size.x*0.5f;
+    float halfSizeY = entity->graphics->size.y*0.5f;
     AABB aabb;
     aabb.min.x = entity->graphics->position.x - halfSizeX;
     aabb.min.y = entity->graphics->position.y - halfSizeY;
@@ -143,8 +143,8 @@ void EntityAddWinComponent(Entity *entity) {
 void EntityAddGameOverComponent(Entity *entity) {
     assert(entity->gameOver == NULL);
     entity->gameOver = (GameOverComponent *)TMMemoryPoolAlloc(gameOverComponentMem);
-    float halfSizeX = entity->graphics->size.x * 0.2f;
-    float halfSizeY = entity->graphics->size.y * 0.45f;
+    float halfSizeX = entity->graphics->size.x*0.5f;
+    float halfSizeY = entity->graphics->size.y*0.5f;
     AABB aabb;
     aabb.min.x = entity->graphics->position.x - halfSizeX;
     aabb.min.y = entity->graphics->position.y - halfSizeY;

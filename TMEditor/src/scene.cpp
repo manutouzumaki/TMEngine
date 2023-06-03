@@ -371,6 +371,14 @@ void LoadSceneFromFile(EditorState *state, char *filepath) {
     TMJsonObject *jsonLevelAmbient = TMJsonFindChildByName(jsonRoot, "LevelAmbient");
     TMJsonObject *jsonLevelLights = TMJsonFindChildByName(jsonRoot, "LevelLights");
     TMJsonObject *jsonScene = TMJsonFindChildByName(jsonRoot, "Scene");
+    TMJsonObject *jsonCameraLimits = TMJsonFindChildByName(jsonRoot, "CameraLimits");
+
+    if(jsonCameraLimits) {
+        state->cameraMin.x = StringToFloat(jsonCameraLimits->values[0].value, jsonCameraLimits->values[0].size);
+        state->cameraMin.y = StringToFloat(jsonCameraLimits->values[1].value, jsonCameraLimits->values[1].size);
+        state->cameraMax.x = StringToFloat(jsonCameraLimits->values[2].value, jsonCameraLimits->values[2].size);
+        state->cameraMax.y = StringToFloat(jsonCameraLimits->values[3].value, jsonCameraLimits->values[3].size);
+    }
 
     ClearTextures(state);
     LoadTextures(state, jsonLevelTextures);
@@ -444,6 +452,14 @@ void SaveScene(TMUIElement *element) {
     TMJsonObjectSetValue(&jsonLevelAmbient, state->lightsConstBuffer.ambient.y);
     TMJsonObjectSetValue(&jsonLevelAmbient, state->lightsConstBuffer.ambient.z);
     TMJsonObjectAddChild(&jsonRoot, &jsonLevelAmbient);
+
+    TMJsonObject jsonCameraLimits = TMJsonObjectCreate();
+    TMJsonObjectSetName(&jsonCameraLimits, "CameraLimits");
+    TMJsonObjectSetValue(&jsonCameraLimits, state->cameraMin.x);
+    TMJsonObjectSetValue(&jsonCameraLimits, state->cameraMin.y);
+    TMJsonObjectSetValue(&jsonCameraLimits, state->cameraMax.x);
+    TMJsonObjectSetValue(&jsonCameraLimits, state->cameraMax.y);
+    TMJsonObjectAddChild(&jsonRoot, &jsonCameraLimits);
 
     TMJsonObject jsonLevelLights = TMJsonObjectCreate();
     TMJsonObjectSetName(&jsonLevelLights, "LevelLights");

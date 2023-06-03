@@ -141,6 +141,9 @@ struct EditorState {
     BrushOption  option;
     LoadOption   loadOption;
     bool         mouseIsHot;
+
+    TMVec2 cameraMin;
+    TMVec2 cameraMax;
 };
 
 struct TMWindow;

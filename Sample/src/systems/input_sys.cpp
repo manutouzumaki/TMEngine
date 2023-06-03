@@ -84,7 +84,7 @@ void InputSystemUpdate(Entity **entities, float dt) {
                 if(entity->physics->grounded || 
                    RayEntitities(entity, entities, downLeft) || RayEntitities(entity, entities, downRight)) {
                     Message message{};
-                    message.v2[0] = {0, 15.0f};
+                    message.v2[0] = {0, 16.0f};
                     MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_ADD_IMPULSE, (void *)entity, message);
                 }
             }
@@ -124,7 +124,7 @@ void InputSystemUpdate(Entity **entities, float dt) {
                     message.v2[0] = TMVec2Normalized(acceleration) * 30.0f;
                 }
                 else {
-                    message.v2[0] = (TMVec2Normalized(acceleration) * 30.0f) * 0.1f;
+                    message.v2[0] = (TMVec2Normalized(acceleration) * 30.0f) * 0.6f;
                 }
                 MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_ADD_FORCE, (void *)entity, message);
             }

@@ -15,7 +15,7 @@ static void IntegrationStep(PhysicsComponent *physics, float dt) {
         float damping = powf(0.001f, dt);
         physics->velocity = physics->velocity * damping;
     }else {
-        float damping = powf(0.5f, dt);
+        float damping = powf(0.03f, dt);
         physics->velocity = physics->velocity * damping;
     }
 }

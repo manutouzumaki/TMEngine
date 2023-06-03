@@ -298,7 +298,13 @@ void LoadSceneFromFile(GameState *state, const char *filepath) {
     TMJsonObject *jsonLevelTextures = TMJsonFindChildByName(jsonRoot, "LevelTextures");
     TMJsonObject *jsonLevelAmbient = TMJsonFindChildByName(jsonRoot, "LevelAmbient");
     TMJsonObject *jsonLevelLights = TMJsonFindChildByName(jsonRoot, "LevelLights");
+    TMJsonObject *jsonCameraLimits = TMJsonFindChildByName(jsonRoot, "CameraLimits");
     TMJsonObject *jsonScene = TMJsonFindChildByName(jsonRoot, "Scene");
+
+    state->cameraMin.x = StringToFloat(jsonCameraLimits->values[0].value, jsonCameraLimits->values[0].size);
+    state->cameraMin.y = StringToFloat(jsonCameraLimits->values[1].value, jsonCameraLimits->values[1].size);
+    state->cameraMax.x = StringToFloat(jsonCameraLimits->values[2].value, jsonCameraLimits->values[2].size);
+    state->cameraMax.y = StringToFloat(jsonCameraLimits->values[3].value, jsonCameraLimits->values[3].size);
 
     for(int i = 0; i < jsonLevelTextures->valuesCount; ++i) {
         TMJsonValue *jsonValue = jsonLevelTextures->values + i;

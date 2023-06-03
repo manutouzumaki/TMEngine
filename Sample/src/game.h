@@ -24,6 +24,9 @@ struct GameState {
 
     ParticleSystem particleSystem;
 
+    TMVec2 cameraMin;
+    TMVec2 cameraMax;
+
 
 };
 

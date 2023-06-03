@@ -24,6 +24,7 @@ static void ClearSelected(TMUIElement *element) {
     state->element = NULL;
     state->lightSelected = -1;
     state->option = OPTION_CLEAR;
+    state->modifyOption = MODIFY_NONE;
 }
 
 void ElementSelected(TMUIElement *element) {
@@ -33,6 +34,18 @@ void ElementSelected(TMUIElement *element) {
     state->modifyOption = MODIFY_NONE;
     state->selectedEntity = NULL;
     state->lightSelected = -1;
+}
+
+
+void ModifyCameraLimits(TMUIElement *element) {
+
+    printf("Camera Limits selected\n");
+    EditorState *state = (EditorState *)element->userData;
+    state->element = NULL;
+    state->modifyOption = MODIFY_CAMERA_LIMITS;
+    state->prefabType = PREFAB_TYPE_NONE;
+    state->selectedEntity = NULL;
+
 }
 
 static void PlayerPrefabSelected(TMUIElement *element) {
@@ -221,17 +234,6 @@ static void LoadTexture(TMUIElement *element) {
 
 }
 
-static void LoadShader(TMUIElement *element) {
-
-    EditorState *state = (EditorState *)element->userData;
-    if(state->loadOption != LOAD_OPTION_SHADER) {
-        state->loadOption = LOAD_OPTION_SHADER;
-    }
-    else {
-        state->loadOption = LOAD_OPTION_NONE;
-    }
-}
-
 static void SelectTexture(TMUIElement *element) {
     
     EditorState *state = (EditorState *)element->userData;
@@ -265,12 +267,8 @@ static void SelectTexture(TMUIElement *element) {
 
     }
     state->loadOption = LOAD_OPTION_NONE;
+    state->modifyOption = MODIFY_NONE;
 
-}
-
-static void SelectShader(TMUIElement *element) {
-    EditorState *state = (EditorState *)element->userData;
-    state->loadOption = LOAD_OPTION_NONE;
 }
 
 
@@ -300,6 +298,7 @@ static void SelectScene(TMUIElement *element) {
     LoadSceneFromFile(state, filepath);
     
     state->loadOption = LOAD_OPTION_NONE;
+    state->modifyOption = MODIFY_NONE;
 
 
 }
@@ -446,7 +445,6 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
 
     LoadFileNamesFromDirectory("../../assets/json", &ui->scenesNames);
     LoadFileNamesFromDirectory("../../assets/images", &ui->texturesNames);
-    LoadFileNamesFromDirectory("../../assets/shaders", &ui->shadersNames);
 
     ui->options = TMUIElementCreateButton(TM_UI_ORIENTATION_HORIZONTAL, {0, 2}, {6, 0.4}, {0.1, 0.1, 0.1, 1});
     TMUIElementAddChildLabel(ui->options, TM_UI_ORIENTATION_VERTICAL, " Textures    ", {1, 1, 1, 1}, OptionSelected, state);
@@ -522,8 +520,8 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Save Scene    ", {1, 1, 1, 1}, SaveScene, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Scene    ", {1, 1, 1, 1}, LoadScene, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Texture  ", {1, 1, 1, 1}, LoadTexture, state);
-    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Load Shader   ", {1, 1, 1, 1}, LoadShader, state);
     TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Delete Entity ", {1, 1, 1, 1}, DeleteSelectedEntity, state);
+    TMUIElementAddChildLabel(ui->save, TM_UI_ORIENTATION_VERTICAL, " Camera Limits ", {1, 1, 1, 1}, ModifyCameraLimits, state);
     TMUIElementAddChildButton(ui->save, TM_UI_ORIENTATION_HORIZONTAL, {0.1f, 0.1f, 0.1f, 1});
 
     child = TMUIElementGetChild(ui->save, 5);
@@ -548,15 +546,6 @@ void EditorUIInitialize(EditorState *state, EditorUI *ui, float width, float hei
             TMUIElementAddChildLabel(ui->loadTexture, TM_UI_ORIENTATION_VERTICAL, ui->texturesNames[i], {1, 1, 1, 1}, SelectTexture, state);
         }
     }
-
-    ui->loadShader = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {9.0f, height/meterToPixel - 0.25f - 4.5f}, {2.5, 4.5}, {0.02f, 0.02f, 0.02f, 1.0f});
-    if(ui->shadersNames) {
-        for(int i = 0; i < TMDarraySize(ui->shadersNames); ++i) {
-            TMUIElementAddChildLabel(ui->loadShader, TM_UI_ORIENTATION_VERTICAL, ui->shadersNames[i], {1, 1, 1, 1}, SelectShader, state);
-        }
-    }
-
-
 
     ui->lights = TMUIElementCreateButton(TM_UI_ORIENTATION_VERTICAL, {0, 0}, {6, 2}, {0.1f, 0.1f, 0.1f, 1});
 
@@ -613,11 +602,7 @@ void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height,
 
     if(state->loadOption == LOAD_OPTION_TEXTURE) {
         TMUIElementProcessInput(ui->loadTexture, pos.x, pos.y, width, height, meterToPixel);
-    }
-
-    if(state->loadOption == LOAD_OPTION_SHADER) {
-        TMUIElementProcessInput(ui->loadShader, pos.x, pos.y, width, height, meterToPixel);
-    }
+    } 
     if(state->loadOption == LOAD_OPTION_SCENE) {
         TMUIElementProcessInput(ui->loadScene, pos.x, pos.y, width, height, meterToPixel);
     }
@@ -642,9 +627,7 @@ void EditorUIUpdate(EditorState *state, EditorUI *ui, float width, float height,
     if(state->loadOption == LOAD_OPTION_TEXTURE) {
         TMUIMouseIsHot(ui->loadTexture, &state->mouseIsHot);
     }
-    if(state->loadOption == LOAD_OPTION_SHADER) {
-        TMUIMouseIsHot(ui->loadShader, &state->mouseIsHot);
-    }
+    
     if(state->loadOption == LOAD_OPTION_SCENE) {
         TMUIMouseIsHot(ui->loadScene, &state->mouseIsHot);
     }
@@ -674,14 +657,10 @@ void EditorUIDraw(EditorState *state, EditorUI *ui, TMRenderer *renderer) {
 
     if(state->loadOption == LOAD_OPTION_TEXTURE) {
         TMUIElementDraw(renderer, ui->loadTexture, 0.0f);
-    }
-    if(state->loadOption == LOAD_OPTION_SHADER) {
-        TMUIElementDraw(renderer, ui->loadShader, 0.0f);
-    }
+    } 
     if(state->loadOption == LOAD_OPTION_SCENE) {
         TMUIElementDraw(renderer, ui->loadScene, 0.0f);
     }
-
     if(!state->element && state->selectedEntity) {
         TMUIElementDraw(renderer, ui->modify, 0.0f);
         if(state->selectedEntity->prefabType == PREFAB_TYPE_SHOT_ENEMY) {
@@ -705,9 +684,7 @@ void EditorUIShutdown(EditorUI *ui) {
     TMUIElementDestroy(ui->textures);
     TMUIElementDestroy(ui->options);
     TMUIElementDestroy(ui->loadTexture);
-    TMUIElementDestroy(ui->loadShader);
     TMUIElementDestroy(ui->loadScene);
-    FreeFileNames(&ui->shadersNames);
     FreeFileNames(&ui->texturesNames);
     FreeFileNames(&ui->scenesNames);
 

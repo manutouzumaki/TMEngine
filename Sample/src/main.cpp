@@ -16,7 +16,7 @@ int main() {
     
     float accumulator = 0.0f;
     // NOTE: try to set this at 1.0f/120.0f to improve collision resolution
-    float dt = 1.0f/60.0f;
+    float dt = 1.0f/120.0f;
 
     float targetFrameTime = 1.0f/60.0f;
 

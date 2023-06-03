@@ -27,7 +27,9 @@ enum ModifyOption {
     MODIFY_B_LIGHT,
 
     MODIFY_SHOT_RANGE,
-    MODIFY_SHOT_SPEED
+    MODIFY_SHOT_SPEED,
+
+    MODIFY_CAMERA_LIMITS
 };
 
 enum BrushOption {
@@ -35,14 +37,13 @@ enum BrushOption {
     OPTION_COLOR,
     OPTION_PREFABS,
     OPTION_LIGHT,
-    OPTION_CLEAR
+    OPTION_CLEAR,
 };
 
 enum LoadOption {
     LOAD_OPTION_NONE,
     LOAD_OPTION_TEXTURE,
-    LOAD_OPTION_SHADER,
-    LOAD_OPTION_SCENE
+    LOAD_OPTION_SCENE,
 };
 
 struct EditorUI {
@@ -58,14 +59,12 @@ struct EditorUI {
     TMUIElement *modify;
     TMUIElement *save;
     TMUIElement *loadTexture;
-    TMUIElement *loadShader;
     TMUIElement *loadScene;
 
     TMUIElement *lightModify;
     TMUIElement *shotEnemyModify;
 
     char **texturesNames;
-    char **shadersNames;
     char **scenesNames;
 };
 

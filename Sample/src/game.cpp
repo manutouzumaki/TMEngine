@@ -41,10 +41,10 @@ void UpdateCameraToFollowTarget(GameState *state, Entity *target) {
         float cameraUnitsY = (float)height/MetersToPixel;
 
         // TODO: save this in the level file, this should be set per level        
-        float levelStartX = 3.0f;
-        float levelStartY = 2.0f;
-        float levelEndX = 27.0f + 12.8f;
-        float levelEndY = 9.0f + 7.2f;
+        float levelStartX = state->cameraMin.x;
+        float levelStartY = state->cameraMin.y;
+        float levelEndX   = state->cameraMax.x;
+        float levelEndY   = state->cameraMax.y;
 
         float x = MinF32(MaxF32(graphics->position.x - (width*0.5f)/MetersToPixel, levelStartX), levelEndX - cameraUnitsX);
         float y = MinF32(MaxF32(graphics->position.y - (height*0.5f)/MetersToPixel, levelStartY), levelEndY - cameraUnitsY);
@@ -93,7 +93,7 @@ void GameInitialize(GameState *state, TMWindow *window) {
     EntitySystemInitialize(100);
 
 
-    LoadSceneFromFile(state, "../../assets/json/level1.json");
+    LoadSceneFromFile(state, "../../assets/json/testScene.json");
 
     state->particleSystem = ParticleSystemCreate(state->renderer);
 
@@ -136,6 +136,7 @@ void GameUpdate(GameState *state, float dt) {
     ParticleSystemUpdate(&state->particleSystem, dt);
 
     MessageFireFirstHit(MESSAGE_TYPE_PHYSICS_CLEAR_FORCES, (void *)state->entities, {});
+    
     InputSystemUpdate(state->entities, dt); 
     AnimationSystemUpdate(state->entities, dt);
     EnemySystemUpdate(state->entities, dt);

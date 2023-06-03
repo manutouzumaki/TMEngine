@@ -2,6 +2,9 @@
 #include "utils.h"
 #include <tm_window.h>
 
+
+#include <float.h>
+
 struct ConstBuffer {
     TMMat4 proj;
     TMMat4 view;
@@ -386,6 +389,8 @@ void EditorInitialize(EditorState *state, TMWindow *window) {
     state->colorShader = TMRendererShaderCreate(state->renderer,
                                                 "../../assets/shaders/defaultVert.hlsl",
                                                 "../../assets/shaders/colorFrag.hlsl");
+    state->cameraMin = {FLT_MIN, FLT_MIN};
+    state->cameraMax = {FLT_MAX, FLT_MAX};
 
     TMDebugRendererInitialize(state->renderer, 100);
     TMUIInitialize(state->renderer, state->meterToPixel);
@@ -511,6 +516,19 @@ void EditorUpdate(EditorState *state) {
         MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
         AddLight(state, {mouseX, mouseY}, {1.0, 0.7, 1.8}, {1, 1, 1}, 2);
         
+    }
+
+    if(!state->mouseIsHot && state->modifyOption == MODIFY_CAMERA_LIMITS) {
+        float mouseX, mouseY;
+        MouseToWorld(state->cameraP, &mouseX, &mouseY, clientWidth, clientHeight, state->meterToPixel);
+
+        if(TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
+            state->cameraMin = {mouseX, mouseY};
+        }
+        if(TMInputMousButtonIsDown(TM_MOUSE_BUTTON_MIDDLE)) {
+            state->cameraMax = {mouseX, mouseY};
+        }
+    
     }
 
     if(!state->mouseIsHot && state->selectedEntity && TMInputMousButtonIsDown(TM_MOUSE_BUTTON_LEFT)) {
@@ -687,7 +705,6 @@ void EditorRender(EditorState *state) {
 
         state->ui.loadScene->position   = {3.0f, clientHeight/state->meterToPixel - 0.25f - 3.5f};
         state->ui.loadTexture->position = {6.0f, clientHeight/state->meterToPixel - 0.25f - 4.0f};
-        state->ui.loadShader->position  = {9.0f, clientHeight/state->meterToPixel - 0.25f - 4.5f};
     
         TMUIElementRecalculateChilds(state->ui.modify);
         TMUIElementRecalculateChilds(state->ui.shotEnemyModify);
@@ -695,7 +712,6 @@ void EditorRender(EditorState *state) {
         TMUIElementRecalculateChilds(state->ui.save);
         TMUIElementRecalculateChilds(state->ui.loadScene);
         TMUIElementRecalculateChilds(state->ui.loadTexture);
-        TMUIElementRecalculateChilds(state->ui.loadShader);
 
     }
 
@@ -728,6 +744,24 @@ void EditorRender(EditorState *state) {
     }
 
     TMRendererDepthTestDisable(state->renderer);
+
+    {
+        TMMat4 trans = TMMat4Translate(state->cameraMin.x, state->cameraMin.y, 1.0f);
+        TMMat4 scale = TMMat4Scale(0.5f, 0.5f, 1.0f);
+        gConstBuffer.world = trans * scale;
+        gConstBuffer.color = {0.7f, 0, 1, 0.6f};
+        gConstBuffer.absUVs = {};
+        gConstBuffer.relUVs = {};
+        TMRendererBindShader(state->renderer, state->colorShader);
+        TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &gConstBuffer);
+        TMRendererDrawBufferElements(state->renderer, state->vertexBuffer);
+
+        trans = TMMat4Translate(state->cameraMax.x, state->cameraMax.y, 1.0f);
+        gConstBuffer.color = {0.0f, 0.7f, 1, 0.6f};
+        gConstBuffer.world = trans * scale;
+        TMRendererShaderBufferUpdate(state->renderer, state->shaderBuffer, &gConstBuffer);
+        TMRendererDrawBufferElements(state->renderer, state->vertexBuffer);
+    }
 
     TMVec3 pos = state->cameraP;
     for(int y = 0; y < (height/state->meterToPixel) + 2; ++y) {
