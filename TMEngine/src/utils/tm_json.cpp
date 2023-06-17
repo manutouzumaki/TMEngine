@@ -7,9 +7,10 @@
 #include <assert.h>
 #include <string.h>
 
+#ifdef TM_MACOS
 #pragma clang diagnostic push
-
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 // TODO(manuto): try to create the tokenizer but with out allocating memory for the string
 // use pointer to the file instead ...
@@ -716,5 +717,6 @@ void TMJsonObjectStringify(TMJsonObject *object, char *buffer, int *position) {
     }
 }
 
-
+#ifdef TM_MACOS
 #pragma clang diagnostic pop
+#endif

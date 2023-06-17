@@ -37,13 +37,14 @@ static unsigned int StringToUnsignedInt(const char *c, size_t size) {
     return (unsigned int)atoi(buffer);
 }
 
+#if 0
 static const char *StringToNullTerString(const char *c, size_t size) {
     char *nullTerString = (char *)malloc(size + 1);
     memcpy((void *)nullTerString, (void *)c, size);
     nullTerString[size] = '\0';
     return (const char *)nullTerString;
 }
-
+#endif
 static int StringLength(char *string) {
     int counter = 0;
     char *letter = string; 
