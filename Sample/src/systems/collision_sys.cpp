@@ -5,6 +5,7 @@
 #include <float.h>
 #include "../message.h"
 #include <tm_debug_renderer.h>
+#include <math.h>
 
 static TMVec2 closentPoint;
 
@@ -66,6 +67,7 @@ static void AABBAABBCollisionDetection(Entity *entity, Entity *other, float dt, 
     if(RayAABB(r.o, r.d, expand, t, p) && t*t < TMVec2LenSq(d)) {
         if(TMVec2Len(d) > FLT_EPSILON) {
             t /= TMVec2Len(d); 
+
         }
         TMVec2 hitP = r.o + d * t;
         TMVec2 closestP;

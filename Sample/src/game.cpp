@@ -62,12 +62,21 @@ void GameInitialize(GameState *state, TMWindow *window) {
 
     state->renderer = TMRendererCreate(window);
 
+#ifdef TM_WIN32
     state->spriteShader = TMRendererShaderCreate(state->renderer,
                                   "../../assets/shaders/defaultVert.hlsl",
                                   "../../assets/shaders/spriteFrag.hlsl");
     state->colorShader  =  TMRendererShaderCreate(state->renderer,
                                   "../../assets/shaders/defaultVert.hlsl",
                                   "../../assets/shaders/colorFrag.hlsl");
+#elif TM_MACOS
+    state->spriteShader = TMRendererShaderCreate(state->renderer,
+                                  "../../assets/shaders/defaultVert.glsl",
+                                  "../../assets/shaders/spriteFrag.glsl");
+    state->colorShader  =  TMRendererShaderCreate(state->renderer,
+                                  "../../assets/shaders/defaultVert.glsl",
+                                  "../../assets/shaders/colorFrag.glsl");
+#endif
 
     TMDebugRendererInitialize(state->renderer, 100);
 
@@ -156,7 +165,6 @@ static void RestartLevel(GameState *state) {
 }
 
 void GameUpdate(GameState *state, float dt) {
-
     if(!PlayerAlive(state->player)) {
         RestartLevel(state);
     }
@@ -206,7 +214,7 @@ void GameRender(GameState *state) {
     GraphicsSystemDraw(state->renderer, state->entities);
 
 
-    ParticleSystemDraw(&state->particleSystem);
+    //ParticleSystemDraw(&state->particleSystem);
     
     TMDebugRenderDraw();
 

@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "../tm_window.h"
 #include "../tm_input.h"
@@ -10,6 +11,7 @@ struct TMWindow {
     GLFWwindow *glfwWindow;
     int width;
     int height;
+    bool updateRenderArea;
 };
 
 TMInput gCurrentInput;
@@ -46,6 +48,7 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
     window->width = width;
     window->height = height;
     window->glfwWindow = glfwCreateWindow(window->width, window->height, title, NULL, NULL);
+    window->updateRenderArea = false;
     if(window->glfwWindow == NULL) {
         printf("Failed to create TMWindow\n");
         glfwTerminate();
@@ -77,6 +80,10 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
  void TMWindowPresent(TMWindow *window) {
     glfwSwapBuffers(window->glfwWindow);
     gLastInput = gCurrentInput;
+}
+
+void TMSleep(float milliseconds) {
+    usleep(milliseconds);
 }
 
  void TMWindowFlushEventQueue(TMWindow *window) {

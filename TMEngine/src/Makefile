@@ -26,7 +26,7 @@ build_macos:
 #	conpile to static library .a (mac os lib)
 	clang \
 	-std=c++17 \
-	-c -DTM_DEBUG -DTM_MACOS -g \
+	-c -DTM_MACOS -g \
 	-I$(INCL_PATH_MACOS) \
 	*.cpp utils/*.cpp platform_macos/*.cpp libs/glad/src/glad.cpp \
 	&& ar r ../build/tmlib.a *.o

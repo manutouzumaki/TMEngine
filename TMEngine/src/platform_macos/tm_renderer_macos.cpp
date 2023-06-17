@@ -20,6 +20,7 @@ struct TMWindow {
     GLFWwindow *glfwWindow;
     int width;
     int height;
+    bool updateRenderArea;
 };
 
 enum TM_EBO_TYPE {
@@ -83,6 +84,7 @@ struct TMInstanceRenderer {
 struct TMRenderer {
     int width;
     int height;
+    TMWindow *window;
     TMMemoryPool *buffersMemory;
     TMMemoryPool *texturesMemory;
     TMMemoryPool *shadersMemory;
@@ -104,7 +106,7 @@ struct TMRenderer {
     renderer->instanceRendererMemory = TMMemoryPoolCreate(sizeof(TMInstanceRenderer), TM_RENDERER_MEMORY_BLOCK_SIZE);
 
 
-    
+    renderer->window = window; 
     renderer->width = window->width;
     renderer->height = window->height;
 
@@ -145,8 +147,13 @@ struct TMRenderer {
 
 
 // TODO(manuel): implement this function
- bool TMRendererUpdateRenderArea(TMRenderer *renderer) {
-    return false;
+ bool TMRendererUpdateRenderArea(TMRenderer *renderer, int *outWidth, int *outHeight) {
+    *outWidth = renderer->window->width;
+    *outHeight = renderer->window->height;
+    // TODO: finish this function ...
+    renderer->width = renderer->window->width;
+    renderer->height = renderer->window->height;
+    return renderer->window->updateRenderArea;
 }
 
  void TMRendererFaceCulling(TMRenderer *renderer, bool value,  unsigned int flags) {
@@ -342,7 +349,7 @@ TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, con
     glGetShaderiv(vertShader, GL_COMPILE_STATUS, &success);
     if(!success) {
         glGetShaderInfoLog(vertShader, 512, NULL, infoLog);
-        printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED:\n %s\n", infoLog);
+        printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED: %s\n %s\n", vertPath, infoLog);
     }
     
     // compile and create the fragment shader
@@ -352,7 +359,7 @@ TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, con
     glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
     if(!success) {
         glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
-        printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED:\n %s\n", infoLog);
+        printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED: %s\n %s\n", fragPath, infoLog);
     }
 
     unsigned int program = glCreateProgram();
@@ -362,7 +369,7 @@ TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, con
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if(!success) {
         glGetProgramInfoLog(program, 512, NULL, infoLog);
-        printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n %s\n", infoLog);
+        printf("ERROR::SHADER::PROGRAM::LINKING_FAILED: %s\n%s\n %s\n",vertPath, fragPath, infoLog);
     }
 
     glDeleteShader(vertShader);
@@ -583,6 +590,25 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
 
 void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
                                                           float w, float h, float angle,
+                                                          float r, float g, float b, float a) {
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec4{r, g, b, a}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{r, g, b, a}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{r, g, b, a}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{r, g, b, a}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{r, g, b, a}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{r, g, b, a}}  // 3
+    };
+    BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
+
+    if(renderBatch->used + 1 >= renderBatch->size) {
+        TMRendererRenderBatchDraw(renderBatch);
+    }
+    AddQuadToBatchBuffer(renderBatch, quad);
+}
+
+void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                          float w, float h, float angle,
                                                           int sprite, float *uvs) {
     TMBatchVertex quad[] = {
         TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
@@ -625,13 +651,45 @@ void TMRendererRenderBatchDestroy(TMRenderer *renderer, TMRenderBatch *renderBat
     TMMemoryPoolFree(renderer->renderBatchsMemory, (void *)renderBatch);
 }
 
-// TODO: find a better place to put this kind of functions ....
-float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight) {
+float *TMGenerateUVs(TMTexture *texture, int tileWidth, int tileHeight, int *count) {
     float width = (float)tileWidth / (float)texture->width;
     float height = (float)tileHeight / (float)texture->height;
     int cols = texture->width / tileWidth;
     int rows = texture->height / tileHeight;
     float *uvs = (float *)malloc(cols * rows * 4 * sizeof(float));
+    *count = cols * rows;
+    
+    float ux = 0.0f;
+    float uy = 0.0f;
+    float vx = width;
+    float vy = height;
+    
+    float *uvsPtr = uvs;
+    for(int j = 0; j < rows; ++j) {
+        for(int i = 0; i < cols; ++i) {
+            *uvsPtr++ = ux;
+            *uvsPtr++ = uy;
+            *uvsPtr++ = vx;
+            *uvsPtr++ = vy;
+
+            ux += width;
+            vx += width;
+        }
+        ux = 0;
+        vx = width;
+        uy += height;
+        vy += height;
+    }
+    return uvs;
+}
+
+float *TMGenerateUVs(int texWidth, int texHeight, int tileWidth, int tileHeight, int *count) {
+    float width = (float)tileWidth / (float)texWidth;
+    float height = (float)tileHeight / (float)texHeight;
+    int cols = texWidth / tileWidth;
+    int rows = texHeight / tileHeight;
+    float *uvs = (float *)malloc(cols * rows * 4 * sizeof(float));
+    *count = cols * rows;
     
     float ux = 0.0f;
     float uy = 0.0f;

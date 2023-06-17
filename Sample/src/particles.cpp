@@ -10,9 +10,15 @@ ParticleSystem ParticleSystemCreate(TMRenderer *renderer, TMTexture *texture) {
     gParticleSystemCount++;
 
     if(!gShader) {
+#ifdef TM_WIN32
         gShader = TMRendererShaderCreate(renderer,
                                       "../../assets/shaders/batchVert.hlsl",
                                       "../../assets/shaders/batchFrag.hlsl");
+#elif TM_MACOS
+        gShader = TMRendererShaderCreate(renderer,
+                                      "../../assets/shaders/batchVert.glsl",
+                                      "../../assets/shaders/batchFrag.glsl");
+#endif
     }
 
     ParticleSystem particleSystem{};

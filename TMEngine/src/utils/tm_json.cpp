@@ -7,6 +7,10 @@
 #include <assert.h>
 #include <string.h>
 
+#pragma clang diagnostic push
+
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 // TODO(manuto): try to create the tokenizer but with out allocating memory for the string
 // use pointer to the file instead ...
 
@@ -711,3 +715,6 @@ void TMJsonObjectStringify(TMJsonObject *object, char *buffer, int *position) {
         printf("BYTES COUNTED: %d\n", *position);
     }
 }
+
+
+#pragma clang diagnostic pop

@@ -1,6 +1,5 @@
 #include "tm_hashmap.h"
 
-#include "..\tm_defines.h"
 
 #include <memory.h>
 

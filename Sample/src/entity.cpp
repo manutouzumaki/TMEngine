@@ -212,6 +212,9 @@ void EntityAddEnemyMovementComponent(Entity *entity,
         case COLLISION_TYPE_CIRCLE: {
             width = collision->circle.r*2.0f;
         } break;
+        default:
+          break;
+
 
     }
     entity->enemyMovement->facingLeft = false;

@@ -25,17 +25,23 @@ int main() {
 
     unsigned long long lastTime = TMTimerGetCurrentTime(&timer);
     while(!TMWindowShouldClose(window)) {
-
         unsigned long long currentTime = TMTimerGetCurrentTime(&timer);
-        float frameTime =  (float)(currentTime - lastTime)/(float)timer.frequency;
-        while(frameTime < targetFrameTime) {
-            float millisecondsToSleep = targetFrameTime - frameTime;
-            TMSleep(millisecondsToSleep);
-            currentTime = TMTimerGetCurrentTime(&timer);
-            frameTime = (float)(currentTime - lastTime)/(float)timer.frequency;
-        }
 
+        //float frameTime =  (float)(currentTime - lastTime)/(float)timer.frequency;
+        //while(frameTime < targetFrameTime) {
+        //    float millisecondsToSleep = targetFrameTime - frameTime;
+        //    TMSleep(millisecondsToSleep);
+        //    currentTime = TMTimerGetCurrentTime(&timer);
+        //    frameTime = (float)(currentTime - lastTime)/(float)timer.frequency;
+        //}
+
+#ifdef TM_MACOS
+        float deltaTime = ((float)(currentTime - lastTime)/(float)timer.frequency) / 1000000000;
+#elif TM_WIN32
         float deltaTime = (float)(currentTime - lastTime)/(float)timer.frequency;
+
+#endif
+        
         lastTime = currentTime;
         
         TMWindowFlushEventQueue(window);
