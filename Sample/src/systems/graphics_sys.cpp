@@ -40,7 +40,6 @@ struct GraphycsSystemState {
     TMShaderBuffer *lightShaderBuffer;
 };
 
-// TODO: create a nice lit system for all this piace of shit code
 static ConstBuffer  gConstBuffer;
 static unsigned int gIndices[] = { 1, 0, 2, 2, 0, 3 };
 static TMVertex     gVertices[] = {

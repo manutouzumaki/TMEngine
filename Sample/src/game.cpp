@@ -213,9 +213,9 @@ void GameRender(GameState *state) {
 
     GraphicsSystemDraw(state->renderer, state->entities);
 
-#ifdef TM_WIN32
+
     ParticleSystemDraw(&state->particleSystem);
-#endif
+
     TMDebugRenderDraw();
 
     TMRendererPresent(state->renderer, 1);

@@ -12,7 +12,7 @@ struct PointLight {
     float pad2;
 };
 
-uniform CLightBuffer {
+ uniform CLightBuffer {
     vec3 srcAmbient;
     int count;
     PointLight lights[100];

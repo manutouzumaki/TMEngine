@@ -371,6 +371,11 @@ TMShader *TMRendererShaderCreate(TMRenderer *renderer, const char *vertPath, con
         glGetProgramInfoLog(program, 512, NULL, infoLog);
         printf("ERROR::SHADER::PROGRAM::LINKING_FAILED: %s\n%s\n %s\n",vertPath, fragPath, infoLog);
     }
+    
+    // TODO: try to not have this hardcoded
+    unsigned int blockIndex = glGetUniformBlockIndex(program, "CLightBuffer");
+    unsigned int bindingPoint = 1; 
+    glUniformBlockBinding(program, blockIndex, bindingPoint);
 
     glDeleteShader(vertShader);
     glDeleteShader(fragShader);
@@ -510,7 +515,6 @@ void TMRendererTextureBind(TMRenderer *renderer, TMTexture *texture, TMShader *s
 
 TMRenderBatch *TMRendererRenderBatchCreate(TMRenderer *renderer, TMShader *shader, TMTexture *texture, size_t size) {
     TMRenderBatch *renderBatch = (TMRenderBatch *)TMMemoryPoolAlloc(renderer->renderBatchsMemory);
-
     renderBatch->renderer = renderer;
     renderBatch->shader = shader;
     renderBatch->texture = texture;
@@ -531,6 +535,8 @@ TMRenderBatch *TMRendererRenderBatchCreate(TMRenderer *renderer, TMShader *shade
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TMBatchVertex), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(TMBatchVertex), (void *)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     renderBatch->vao = VAO;
     renderBatch->vbo = VBO;
@@ -549,18 +555,52 @@ static void BatchQuadLocalToWorld(TMBatchVertex *quad, float x, float y, float z
     }
 }
 
-static void BatchQuadHandleUVs(TMBatchVertex *quad, int sprite, float *uvs) {
-   int uvsIndex = sprite * 4;
-   float u0 = uvs[uvsIndex + 0]; 
-   float v0 = uvs[uvsIndex + 1];
-   float u1 = uvs[uvsIndex + 2];
-   float v1 = uvs[uvsIndex + 3];
+static void BatchQuadHandleUVs(TMBatchVertex *quad, float *uvs) {
+   float u0 = uvs[0]; 
+   float v0 = uvs[1];
+   float u1 = uvs[2];
+   float v1 = uvs[3];
    quad[0].uvs = {u0, v0};
    quad[1].uvs = {u1, v0};
    quad[2].uvs = {u0, v1};
    quad[3].uvs = {u0, v1};
    quad[4].uvs = {u1, v0};
    quad[5].uvs = {u1, v1};
+}
+
+static void BatchQuadHandleSubUVs(TMBatchVertex *quad, int sprite, float *uvs, TMVec4 absUVs) {
+    
+    int uvsIndex = sprite * 4;
+    float relU0 = uvs[uvsIndex + 0]; 
+    float relV0 = uvs[uvsIndex + 1];
+    float relU1 = uvs[uvsIndex + 2];
+    float relV1 = uvs[uvsIndex + 3];
+
+    float absU0 = absUVs.x;
+    float absV0 = absUVs.y;
+    float absU1 = absUVs.z;
+    float absV1 = absUVs.w;
+
+    float uLen = absU1 - absU0;
+    float vLen = absV1 - absV0;
+
+    float uOffset0 = uLen * relU0; 
+    float vOffset0 = vLen * relV0; 
+    float uOffset1 = uLen * relU1; 
+    float vOffset1 = vLen * relV1; 
+
+    float u0 = absU0 + uOffset0;
+    float u1 = absU0 + uOffset1;
+    float v0 = vLen - (absV0 + vOffset1);
+    float v1 = vLen - (absV0 + vOffset0);
+
+    quad[0].uvs = {u0, v0};
+    quad[1].uvs = {u1, v0};
+    quad[2].uvs = {u0, v1};
+    quad[3].uvs = {u0, v1};
+    quad[4].uvs = {u1, v0};
+    quad[5].uvs = {u1, v1};
+
 }
 
 static void AddQuadToBatchBuffer(TMRenderBatch *renderBatch, TMBatchVertex *quad) {
@@ -573,12 +613,12 @@ static void AddQuadToBatchBuffer(TMRenderBatch *renderBatch, TMBatchVertex *quad
 void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
                                                           float w, float h, float angle) {
     TMBatchVertex quad[] = {
-        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
-        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
-        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
-        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
-        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
-        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec4{}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{}}  // 3
     };
     BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
 
@@ -607,25 +647,47 @@ void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, floa
     AddQuadToBatchBuffer(renderBatch, quad);
 }
 
+
 void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
                                                           float w, float h, float angle,
-                                                          int sprite, float *uvs) {
+                                                          float *uvs) {
     TMBatchVertex quad[] = {
-        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}}, // 1
-        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
-        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
-        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}}, // 2
-        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}}, // 0
-        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}}  // 3
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec4{}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{}}  // 3
     };
     BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
-    BatchQuadHandleUVs(quad, sprite, uvs);
+    BatchQuadHandleUVs(quad, uvs);
 
     if(renderBatch->used + 1 >= renderBatch->size) {
         TMRendererRenderBatchDraw(renderBatch);
     }
     AddQuadToBatchBuffer(renderBatch, quad);
 }
+
+void TMRendererRenderBatchAdd(TMRenderBatch *renderBatch, float x, float y, float z,
+                                                          float w, float h, float angle,
+                                                          TMVec4 absUVs, int sprite, float *uvs) {
+    TMBatchVertex quad[] = {
+        TMBatchVertex{TMVec3{-0.5f,  0.5f, 0}, TMVec2{0, 0}, TMVec4{}}, // 1
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{-0.5f, -0.5f, 0}, TMVec2{0, 1}, TMVec4{}}, // 2
+        TMBatchVertex{TMVec3{ 0.5f,  0.5f, 0}, TMVec2{1, 0}, TMVec4{}}, // 0
+        TMBatchVertex{TMVec3{ 0.5f, -0.5f, 0}, TMVec2{1, 1}, TMVec4{}}  // 3
+    };
+    BatchQuadLocalToWorld(quad, x, y, z, w, h, angle);
+    BatchQuadHandleSubUVs(quad, sprite, uvs, absUVs);
+
+    if(renderBatch->used + 1 >= renderBatch->size) {
+        TMRendererRenderBatchDraw(renderBatch);
+    }
+    AddQuadToBatchBuffer(renderBatch, quad);
+}
+
 
 void TMRendererRenderBatchDraw(TMRenderBatch *renderBatch) {
     TMRenderer *renderer = renderBatch->renderer;
@@ -636,7 +698,7 @@ void TMRendererRenderBatchDraw(TMRenderBatch *renderBatch) {
 
 
     TMRendererBindShader(renderer, renderBatch->shader);
-    TMRendererTextureBind(renderer, renderBatch->texture, renderBatch->shader, "uTexture", 0);
+    if(renderBatch->texture) TMRendererTextureBind(renderer, renderBatch->texture, renderBatch->shader, "uTexture", 0);
     glDrawArrays(GL_TRIANGLES, 0, renderBatch->used*6);
 
 
